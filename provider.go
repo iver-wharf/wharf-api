@@ -46,8 +46,8 @@ func (m ProviderModule) Register(g *gin.RouterGroup) {
 // @summary Returns first 100 providers
 // @tags provider
 // @success 200 {object} []Provider
-// @failure 401 {object} problem.Problem "Unauthorized or missing jwt token"
-// @failure 502 {object} problem.Problem "Database is unreachable"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 502 {object} problem.Response "Database is unreachable"
 // @router /providers [get]
 func (m ProviderModule) getProvidersHandler(c *gin.Context) {
 	var providers []Provider
@@ -64,10 +64,10 @@ func (m ProviderModule) getProvidersHandler(c *gin.Context) {
 // @tags provider
 // @param providerid path int true "Provider ID"
 // @success 200 {object} Provider
-// @failure 400 {object} problem.Problem "Bad request"
-// @failure 404 {object} problem.Problem "Provider not found"
-// @failure 401 {object} problem.Problem "Unauthorized or missing jwt token"
-// @failure 502 {object} problem.Problem "Database is unreachable"
+// @failure 400 {object} problem.Response "Bad request"
+// @failure 404 {object} problem.Response "Provider not found"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 502 {object} problem.Response "Database is unreachable"
 // @router /provider/{providerid} [get]
 func (m ProviderModule) getProviderHandler(c *gin.Context) {
 	providerID, ok := httputils.ParseParamUint(c, "providerid")
@@ -101,9 +101,9 @@ func (m ProviderModule) getProviderHandler(c *gin.Context) {
 // @produce json
 // @param provider body Provider _ "provider object"
 // @success 200 {object} []Provider
-// @failure 400 {object} problem.Problem "Bad request"
-// @failure 401 {object} problem.Problem "Unauthorized or missing jwt token"
-// @failure 502 {object} problem.Problem "Database is unreachable"
+// @failure 400 {object} problem.Response "Bad request"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 502 {object} problem.Response "Database is unreachable"
 // @router /providers/search [post]
 func (m ProviderModule) postSearchProviderHandler(c *gin.Context) {
 	var provider Provider
@@ -150,9 +150,9 @@ func (m ProviderModule) postSearchProviderHandler(c *gin.Context) {
 // @produce json
 // @param provider body Provider _ "provider object"
 // @success 201 {object} Provider
-// @failure 400 {object} problem.Problem "Bad request"
-// @failure 401 {object} problem.Problem "Unauthorized or missing jwt token"
-// @failure 502 {object} problem.Problem "Database is unreachable"
+// @failure 400 {object} problem.Response "Bad request"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 502 {object} problem.Response "Database is unreachable"
 // @router /provider [post]
 func (m ProviderModule) postProviderHandler(c *gin.Context) {
 	var provider Provider

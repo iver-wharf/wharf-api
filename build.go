@@ -96,10 +96,10 @@ func build(buildID uint) broadcast.Broadcaster {
 // @tags build
 // @param buildid path int true "build id"
 // @success 200 {object} Build
-// @failure 400 {object} problem.Problem "Bad request"
-// @failure 401 {object} problem.Problem "Unauthorized or missing jwt token"
-// @failure 404 {object} problem.Problem "Build not found"
-// @failure 502 {object} problem.Problem "Database is unreachable"
+// @failure 400 {object} problem.Response "Bad request"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 404 {object} problem.Response "Build not found"
+// @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid} [get]
 func (m BuildModule) getBuildHandler(c *gin.Context) {
 	buildID, ok := httputils.ParseParamUint(c, "buildid")
@@ -162,9 +162,9 @@ func (m BuildModule) postBuildSearchHandler(c *gin.Context) {
 // @tags build
 // @param buildid path int true "build id"
 // @success 200 {object} []Log "logs from selected build"
-// @failure 400 {object} problem.Problem "Bad request"
-// @failure 401 {object} problem.Problem "Unauthorized or missing jwt token"
-// @failure 502 {object} problem.Problem "Database is unreachable"
+// @failure 400 {object} problem.Response "Bad request"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/log [get]
 func (m BuildModule) getLogHandler(c *gin.Context) {
 	buildID, ok := httputils.ParseParamUint(c, "buildid")
@@ -189,8 +189,8 @@ func (m BuildModule) getLogHandler(c *gin.Context) {
 // @tags build
 // @param buildid path int true "build id"
 // @success 200 "Open stream"
-// @failure 400 {object} problem.Problem "Bad request"
-// @failure 401 {object} problem.Problem "Unauthorized or missing jwt token"
+// @failure 400 {object} problem.Response "Bad request"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @router /build/{buildid}/stream [get]
 func (m BuildModule) streamBuildLogHandler(c *gin.Context) {
 	buildID, ok := httputils.ParseParamUint(c, "buildid")
@@ -220,9 +220,9 @@ func (m BuildModule) streamBuildLogHandler(c *gin.Context) {
 // @param buildid path int true "build id"
 // @param data body BuildLog true "data"
 // @success 201 "Created"
-// @failure 400 {object} problem.Problem "Bad request"
-// @failure 401 {object} problem.Problem "Unauthorized or missing jwt token"
-// @failure 502 {object} problem.Problem "Database is unreachable"
+// @failure 400 {object} problem.Response "Bad request"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/log [post]
 func (m BuildModule) postBuildLogHandler(c *gin.Context) {
 	buildID, ok := httputils.ParseParamUint(c, "buildid")
@@ -264,10 +264,10 @@ func (m BuildModule) postBuildLogHandler(c *gin.Context) {
 // @param buildid path uint true "build id"
 // @param status query string true "Build status term" Enums(Scheduling, Running, Completed, Failed)
 // @success 200 {object} Build
-// @failure 400 {object} problem.Problem "Bad request"
-// @failure 401 {object} problem.Problem "Unauthorized or missing jwt token"
-// @failure 404 {object} problem.Problem "Build not found"
-// @failure 502 {object} problem.Problem "Database is unreachable"
+// @failure 400 {object} problem.Response "Bad request"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 404 {object} problem.Response "Build not found"
+// @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid} [put]
 func (m BuildModule) putBuildStatus(c *gin.Context) {
 	buildID, ok := httputils.ParseParamUint(c, "buildid")

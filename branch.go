@@ -58,9 +58,9 @@ func (m BranchModule) GetBranchHandler(c *gin.Context) {
 // @param branch body Branch true "branch object"
 // @success 200 {object} Branch "Updated branch"
 // @success 201 {object} Branch "Added new branch"
-// @failure 400 {object} problem.Problem "Bad request"
-// @failure 401 {object} problem.Problem "Unauthorized or missing jwt token"
-// @failure 502 {object} problem.Problem "Database is unreachable"
+// @failure 400 {object} problem.Response "Bad request"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 502 {object} problem.Response "Database is unreachable"
 // @router /branch [post]
 func (m BranchModule) PostBranchHandler(c *gin.Context) {
 	var branch Branch
@@ -104,9 +104,9 @@ func (m BranchModule) PostBranchHandler(c *gin.Context) {
 // @produce json
 // @param branches body []Branch true "branch array"
 // @success 200 {object} []Branch "Updated branches"
-// @failure 400 {object} problem.Problem "Bad request"
-// @failure 401 {object} problem.Problem "Unauthorized or missing jwt token"
-// @failure 502 {object} problem.Problem "Database is unreachable"
+// @failure 400 {object} problem.Response "Bad request"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 502 {object} problem.Response "Database is unreachable"
 // @router /branches [put]
 func (m BranchModule) PutBranchesHandler(c *gin.Context) {
 	var branches []Branch

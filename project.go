@@ -78,8 +78,8 @@ func (m ProjectModule) FindProjectByID(id uint) (Project, error) {
 // @summary Returns all projects from database
 // @tags project
 // @success 200 {array} Project
-// @failure 502 {object} problem.Problem "Database is unreachable"
-// @failure 401 {object} problem.Problem "Unauthorized or missing jwt token"
+// @failure 502 {object} problem.Response "Database is unreachable"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @router /projects [get]
 func (m ProjectModule) getProjectsHandler(c *gin.Context) {
 	var projects []Project
@@ -101,8 +101,8 @@ func (m ProjectModule) getProjectsHandler(c *gin.Context) {
 // @summary Search for projects from database
 // @tags project
 // @success 200 {array} Project
-// @failure 502 {object} problem.Problem "Database is unreachable"
-// @failure 401 {object} problem.Problem "Unauthorized or missing jwt token"
+// @failure 502 {object} problem.Response "Database is unreachable"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @router /projects/search [post]
 func (m ProjectModule) searchProjectsHandler(c *gin.Context) {
 	var query Project
@@ -132,9 +132,9 @@ func (m ProjectModule) searchProjectsHandler(c *gin.Context) {
 // @param offset query string true "PK of last branch taken"
 // @param orderby query []string false "Sorting orders. Takes the property name followed by either 'asc' or 'desc'. Can be specified multiple times for more granular sorting. Defaults to '?orderby=buildId desc'"
 // @success 200 {object} PaginatedBuilds
-// @failure 400 {object} problem.Problem "Bad request"
-// @failure 401 {object} problem.Problem "Unauthorized or missing jwt token"
-// @failure 502 {object} problem.Problem "Database is unreachable"
+// @failure 400 {object} problem.Response "Bad request"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 502 {object} problem.Response "Database is unreachable"
 // @router /projects/{projectid}/builds [get]
 func (m ProjectModule) getBuildsSliceHandler(c *gin.Context) {
 	projectID, ok := httputils.ParseParamUint(c, "projectid")
@@ -184,10 +184,10 @@ func (m ProjectModule) getBuildsSliceHandler(c *gin.Context) {
 // @tags project
 // @param projectid path int true "project ID"
 // @success 200 {object} Project
-// @failure 400 {object} problem.Problem "Bad request"
-// @failure 401 {object} problem.Problem "Unauthorized or missing jwt token"
-// @failure 404 {object} problem.Problem "Project not found"
-// @failure 502 {object} problem.Problem "Database is unreachable"
+// @failure 400 {object} problem.Response "Bad request"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 404 {object} problem.Response "Project not found"
+// @failure 502 {object} problem.Response "Database is unreachable"
 // @router /project/{projectid} [get]
 func (m ProjectModule) getProjectHandler(c *gin.Context) {
 	projectID, ok := httputils.ParseParamUint(c, "projectid")
@@ -215,10 +215,10 @@ func (m ProjectModule) getProjectHandler(c *gin.Context) {
 // @param project body Project true "project object"
 // @success 200 {object} Project "Project has been updated"
 // @success 201 {object} Project "Project has been created"
-// @failure 400 {object} problem.Problem "Bad request"
-// @failure 404 {object} problem.Problem "Project to update is not found"
-// @failure 401 {object} problem.Problem "Unauthorized or missing jwt token"
-// @failure 502 {object} problem.Problem "Database is unreachable"
+// @failure 400 {object} problem.Response "Bad request"
+// @failure 404 {object} problem.Response "Project to update is not found"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 502 {object} problem.Response "Database is unreachable"
 // @router /project [post]
 func (m ProjectModule) postProjectHandler(c *gin.Context) {
 	var project Project
@@ -282,10 +282,10 @@ func (m ProjectModule) postProjectHandler(c *gin.Context) {
 // @tags project
 // @param projectid path int true "project ID"
 // @success 204 "Deleted"
-// @failure 502 {object} problem.Problem "Database is unreachable"
-// @failure 400 {object} problem.Problem "Bad request"
-// @failure 404 {object} problem.Problem "Project to delete is not found"
-// @failure 401 {object} problem.Problem "Unauthorized or missing jwt token"
+// @failure 502 {object} problem.Response "Database is unreachable"
+// @failure 400 {object} problem.Response "Bad request"
+// @failure 404 {object} problem.Response "Project to delete is not found"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @router /project/{projectid} [delete]
 func (m ProjectModule) deleteProjectHandler(c *gin.Context) {
 	projectID, ok := httputils.ParseParamUint(c, "projectid")
@@ -320,10 +320,10 @@ func (m ProjectModule) deleteProjectHandler(c *gin.Context) {
 // @produce json
 // @param project body Project _ "project object"
 // @success 200 {object} Project
-// @failure 400 {object} problem.Problem "Bad request, such as invalid body JSON or when altering group"
-// @failure 401 {object} problem.Problem "Unauthorized or missing jwt token"
-// @failure 404 {object} problem.Problem "Project to update was not found"
-// @failure 502 {object} problem.Problem "Database is unreachable"
+// @failure 400 {object} problem.Response "Bad request, such as invalid body JSON or when altering group"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 404 {object} problem.Response "Project to update was not found"
+// @failure 502 {object} problem.Response "Database is unreachable"
 // @router /project [put]
 func (m ProjectModule) putProjectHandler(c *gin.Context) {
 	var project Project
@@ -396,10 +396,10 @@ func (m ProjectModule) putProjectHandler(c *gin.Context) {
 // @param environment query string false "environment name"
 // @param inputs body string _ "user inputs"
 // @success 200 {object} BuildReferenceWrapper "Build scheduled"
-// @failure 400 {object} problem.Problem "Bad request, such as invalid body JSON"
-// @failure 401 {object} problem.Problem "Unauthorized or missing jwt token"
-// @failure 404 {object} problem.Problem "Project was not found"
-// @failure 502 {object} problem.Problem "Database or code execution engine is unreachable"
+// @failure 400 {object} problem.Response "Bad request, such as invalid body JSON"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 404 {object} problem.Response "Project was not found"
+// @failure 502 {object} problem.Response "Database or code execution engine is unreachable"
 // @router /project/{projectid}/{stage}/run [post]
 func (m ProjectModule) runStageHandler(c *gin.Context) {
 	projectID, ok := httputils.ParseParamUint(c, "projectid")

@@ -53,9 +53,9 @@ func (m ArtifactModule) Register(g *gin.RouterGroup) {
 // @tags artifact
 // @param buildid path int true "Build ID"
 // @success 200 {array} Artifact
-// @failure 400 {object} problem.Problem "Bad request"
-// @failure 401 {object} problem.Problem "Unauthorized or missing jwt token"
-// @failure 502 {object} problem.Problem "Database is unreachable"
+// @failure 400 {object} problem.Response "Bad request"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/artifacts [get]
 func (m ArtifactModule) getBuildArtifactsHandler(c *gin.Context) {
 	buildID, ok := httputils.ParseParamUint(c, "buildid")
@@ -84,10 +84,10 @@ func (m ArtifactModule) getBuildArtifactsHandler(c *gin.Context) {
 // @param buildid path int true "Build ID"
 // @param artifactId path int true "Artifact ID"
 // @success 200 {file} string "OK"
-// @failure 400 {object} problem.Problem "Bad request"
-// @failure 401 {object} problem.Problem "Unauthorized or missing jwt token"
-// @failure 404 {object} problem.Problem "Artifact not found"
-// @failure 502 {object} problem.Problem "Database is unreachable"
+// @failure 400 {object} problem.Response "Bad request"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 404 {object} problem.Response "Artifact not found"
+// @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/artifact/{artifactId} [get]
 func (m ArtifactModule) getBuildArtifactHandler(c *gin.Context) {
 	buildID, ok := httputils.ParseParamUint(c, "buildid")
@@ -132,9 +132,9 @@ func (m ArtifactModule) getBuildArtifactHandler(c *gin.Context) {
 // @tags artifact
 // @param buildid path int true "Build ID"
 // @success 200 {object} TestsResults "OK"
-// @failure 400 {object} problem.Problem "Bad request"
-// @failure 401 {object} problem.Problem "Unauthorized or missing jwt token"
-// @failure 502 {object} problem.Problem "Database is unreachable"
+// @failure 400 {object} problem.Response "Bad request"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/tests-results [get]
 func (m ArtifactModule) getBuildTestsResultsHandler(c *gin.Context) {
 	buildID, ok := httputils.ParseParamUint(c, "buildid")
@@ -181,10 +181,10 @@ func (m ArtifactModule) getBuildTestsResultsHandler(c *gin.Context) {
 // @param buildid path int true "Build ID"
 // @param file formData file true "build artifact file"
 // @success 200 "OK"
-// @failure 400 {object} problem.Problem "Bad request"
-// @failure 401 {object} problem.Problem "Unauthorized or missing jwt token"
-// @failure 404 {object} problem.Problem "Artifact not found"
-// @failure 502 {object} problem.Problem "Database is unreachable"
+// @failure 400 {object} problem.Response "Bad request"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 404 {object} problem.Response "Artifact not found"
+// @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/artifact [post]
 func (m ArtifactModule) postBuildArtifactHandler(c *gin.Context) {
 	buildID, ok := httputils.ParseParamUint(c, "buildid")

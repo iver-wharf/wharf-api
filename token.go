@@ -34,8 +34,8 @@ func (m TokenModule) Register(g *gin.RouterGroup) {
 // @summary Returns first 100 tokens
 // @tags token
 // @success 200 {object} []Token
-// @failure 401 {object} problem.Problem "Unauthorized or missing jwt token"
-// @failure 502 {object} problem.Problem "Database is unreachable"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 502 {object} problem.Response "Database is unreachable"
 // @router /tokens [get]
 func (m TokenModule) getTokensHandler(c *gin.Context) {
 
@@ -54,9 +54,9 @@ func (m TokenModule) getTokensHandler(c *gin.Context) {
 // @tags token
 // @param tokenid path int true "Token ID"
 // @success 200 {object} Token
-// @failure 400 {object} problem.Problem "Bad request"
-// @failure 401 {object} problem.Problem "Unauthorized or missing jwt token"
-// @failure 502 {object} problem.Problem "Database is unreachable"
+// @failure 400 {object} problem.Response "Bad request"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 502 {object} problem.Response "Database is unreachable"
 // @router /token/{tokenid} [get]
 func (m TokenModule) getTokenHandler(c *gin.Context) {
 	tokenID, ok := httputils.ParseParamUint(c, "tokenid")
@@ -87,9 +87,9 @@ func (m TokenModule) getTokenHandler(c *gin.Context) {
 // @produce json
 // @param token body Token _ "token object"
 // @success 200 {object} []Token
-// @failure 400 {object} problem.Problem "Bad request"
-// @failure 401 {object} problem.Problem "Unauthorized or missing jwt token"
-// @failure 502 {object} problem.Problem "Database is unreachable"
+// @failure 400 {object} problem.Response "Bad request"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 502 {object} problem.Response "Database is unreachable"
 // @router /tokens/search [post]
 func (m TokenModule) postSearchTokenHandler(c *gin.Context) {
 	var token Token
@@ -128,10 +128,10 @@ type TokenWithProviderID struct {
 // @produce json
 // @param token body TokenWithProviderID _ "token object"
 // @success 201 {object} Token
-// @failure 400 {object} problem.Problem "Bad request"
-// @failure 401 {object} problem.Problem "Unauthorized or missing jwt token"
-// @failure 404 {object} problem.Problem "Referenced provider not found"
-// @failure 502 {object} problem.Problem "Database is unreachable"
+// @failure 400 {object} problem.Response "Bad request"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 404 {object} problem.Response "Referenced provider not found"
+// @failure 502 {object} problem.Response "Database is unreachable"
 // @router /token [post]
 func (m TokenModule) postTokenHandler(c *gin.Context) {
 	var (
