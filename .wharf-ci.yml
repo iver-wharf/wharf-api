@@ -1,0 +1,6 @@
+build:
+  api:
+    docker:
+      file: Dockerfile
+      tag: ${GIT_COMMIT},${GIT_TAG},latest
+      append-cert: false
