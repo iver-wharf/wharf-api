@@ -21,6 +21,12 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Added Go module caching in the Dockerfile so local iterations will be
   slightly quicker to compile. (!44)
 
+- Added endpoint `GET /version` that returns an object of version data of the
+  API itself. (#2)
+
+- Added Swagger spec metadata such as version that equals the version of the
+  API, contact information, and license. (#2)
+
 - Changed version of GORM from v1 to v2. Some constraints have been renamed in
   the database, and migrations were added to automatically upgrade the database.
   (!40)

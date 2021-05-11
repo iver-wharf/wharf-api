@@ -41,7 +41,7 @@ with.
    $ cd wharf-api
 
    # Generate the files into docs/
-   $ swag
+   $ swag init --parseDependency --parseDepth 1
    ```
 
 4. Start hacking with your favorite tool. For example VS Code, GoLand,
