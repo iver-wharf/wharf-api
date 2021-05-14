@@ -6,6 +6,7 @@ Dockerfile
 
 .wharf-ci.yml
 docs
+.idea
 
 package.json
 package-lock.json
