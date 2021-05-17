@@ -151,7 +151,6 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 ## v0.7.10 (2020-10-20)
 
 - Added dependency on `wharf-message-bus-sender`. (!15)
-
 - Added publishing of build events via RabbitMQ. (!15)
 
 ## v0.7.9 (2020-07-03)
@@ -242,4 +241,3 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   repository. (9685945)
 
 - Added this repository by splitting it out from the joined repo. (a7d5f00)
-
