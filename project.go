@@ -460,7 +460,7 @@ func (m ProjectModule) runStageHandler(c *gin.Context) {
 		if saveErr := m.Database.Save(&build).Error; saveErr != nil {
 			c.Error(saveErr)
 		}
-		problem.WriteProblem(c, problem.Response{
+		problem.WriteProblemError(c, err, problem.Response{
 			Type:   "/prob/api/project/run/params-deserialize",
 			Title:  "Parsing build parameters failed.",
 			Status: http.StatusBadRequest,
@@ -489,7 +489,7 @@ func (m ProjectModule) runStageHandler(c *gin.Context) {
 		if saveErr := m.Database.Save(&build).Error; saveErr != nil {
 			c.Error(saveErr)
 		}
-		problem.WriteProblem(c, problem.Response{
+		problem.WriteProblemError(c, err, problem.Response{
 			Type:   "/prob/api/project/run/params-serialize",
 			Title:  "Serializing build parameters failed.",
 			Status: http.StatusBadRequest,
