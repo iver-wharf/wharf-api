@@ -1,10 +1,11 @@
 # Wharf API
 
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/157d2eff9eba41a4a5deee8bb748a9f5)](https://www.codacy.com/gh/iver-wharf/wharf-api/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=iver-wharf/wharf-api&amp;utm_campaign=Badge_Grade)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/157d2eff9eba41a4a5deee8bb748a9f5)](https://www.codacy.com/gh/iver-wharf/wharf-api/dashboard?utm_source=github.com\&utm_medium=referral\&utm_content=iver-wharf/wharf-api\&utm_campaign=Badge_Grade)
 
 The API is one of the main components in Wharf. Its purpose is mainly a
-[CRUD](https://en.wikipedia.org/wiki/Create,_read,_update_and_delete) interface
-on top of the database that the other components in Wharf interact with.
+[CRUD](https://en.wikipedia.org/wiki/Create,\_read,\_update_and_delete)
+interface on top of the database that the other components in Wharf interact
+with.
 
 ## Components
 
