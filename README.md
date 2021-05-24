@@ -1,5 +1,7 @@
 # Wharf API
 
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/157d2eff9eba41a4a5deee8bb748a9f5)](https://www.codacy.com/gh/iver-wharf/wharf-api/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=iver-wharf/wharf-api&amp;utm_campaign=Badge_Grade)
+
 The API is one of the main components in Wharf. Its purpose is mainly a
 [CRUD](https://en.wikipedia.org/wiki/Create,_read,_update_and_delete) interface
 on top of the database that the other components in Wharf interact with.
@@ -44,13 +46,38 @@ on top of the database that the other components in Wharf interact with.
 4. Start hacking with your favorite tool. For example VS Code, GoLand,
    Vim, Emacs, or whatnot.
 
+## Linting Golang
+
+- Requires Node.js (npm) to be installed: <https://nodejs.org/en/download/>
+- Requires Revive to be installed: <https://revive.run/>
+
+```sh
+go get -u github.com/mgechev/revive
+```
+
+```sh
+npm run lint-go
+```
+
 ## Linting markdown
 
-Requires Node.js (npm) to be installed: <https://nodejs.org/en/download/>
+- Requires Node.js (npm) to be installed: <https://nodejs.org/en/download/>
 
 ```sh
 npm install
 
+npm run lint-md
+
+# Some errors can be fixed automatically. Keep in mind that this updates the
+# files in place.
+npm run lint-md-fix
+```
+
+## Linting
+
+You can lint all of the above at the same time by running:
+
+```sh
 npm run lint
 
 # Some errors can be fixed automatically. Keep in mind that this updates the
