@@ -9,7 +9,7 @@ import (
 // Consts conventions in this file:
 //  - Go struct field name:           {type}Field{FieldName}
 //  - Association struct field names: {type}Assoc{FieldName}
-//  - JSON property names:            {type}Json{FieldName}
+//  - JSON property names:            {type}JSON{FieldName}
 //  - SQL column names:               {type}Column{FieldName}
 
 const (
@@ -54,7 +54,7 @@ type Project struct {
 	Name            string    `gorm:"size:500;not null" json:"name"`
 	GroupName       string    `gorm:"size:500" json:"groupName"`
 	Description     string    `gorm:"size:500" json:"description"`
-	AvatarUrl       string    `gorm:"size:500" json:"avatarUrl"`
+	AvatarURL       string    `gorm:"size:500" json:"avatarUrl"`
 	TokenID         uint      `gorm:"nullable;default:NULL;index:project_idx_token_id" json:"tokenId"`
 	Token           *Token    `gorm:"foreignKey:TokenID;constraint:OnUpdate:RESTRICT,OnDelete:RESTRICT" json:"-"`
 	ProviderID      uint      `gorm:"nullable;default:NULL;index:project_idx_provider_id" json:"providerId"`
@@ -87,7 +87,7 @@ const (
 	buildColumnName    = "name"
 )
 
-var buildJsonToColumns = map[string]string{
+var buildJSONToColumns = map[string]string{
 	"buildId":     buildColumnBuildID,
 	"environment": "environment",
 	"finishedOn":  "completed_on",

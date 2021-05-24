@@ -38,7 +38,7 @@ type BuildReferenceWrapper struct {
 }
 
 var wharfInstance = os.Getenv("WHARF_INSTANCE")
-var triggerUrl = os.Getenv("CI_URL")
+var triggerURL = os.Getenv("CI_URL")
 var token = os.Getenv("CI_TOKEN")
 
 func (m ProjectModule) Register(g *gin.RouterGroup) {
@@ -150,7 +150,7 @@ func (m ProjectModule) getBuildsSliceHandler(c *gin.Context) {
 		return
 	}
 	orderByQueryParams := c.QueryArray("orderby")
-	orderBySlice, err := orderby.ParseSlice(orderByQueryParams, buildJsonToColumns)
+	orderBySlice, err := orderby.ParseSlice(orderByQueryParams, buildJSONToColumns)
 	if err != nil {
 		joinedOrders := strings.Join(orderByQueryParams, ", ")
 		problem.WriteInvalidParamError(c, err, "orderby", fmt.Sprintf(
@@ -270,7 +270,7 @@ func (m ProjectModule) postProjectHandler(c *gin.Context) {
 
 	existingProject.BuildDefinition = project.BuildDefinition
 	existingProject.Description = project.Description
-	existingProject.AvatarUrl = project.AvatarUrl
+	existingProject.AvatarURL = project.AvatarURL
 
 	m.Database.Save(existingProject)
 
@@ -429,14 +429,14 @@ func (m ProjectModule) runStageHandler(c *gin.Context) {
 	branch, hasBranch := c.GetQuery("branch")
 
 	if !hasBranch {
-		if b, ok := findDefaultBranch(project.Branches); !ok {
+		b, ok := findDefaultBranch(project.Branches)
+		if !ok {
 			problem.WriteDBNotFound(c, fmt.Sprintf(
 				"No branch to build for project with ID %d was specified, and no default branch was found on the project.",
 				projectID))
 			return
-		} else {
-			branch = b.Name
 		}
+		branch = b.Name
 	}
 
 	now := time.Now().UTC()
@@ -629,7 +629,7 @@ func triggerBuild(params []Param) (string, error) {
 
 	tokenStr := fmt.Sprintf("?token=%s", token)
 
-	url := fmt.Sprintf("%s%s%s", triggerUrl, tokenStr, q)
+	url := fmt.Sprintf("%s%s%s", triggerURL, tokenStr, q)
 	fmt.Printf("POSTing to url: %v\n", url)
 
 	var resp, err = http.Post(url, "", nil)

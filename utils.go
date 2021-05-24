@@ -30,14 +30,14 @@ func convert(i interface{}) interface{} {
 	return i
 }
 
-func getProjectGroupFromGitURL(gitUrl string, projectName string) string {
+func getProjectGroupFromGitURL(gitURL string, projectName string) string {
 	pattern := regexp.MustCompile(`((git@[\w\.]+)):(?P<projectPath>[\w\.@\:/\-~]+)(\.git)(/)?`)
-	if !pattern.MatchString(gitUrl) {
+	if !pattern.MatchString(gitURL) {
 		return ""
 	}
 
 	template := "$projectPath"
-	projectPath := pattern.ReplaceAllString(gitUrl, template)
+	projectPath := pattern.ReplaceAllString(gitURL, template)
 	projectGroup := strings.TrimSuffix(strings.ToLower(projectPath), strings.ToLower(projectName))
 	projectGroup = strings.TrimSuffix(projectGroup, "/")
 

@@ -144,10 +144,9 @@ func (m TokenModule) postTokenHandler(c *gin.Context) {
 		problem.WriteInvalidBindError(c, err,
 			"One or more parameters failed to parse when reading the request body for the token object to create.")
 		return
-	} else {
-		token = &tokenWithProviderID.Token
-		providerID = tokenWithProviderID.ProviderID
 	}
+	token = &tokenWithProviderID.Token
+	providerID = tokenWithProviderID.ProviderID
 
 	if providerID != 0 {
 		var provider Provider
