@@ -77,10 +77,9 @@ func openDatabase(config DatabaseConfig) (*gorm.DB, error) {
 		db, err = gorm.Open(postgres.Open(psqlInfo), &gorm.Config{})
 		if err == nil {
 			break
-		} else {
-			fmt.Printf("Error: %v\n", err)
-			time.Sleep(2 * time.Second)
 		}
+		fmt.Printf("Error: %v\n", err)
+		time.Sleep(2 * time.Second)
 	}
 	if err != nil {
 		return db, err
@@ -122,9 +121,8 @@ func openDatabase(config DatabaseConfig) (*gorm.DB, error) {
 func getLogger(config DatabaseConfig) logger.Interface {
 	if config.Log {
 		return logger.Default.LogMode(logger.Info)
-	} else {
-		return logger.Default.LogMode(logger.Silent)
 	}
+	return logger.Default.LogMode(logger.Silent)
 }
 
 func getDatabaseConfigFromEnvironment() (DatabaseConfig, error) {

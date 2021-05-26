@@ -72,11 +72,11 @@ func mapOrderByField(field string, fieldToColumnNames map[string]string) (string
 func ParseSlice(queries []string, fieldToColumnNames map[string]string) ([]OrderBy, error) {
 	sqlOrderings := make([]OrderBy, len(queries))
 	for i, qo := range queries {
-		if orderBy, err := Parse(qo, fieldToColumnNames); err != nil {
+		orderBy, err := Parse(qo, fieldToColumnNames)
+		if err != nil {
 			return nil, err
-		} else {
-			sqlOrderings[i] = orderBy
 		}
+		sqlOrderings[i] = orderBy
 	}
 	return sqlOrderings, nil
 }
@@ -85,11 +85,10 @@ func ParseSlice(queries []string, fieldToColumnNames map[string]string) ([]Order
 // the orderings slice is empty then the ifNone ordering is applied.
 func ApplyAllToGormQuery(query *gorm.DB, orderBySlice []OrderBy, ifNone OrderBy) *gorm.DB {
 	if len(orderBySlice) == 0 {
-		query = query.Order(ifNone.String())
-	} else {
-		for _, o := range orderBySlice {
-			query = query.Order(o.String())
-		}
+		return query.Order(ifNone.String())
+	}
+	for _, o := range orderBySlice {
+		query = query.Order(o.String())
 	}
 	return query
 }

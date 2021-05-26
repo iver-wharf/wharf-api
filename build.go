@@ -334,20 +334,16 @@ func (m BuildModule) updateBuildStatus(buildID uint, statusID BuildStatus) (Buil
 }
 
 func (m BuildModule) saveLog(buildID uint, message string, timestamp time.Time) error {
-	if err := m.Database.Save(&Log{
+	return m.Database.Save(&Log{
 		BuildID:   buildID,
 		Message:   message,
 		Timestamp: timestamp,
-	}).Error; err != nil {
-		return err
-	}
-
-	return nil
+	}).Error
 }
 
-func setStatusDate(build *Build, statusId BuildStatus) {
+func setStatusDate(build *Build, statusID BuildStatus) {
 	now := time.Now().UTC()
-	switch statusId {
+	switch statusID {
 	case BuildRunning:
 		build.StartedOn = &now
 	case BuildCompleted, BuildFailed:

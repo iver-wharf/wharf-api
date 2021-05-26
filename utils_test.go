@@ -51,7 +51,7 @@ func TestConvert(t *testing.T) {
 
 func TestGetProjectGroupFromGitURL(t *testing.T) {
 	type testCase struct {
-		gitUrl      string
+		gitURL      string
 		projectName string
 	}
 	tests := []struct {
@@ -60,42 +60,42 @@ func TestGetProjectGroupFromGitURL(t *testing.T) {
 	}{
 		{
 			args: testCase{
-				gitUrl:      "git@gitlab.somedomain:default/marek-test-proj.git",
+				gitURL:      "git@gitlab.somedomain:default/marek-test-proj.git",
 				projectName: "marek-test-proj",
 			},
 			want: "default",
 		},
 		{
 			args: testCase{
-				gitUrl:      "git@gitlab.somedomain:default/nestedgroup/projname.git",
+				gitURL:      "git@gitlab.somedomain:default/nestedgroup/projname.git",
 				projectName: "projname",
 			},
 			want: "default/nestedgroup",
 		},
 		{
 			args: testCase{
-				gitUrl:      "git@gitlab.somedomain:default/nestedgroup/projname.git",
+				gitURL:      "git@gitlab.somedomain:default/nestedgroup/projname.git",
 				projectName: "Projname",
 			},
 			want: "default/nestedgroup",
 		},
 		{
 			args: testCase{
-				gitUrl:      "git@gitlab.somedomain:default/other/nestedgroup/name.with.dots.git",
+				gitURL:      "git@gitlab.somedomain:default/other/nestedgroup/name.with.dots.git",
 				projectName: "name.with.dots",
 			},
 			want: "default/other/nestedgroup",
 		},
 		{
 			args: testCase{
-				gitUrl:      "git@gitlab.somedomain:default/Project.git",
+				gitURL:      "git@gitlab.somedomain:default/Project.git",
 				projectName: "Project",
 			},
 			want: "default",
 		},
 		{
 			args: testCase{
-				gitUrl:      "git@gitlab.somedomain:default/group/project-with-dash.git",
+				gitURL:      "git@gitlab.somedomain:default/group/project-with-dash.git",
 				projectName: "project-with-dash",
 			},
 			want: "default/group",
@@ -103,8 +103,8 @@ func TestGetProjectGroupFromGitURL(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.args.gitUrl, func(t *testing.T) {
-			got := getProjectGroupFromGitURL(tt.args.gitUrl, tt.args.projectName)
+		t.Run(tt.args.gitURL, func(t *testing.T) {
+			got := getProjectGroupFromGitURL(tt.args.gitURL, tt.args.projectName)
 			assert.Equal(t, tt.want, got)
 		})
 	}

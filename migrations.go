@@ -43,11 +43,7 @@ func runDatabaseMigrations(db *gorm.DB) error {
 
 	// since v3.1.0, the token.provider_id column was removed as it induced a
 	// circular dependency between the token and provider tables
-	if err := dropOldColumn(db, &Token{}, "provider_id"); err != nil {
-		return err
-	}
-
-	return nil
+	return dropOldColumn(db, &Token{}, "provider_id")
 }
 
 type constraintToDrop struct {
