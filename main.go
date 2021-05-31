@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"math/rand"
 	"net/http"
 	"os"
@@ -13,21 +14,33 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 
-	ginSwagger "github.com/swaggo/gin-swagger"
-	"github.com/swaggo/gin-swagger/swaggerFiles"
-	_ "github.com/iver-wharf/wharf-api/docs"
+	"github.com/iver-wharf/wharf-api/docs"
 	"github.com/iver-wharf/wharf-api/pkg/httputils"
 	"github.com/iver-wharf/wharf-api/pkg/problem"
+	ginSwagger "github.com/swaggo/gin-swagger"
+	"github.com/swaggo/gin-swagger/swaggerFiles"
 )
 
 var logBroadcaster broadcast.Broadcaster
 
-// @title Swagger import API
-// @version 1.0
-// @description Wharf import server.
+// @title Wharf main API
+// @description Wharf backend API that manages data storage for projects,
+// @description builds, providers, etc.
+// @license.name MIT
+// @license.url https://github.com/iver-wharf/wharf-api/blob/master/LICENSE
+// @contact.name Iver Wharf API support
+// @contact.url https://github.com/iver-wharf/wharf-api/issues
+// @contact.email wharf@iver.se
 // @basePath /api
 // @query.collection.format multi
 func main() {
+	if err := loadEmbeddedVersionFile(); err != nil {
+		fmt.Println("Failed to read embedded version.yaml file:", err)
+		os.Exit(1)
+	}
+
+	docs.SwaggerInfo.Version = AppVersion.Version
+
 	initLogger(log.TraceLevel)
 	if localCertFile, _ := os.LookupEnv("CA_CERTS"); localCertFile != "" {
 		client, err := httputils.NewClientWithCerts(localCertFile)
@@ -107,6 +120,7 @@ func main() {
 		module.Register(api)
 	}
 
+	api.GET("/version", getVersionHandler)
 	api.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	_ = r.Run()
