@@ -27,6 +27,7 @@ func (m TokenModule) Register(g *gin.RouterGroup) {
 	{
 		token.GET("/:tokenid", m.getTokenHandler)
 		token.POST("", m.postTokenHandler)
+		token.PUT("", m.putTokenHandler)
 	}
 }
 
@@ -177,4 +178,30 @@ func (m TokenModule) postTokenHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, token)
+}
+
+// postTokenHandler godoc
+// @summary Put token in database.
+// @description Put token in database. Provider in post object has to exists or should be empty.
+// @description Provider will has to be updated token ID during this operation.
+// @tags token
+// @accept json
+// @produce json
+// @param token body TokenWithProviderID _ "token object"
+// @success 201 {object} Token
+// @failure 400 {object} problem.Response "Bad request"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 404 {object} problem.Response "Referenced provider not found"
+// @failure 502 {object} problem.Response "Database is unreachable"
+// @router /token [put]
+func (m TokenModule) putTokenHandler(c *gin.Context) {
+	var token Token
+	err := c.ShouldBindJSON(&token)
+	if err != nil {
+		problem.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading the request body.")
+		return
+	}
+	var placedToken Token
+	m.Database.Where(token).FirstOrCreate(&placedToken)
+	c.JSON(http.StatusAccepted, placedToken)
 }
