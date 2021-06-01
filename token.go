@@ -74,6 +74,7 @@ func (m TokenModule) getTokenHandler(c *gin.Context) {
 	} else if err != nil {
 		problem.WriteDBReadError(c, err, fmt.Sprintf(
 			"Failed fetching token by ID %d from database.", tokenID))
+		return
 	}
 
 	c.JSON(http.StatusOK, token)
