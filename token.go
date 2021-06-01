@@ -124,7 +124,6 @@ type TokenWithProviderID struct {
 // postTokenHandler godoc
 // @summary Add token to database.
 // @description Add token to database. Provider in post object has to exists or should be empty.
-// @description Provider will has to be updated token ID during this operation.
 // @tags token
 // @accept json
 // @produce json
