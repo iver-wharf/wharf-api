@@ -200,6 +200,11 @@ func (m TokenModule) putTokenHandler(c *gin.Context) {
 		return
 	}
 	var placedToken Token
-	m.Database.Where(token).FirstOrCreate(&placedToken)
+	if err := m.Database.Where(token).FirstOrCreate(&placedToken).Error; err != nil {
+		problem.WriteInvalidBindError(c, err, fmt.Sprintf(
+			"Failed fetch or create on token with token:%q and username:%q.",
+			token.Token, token.UserName))
+		return
+	}
 	c.JSON(http.StatusAccepted, placedToken)
 }
