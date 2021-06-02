@@ -196,8 +196,7 @@ func (m TokenModule) postTokenHandler(c *gin.Context) {
 // @router /token [put]
 func (m TokenModule) putTokenHandler(c *gin.Context) {
 	var token Token
-	err := c.ShouldBindJSON(&token)
-	if err != nil {
+	if err := c.ShouldBindJSON(&token); err != nil {
 		problem.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading the request body.")
 		return
 	}
