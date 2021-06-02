@@ -12,6 +12,11 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 	https://changelog.md/
 -->
 
+## v4.0.1 (WIP)
+
+- Fixed missing `failed` field from `main.TestsResults` in
+  `GET /build/{buildid}/tests-results`. (#25)
+
 ## v4.0.0 (2021-05-28)
 
 - Added [IETF RFC-7807](https://tools.ietf.org/html/rfc7807) compatible problem

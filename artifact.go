@@ -10,9 +10,9 @@ import (
 	"path/filepath"
 
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
 	"github.com/iver-wharf/wharf-api/pkg/httputils"
 	"github.com/iver-wharf/wharf-api/pkg/problem"
+	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -36,9 +36,18 @@ type Counters struct {
 	Failed  int      `xml:"failed,attr"`
 }
 
+type TestStatus string
+
+const (
+	TestStatusSuccess TestStatus = "Success"
+	TestStatusFailed  TestStatus = "Failed"
+	TestStatusNoTests TestStatus = "No tests"
+)
+
 type TestsResults struct {
-	Passed, Failed int
-	Status         string
+	Passed int        `json:"passed"`
+	Failed int        `json:"failed"`
+	Status TestStatus `json:"status" enums:"Success,Failed,No tests"`
 }
 
 func (m ArtifactModule) Register(g *gin.RouterGroup) {
@@ -165,10 +174,12 @@ func (m ArtifactModule) getBuildTestsResultsHandler(c *gin.Context) {
 		testsResults.Failed += testRun.ResultSummary.Counters.Failed
 	}
 
-	if testsResults.Failed == 0 && testsResults.Passed != 0 {
-		testsResults.Status = "Success"
+	if testsResults.Failed == 0 && testsResults.Passed == 0 {
+		testsResults.Status = TestStatusNoTests
+	} else if testsResults.Failed == 0 {
+		testsResults.Status = TestStatusSuccess
 	} else {
-		testsResults.Status = "Failed"
+		testsResults.Status = TestStatusFailed
 	}
 
 	c.JSON(http.StatusOK, testsResults)
