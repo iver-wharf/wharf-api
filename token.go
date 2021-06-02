@@ -191,7 +191,6 @@ func (m TokenModule) postTokenHandler(c *gin.Context) {
 // @success 201 {object} Token
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
-// @failure 404 {object} problem.Response "Referenced provider not found"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /token [put]
 func (m TokenModule) putTokenHandler(c *gin.Context) {
