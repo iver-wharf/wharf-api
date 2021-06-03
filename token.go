@@ -188,7 +188,7 @@ func (m TokenModule) postTokenHandler(c *gin.Context) {
 // @accept json
 // @produce json
 // @param token body TokenWithProviderID _ "token object"
-// @success 201 {object} Token
+// @success 200 {object} Token
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
@@ -206,5 +206,5 @@ func (m TokenModule) putTokenHandler(c *gin.Context) {
 			token.UserName))
 		return
 	}
-	c.JSON(http.StatusAccepted, placedToken)
+	c.JSON(http.StatusOK, placedToken)
 }
