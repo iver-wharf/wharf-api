@@ -185,3 +185,31 @@ func (m ProviderModule) postProviderHandler(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, provider)
 }
+
+// putProviderHandler godoc
+// @summary Put provider in database.
+// @description Put provider in database.
+// @tags provider
+// @accept json
+// @produce json
+// @param provider body Provider _ "provider object"
+// @success 200 {object} Provider
+// @failure 400 {object} problem.Response "Bad request"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 502 {object} problem.Response "Database is unreachable"
+// @router /provider [put]
+func (m TokenModule) putProviderHandler(c *gin.Context) {
+	var provider Provider
+	if err := c.ShouldBindJSON(&provider); err != nil {
+		problem.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading the request body.")
+		return
+	}
+	var placedProvider Provider
+	if err := m.Database.Where(token).FirstOrCreate(&placedProvider).Error; err != nil {
+		problem.WriteDBWriteError(c, err, fmt.Sprintf(
+			"Failed fetch or create on provider with name %q.",
+			provider.Name))
+		return
+	}
+	c.JSON(http.StatusOK, placedProvider)
+}

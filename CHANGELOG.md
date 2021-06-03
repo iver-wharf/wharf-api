@@ -14,6 +14,8 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
 ## v4.1.0 (WIP)
 
+- Add endpoint PUT `PUT /provider`. (#28)
+
 - Added environment var for setting bind address and port. (#29)
 
 - Fixed missing `failed` field from `main.TestsResults` in
