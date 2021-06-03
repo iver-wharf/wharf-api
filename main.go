@@ -123,7 +123,12 @@ func main() {
 	api.GET("/version", getVersionHandler)
 	api.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	_ = r.Run()
+	var bindAddress string
+	var bindAddressDefined bool
+	if bindAddress, bindAddressDefined = os.LookupEnv("BIND_ADDRESS"); !bindAddressDefined {
+		bindAddress = "0.0.0.0:8080"
+	}
+	_ = r.Run(bindAddress)
 }
 
 func setupBasicAuth(router *gin.Engine) {
