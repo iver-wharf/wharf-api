@@ -188,7 +188,7 @@ func (m ProviderModule) postProviderHandler(c *gin.Context) {
 
 // putProviderHandler godoc
 // @summary Put provider in database.
-// @description Put provider in database.
+// @description Creates a new provider if a match is not found.
 // @tags provider
 // @accept json
 // @produce json
