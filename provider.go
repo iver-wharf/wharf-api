@@ -199,17 +199,17 @@ func (m ProviderModule) postProviderHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /provider [put]
 func (m TokenModule) putProviderHandler(c *gin.Context) {
-	var provider Provider
-	if err := c.ShouldBindJSON(&provider); err != nil {
+	var inputProvider Provider
+	if err := c.ShouldBindJSON(&inputProvider); err != nil {
 		problem.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading the request body.")
 		return
 	}
-	var placedProvider Provider
-	if err := m.Database.Where(token).FirstOrCreate(&placedProvider).Error; err != nil {
+	var provider Provider
+	if err := m.Database.Where(token).FirstOrCreate(&provider).Error; err != nil {
 		problem.WriteDBWriteError(c, err, fmt.Sprintf(
-			"Failed fetch or create on provider with name %q.",
-			provider.Name))
+			"Failed fetch or create on inputProvider with name %q.",
+			inputProvider.Name))
 		return
 	}
-	c.JSON(http.StatusOK, placedProvider)
+	c.JSON(http.StatusOK, provider)
 }
