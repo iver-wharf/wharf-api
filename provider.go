@@ -198,14 +198,14 @@ func (m ProviderModule) postProviderHandler(c *gin.Context) {
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /provider [put]
-func (m TokenModule) putProviderHandler(c *gin.Context) {
+func (m ProviderModule) putProviderHandler(c *gin.Context) {
 	var inputProvider Provider
 	if err := c.ShouldBindJSON(&inputProvider); err != nil {
 		problem.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading the request body.")
 		return
 	}
 	var provider Provider
-	if err := m.Database.Where(token).FirstOrCreate(&provider).Error; err != nil {
+	if err := m.Database.Where(inputProvider).FirstOrCreate(&provider).Error; err != nil {
 		problem.WriteDBWriteError(c, err, fmt.Sprintf(
 			"Failed fetch or create on inputProvider with name %q.",
 			inputProvider.Name))
