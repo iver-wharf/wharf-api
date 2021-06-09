@@ -14,7 +14,8 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
 ## v4.1.0 (WIP)
 
-- Add endpoint PUT `PUT /provider`. (#28)
+- Added endpoint `PUT /provider` as an idempotent way of creating a
+  provider. (#28)
 
 - Added environment var for setting bind address and port. (#29)
 
