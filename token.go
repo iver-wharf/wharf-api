@@ -193,17 +193,17 @@ func (m TokenModule) postTokenHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /token [put]
 func (m TokenModule) putTokenHandler(c *gin.Context) {
-	var token Token
-	if err := c.ShouldBindJSON(&token); err != nil {
+	var inputToken Token
+	if err := c.ShouldBindJSON(&inputToken); err != nil {
 		problem.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading the request body.")
 		return
 	}
-	var placedToken Token
-	if err := m.Database.Where(token).FirstOrCreate(&placedToken).Error; err != nil {
+	var token Token
+	if err := m.Database.Where(inputToken).FirstOrCreate(&token).Error; err != nil {
 		problem.WriteDBWriteError(c, err, fmt.Sprintf(
 			"Failed fetch or create on token by username %q and token value.",
-			token.UserName))
+			inputToken.UserName))
 		return
 	}
-	c.JSON(http.StatusOK, placedToken)
+	c.JSON(http.StatusOK, token)
 }
