@@ -182,8 +182,7 @@ func (m TokenModule) postTokenHandler(c *gin.Context) {
 
 // postTokenHandler godoc
 // @summary Put token in database.
-// @description Put token in database. Provider in post object has to exists or should be empty.
-// @description Provider will has to be updated token ID during this operation.
+// @description Creates a new token if a match is not found.
 // @tags token
 // @accept json
 // @produce json
