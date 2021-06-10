@@ -39,6 +39,7 @@ func (m ProviderModule) Register(g *gin.RouterGroup) {
 	{
 		provider.GET("/:providerid", m.getProviderHandler)
 		provider.POST("", m.postProviderHandler)
+		provider.PUT("", m.putProviderHandler)
 	}
 }
 
@@ -184,4 +185,32 @@ func (m ProviderModule) postProviderHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, provider)
+}
+
+// putProviderHandler godoc
+// @summary Put provider in database.
+// @description Creates a new provider if a match is not found.
+// @tags provider
+// @accept json
+// @produce json
+// @param provider body Provider _ "provider object"
+// @success 200 {object} Provider
+// @failure 400 {object} problem.Response "Bad request"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 502 {object} problem.Response "Database is unreachable"
+// @router /provider [put]
+func (m ProviderModule) putProviderHandler(c *gin.Context) {
+	var inputProvider Provider
+	if err := c.ShouldBindJSON(&inputProvider); err != nil {
+		problem.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading the request body.")
+		return
+	}
+	var provider Provider
+	if err := m.Database.Where(inputProvider).FirstOrCreate(&provider).Error; err != nil {
+		problem.WriteDBWriteError(c, err, fmt.Sprintf(
+			"Failed fetch or create on inputProvider with name %q.",
+			inputProvider.Name))
+		return
+	}
+	c.JSON(http.StatusOK, provider)
 }
