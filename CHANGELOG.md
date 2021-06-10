@@ -12,7 +12,7 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 	https://changelog.md/
 -->
 
-## v4.1.0 (WIP)
+## v4.1.0 (2021-04-14)
 
 - Added endpoint `PUT /provider` as an idempotent way of creating a
   provider. (#28)
