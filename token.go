@@ -27,6 +27,7 @@ func (m TokenModule) Register(g *gin.RouterGroup) {
 	{
 		token.GET("/:tokenid", m.getTokenHandler)
 		token.POST("", m.postTokenHandler)
+		token.PUT("", m.putTokenHandler)
 	}
 }
 
@@ -73,6 +74,7 @@ func (m TokenModule) getTokenHandler(c *gin.Context) {
 	} else if err != nil {
 		problem.WriteDBReadError(c, err, fmt.Sprintf(
 			"Failed fetching token by ID %d from database.", tokenID))
+		return
 	}
 
 	c.JSON(http.StatusOK, token)
@@ -122,7 +124,6 @@ type TokenWithProviderID struct {
 // postTokenHandler godoc
 // @summary Add token to database.
 // @description Add token to database. Provider in post object has to exists or should be empty.
-// @description Provider will has to be updated token ID during this operation.
 // @tags token
 // @accept json
 // @produce json
@@ -177,4 +178,32 @@ func (m TokenModule) postTokenHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, token)
+}
+
+// postTokenHandler godoc
+// @summary Put token in database.
+// @description Creates a new token if a match is not found.
+// @tags token
+// @accept json
+// @produce json
+// @param token body TokenWithProviderID _ "token object"
+// @success 200 {object} Token
+// @failure 400 {object} problem.Response "Bad request"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 502 {object} problem.Response "Database is unreachable"
+// @router /token [put]
+func (m TokenModule) putTokenHandler(c *gin.Context) {
+	var inputToken Token
+	if err := c.ShouldBindJSON(&inputToken); err != nil {
+		problem.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading the request body.")
+		return
+	}
+	var token Token
+	if err := m.Database.Where(inputToken).FirstOrCreate(&token).Error; err != nil {
+		problem.WriteDBWriteError(c, err, fmt.Sprintf(
+			"Failed fetch or create on token by username %q and token value.",
+			inputToken.UserName))
+		return
+	}
+	c.JSON(http.StatusOK, token)
 }
