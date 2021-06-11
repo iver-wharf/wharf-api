@@ -12,6 +12,11 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 	https://changelog.md/
 -->
 
+## v4.1.1 (WIP)
+
+- Changed version of Alpine Docker image used as the base image from 3.13.4
+  -> 3.13.5. (#31)
+
 ## v4.1.0 (2021-06-10)
 
 - Added endpoint `PUT /provider` as an idempotent way of creating a
