@@ -3,10 +3,10 @@ package main
 import (
 	"errors"
 	"fmt"
+	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/iver-wharf/wharf-api/pkg/problem"
 	"gorm.io/gorm"
 )
 
@@ -65,7 +65,7 @@ func (m BranchModule) GetBranchHandler(c *gin.Context) {
 func (m BranchModule) PostBranchHandler(c *gin.Context) {
 	var branch Branch
 	if err := c.ShouldBindJSON(&branch); err != nil {
-		problem.WriteInvalidBindError(c, err,
+		ginutil.WriteInvalidBindError(c, err,
 			"One or more parameters failed to parse when reading the request body for branch object to update.")
 		return
 	}
@@ -77,7 +77,7 @@ func (m BranchModule) PostBranchHandler(c *gin.Context) {
 		Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		if err := m.Database.Create(&branch).Error; err != nil {
-			problem.WriteDBWriteError(c, err, fmt.Sprintf(
+			ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
 				"Failed creating branch with name %q for token with ID %d and for project with ID %d in database.",
 				branch.Name, branch.TokenID, branch.ProjectID))
 			return
@@ -85,7 +85,7 @@ func (m BranchModule) PostBranchHandler(c *gin.Context) {
 		c.JSON(http.StatusCreated, branch)
 		return
 	} else if err != nil {
-		problem.WriteDBReadError(c, err, fmt.Sprintf(
+		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
 			"Failed fetching branch with name %q for token with ID %d and for project with ID %d in database.",
 			branch.Name, branch.TokenID, branch.ProjectID))
 		return
@@ -111,12 +111,12 @@ func (m BranchModule) PostBranchHandler(c *gin.Context) {
 func (m BranchModule) PutBranchesHandler(c *gin.Context) {
 	var branches []Branch
 	if err := c.ShouldBindJSON(&branches); err != nil {
-		problem.WriteInvalidBindError(c, err,
+		ginutil.WriteInvalidBindError(c, err,
 			"One or more parameters failed to parse when reading the request body for branch object array to update.")
 		return
 	}
 	if err := m.PutBranches(branches); err != nil {
-		problem.WriteDBWriteError(c, err, "Failed to update branches in database.")
+		ginutil.WriteDBWriteError(c, err, "Failed to update branches in database.")
 		return
 	}
 	c.JSON(http.StatusOK, branches)
