@@ -11,8 +11,7 @@ import (
 
 	"github.com/dustin/go-broadcast"
 	"github.com/gin-gonic/gin"
-	"github.com/iver-wharf/wharf-api/pkg/httputils"
-	"github.com/iver-wharf/wharf-api/pkg/problem"
+	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"gorm.io/gorm"
 
 	"github.com/iver-wharf/messagebus-go"
@@ -102,19 +101,19 @@ func build(buildID uint) broadcast.Broadcaster {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid} [get]
 func (m BuildModule) getBuildHandler(c *gin.Context) {
-	buildID, ok := httputils.ParseParamUint(c, "buildid")
+	buildID, ok := ginutil.ParseParamUint(c, "buildid")
 	if !ok {
 		return
 	}
 
 	build, err := m.getBuild(buildID)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		problem.WriteDBNotFound(c, fmt.Sprintf(
+		ginutil.WriteDBNotFound(c, fmt.Sprintf(
 			"Build with ID %d was not found.",
 			buildID))
 		return
 	} else if err != nil {
-		problem.WriteDBReadError(c, err, fmt.Sprintf(
+		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
 			"Failed fetching build with ID %d from database.",
 			buildID))
 		return
@@ -167,7 +166,7 @@ func (m BuildModule) postBuildSearchHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/log [get]
 func (m BuildModule) getLogHandler(c *gin.Context) {
-	buildID, ok := httputils.ParseParamUint(c, "buildid")
+	buildID, ok := ginutil.ParseParamUint(c, "buildid")
 	if !ok {
 		return
 	}
@@ -175,7 +174,7 @@ func (m BuildModule) getLogHandler(c *gin.Context) {
 	logs, err := m.getLogs(buildID)
 
 	if err != nil {
-		problem.WriteDBReadError(c, err, fmt.Sprintf(
+		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
 			"Failed fetching logs for build with ID %d.",
 			buildID))
 		return
@@ -193,7 +192,7 @@ func (m BuildModule) getLogHandler(c *gin.Context) {
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @router /build/{buildid}/stream [get]
 func (m BuildModule) streamBuildLogHandler(c *gin.Context) {
-	buildID, ok := httputils.ParseParamUint(c, "buildid")
+	buildID, ok := ginutil.ParseParamUint(c, "buildid")
 	if !ok {
 		return
 	}
@@ -225,14 +224,14 @@ func (m BuildModule) streamBuildLogHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/log [post]
 func (m BuildModule) postBuildLogHandler(c *gin.Context) {
-	buildID, ok := httputils.ParseParamUint(c, "buildid")
+	buildID, ok := ginutil.ParseParamUint(c, "buildid")
 	if !ok {
 		return
 	}
 
 	var log BuildLog
 	if err := c.ShouldBindJSON(&log); err != nil {
-		problem.WriteInvalidBindError(c, err,
+		ginutil.WriteInvalidBindError(c, err,
 			"One or more parameters failed to parse when reading the request body for log object to post.")
 		return
 	}
@@ -240,14 +239,14 @@ func (m BuildModule) postBuildLogHandler(c *gin.Context) {
 	if log.StatusID >= 0 {
 		_, err := m.updateBuildStatus(buildID, log.StatusID)
 		if err != nil {
-			problem.WriteDBWriteError(c, err, fmt.Sprintf(
+			ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
 				"Failed updating status on build with ID %d to status with ID %d.",
 				buildID, log.StatusID))
 			return
 		}
 	} else {
 		if err := m.saveLog(buildID, log.Message, log.Timestamp); err != nil {
-			problem.WriteDBWriteError(c, err, fmt.Sprintf(
+			ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
 				"Failed adding log message to build with ID %d.",
 				buildID))
 			return
@@ -270,24 +269,24 @@ func (m BuildModule) postBuildLogHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid} [put]
 func (m BuildModule) putBuildStatus(c *gin.Context) {
-	buildID, ok := httputils.ParseParamUint(c, "buildid")
+	buildID, ok := ginutil.ParseParamUint(c, "buildid")
 	if !ok {
 		return
 	}
 
-	status, ok := httputils.RequireQueryString(c, "status")
+	status, ok := ginutil.RequireQueryString(c, "status")
 	if !ok {
 		return
 	}
 
 	build, err := m.updateBuildStatus(buildID, ParseBuildStatus(status))
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		problem.WriteDBNotFound(c, fmt.Sprintf(
+		ginutil.WriteDBNotFound(c, fmt.Sprintf(
 			"Build with ID %d was not found when trying to update status to %q.",
 			buildID, status))
 		return
 	} else if err != nil {
-		problem.WriteDBWriteError(c, err, fmt.Sprintf(
+		ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
 			"Failed updating build status to %q on build with ID %d in the database.",
 			status, buildID))
 		return

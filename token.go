@@ -3,12 +3,11 @@ package main
 import (
 	"errors"
 	"fmt"
+	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/iver-wharf/wharf-api/pkg/httputils"
-	"github.com/iver-wharf/wharf-api/pkg/problem"
 	"gorm.io/gorm"
 )
 
@@ -43,7 +42,7 @@ func (m TokenModule) getTokensHandler(c *gin.Context) {
 	var tokens []Token
 	err := m.Database.Limit(100).Find(&tokens).Error
 	if err != nil {
-		problem.WriteDBReadError(c, err, "Failed fetching list of tokens from database.")
+		ginutil.WriteDBReadError(c, err, "Failed fetching list of tokens from database.")
 		return
 	}
 
@@ -60,7 +59,7 @@ func (m TokenModule) getTokensHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /token/{tokenid} [get]
 func (m TokenModule) getTokenHandler(c *gin.Context) {
-	tokenID, ok := httputils.ParseParamUint(c, "tokenid")
+	tokenID, ok := ginutil.ParseParamUint(c, "tokenid")
 	if !ok {
 		return
 	}
@@ -68,11 +67,11 @@ func (m TokenModule) getTokenHandler(c *gin.Context) {
 	var token Token
 	err := m.Database.First(&token, tokenID).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		problem.WriteDBNotFound(c, fmt.Sprintf(
+		ginutil.WriteDBNotFound(c, fmt.Sprintf(
 			"Token with ID %d was not found.", tokenID))
 		return
 	} else if err != nil {
-		problem.WriteDBReadError(c, err, fmt.Sprintf(
+		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
 			"Failed fetching token by ID %d from database.", tokenID))
 		return
 	}
@@ -96,7 +95,7 @@ func (m TokenModule) getTokenHandler(c *gin.Context) {
 func (m TokenModule) postSearchTokenHandler(c *gin.Context) {
 	var token Token
 	if err := c.ShouldBindJSON(&token); err != nil {
-		problem.WriteInvalidBindError(c, err,
+		ginutil.WriteInvalidBindError(c, err,
 			"One or more parameters failed to parse when reading the request body for the token object to search with.")
 		return
 	}
@@ -107,7 +106,7 @@ func (m TokenModule) postSearchTokenHandler(c *gin.Context) {
 		Find(&tokens).
 		Error
 	if err != nil {
-		problem.WriteDBReadError(c, err, fmt.Sprintf(
+		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
 			"Failed searching for token by value and with username %q in database.",
 			token.UserName))
 		return
@@ -142,7 +141,7 @@ func (m TokenModule) postTokenHandler(c *gin.Context) {
 	)
 
 	if err := c.ShouldBindJSON(&tokenWithProviderID); err != nil {
-		problem.WriteInvalidBindError(c, err,
+		ginutil.WriteInvalidBindError(c, err,
 			"One or more parameters failed to parse when reading the request body for the token object to create.")
 		return
 	}
@@ -153,26 +152,26 @@ func (m TokenModule) postTokenHandler(c *gin.Context) {
 		var provider Provider
 		err := m.Database.Find(&provider, providerID).Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			problem.WriteDBNotFound(c, fmt.Sprintf(
+			ginutil.WriteDBNotFound(c, fmt.Sprintf(
 				"Provider with ID %d was not found when creating token.",
 				providerID))
 			return
 		} else if err != nil {
-			problem.WriteDBReadError(c, err, fmt.Sprintf(
+			ginutil.WriteDBReadError(c, err, fmt.Sprintf(
 				"Failed fetching project with ID %d from database when creating token.",
 				providerID))
 			return
 		}
 		provider.Token = token
 		if err := m.Database.Save(&provider).Error; err != nil {
-			problem.WriteDBWriteError(c, err, fmt.Sprintf(
+			ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
 				"Failed updating provider with ID %d with a new token.",
 				providerID))
 			return
 		}
 	} else {
 		if err := m.Database.Create(token).Error; err != nil {
-			problem.WriteDBWriteError(c, err, "Failed creating a new token.")
+			ginutil.WriteDBWriteError(c, err, "Failed creating a new token.")
 			return
 		}
 	}
@@ -195,12 +194,12 @@ func (m TokenModule) postTokenHandler(c *gin.Context) {
 func (m TokenModule) putTokenHandler(c *gin.Context) {
 	var inputToken Token
 	if err := c.ShouldBindJSON(&inputToken); err != nil {
-		problem.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading the request body.")
+		ginutil.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading the request body.")
 		return
 	}
 	var token Token
 	if err := m.Database.Where(inputToken).FirstOrCreate(&token).Error; err != nil {
-		problem.WriteDBWriteError(c, err, fmt.Sprintf(
+		ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
 			"Failed fetch or create on token by username %q and token value.",
 			inputToken.UserName))
 		return

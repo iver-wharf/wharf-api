@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"math/rand"
 	"net/http"
 	"os"
@@ -16,7 +17,6 @@ import (
 
 	"github.com/iver-wharf/wharf-api/docs"
 	"github.com/iver-wharf/wharf-api/pkg/httputils"
-	"github.com/iver-wharf/wharf-api/pkg/problem"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/swaggo/gin-swagger/swaggerFiles"
 )
@@ -75,7 +75,7 @@ func main() {
 	r.Use(
 		//disable GIN logs for path "/health". Probes won't clog up logs now.
 		gin.LoggerWithWriter(gin.DefaultWriter, "/health"),
-		gin.CustomRecovery(problem.RecoverHandle),
+		gin.CustomRecovery(ginutil.RecoverProblemHandle),
 	)
 
 	allowCors, ok := os.LookupEnv("ALLOW_CORS")

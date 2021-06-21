@@ -10,8 +10,7 @@ import (
 	"path/filepath"
 
 	"github.com/gin-gonic/gin"
-	"github.com/iver-wharf/wharf-api/pkg/httputils"
-	"github.com/iver-wharf/wharf-api/pkg/problem"
+	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -67,7 +66,7 @@ func (m ArtifactModule) Register(g *gin.RouterGroup) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/artifacts [get]
 func (m ArtifactModule) getBuildArtifactsHandler(c *gin.Context) {
-	buildID, ok := httputils.ParseParamUint(c, "buildid")
+	buildID, ok := ginutil.ParseParamUint(c, "buildid")
 	if !ok {
 		return
 	}
@@ -78,7 +77,7 @@ func (m ArtifactModule) getBuildArtifactsHandler(c *gin.Context) {
 		Find(&artifacts).
 		Error
 	if err != nil {
-		problem.WriteDBReadError(c, err, fmt.Sprintf(
+		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
 			"Failed fetching artifacts for build with ID %d from database.",
 			buildID))
 		return
@@ -99,11 +98,11 @@ func (m ArtifactModule) getBuildArtifactsHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/artifact/{artifactId} [get]
 func (m ArtifactModule) getBuildArtifactHandler(c *gin.Context) {
-	buildID, ok := httputils.ParseParamUint(c, "buildid")
+	buildID, ok := ginutil.ParseParamUint(c, "buildid")
 	if !ok {
 		return
 	}
-	artifactID, ok := httputils.ParseParamUint(c, "artifactId")
+	artifactID, ok := ginutil.ParseParamUint(c, "artifactId")
 	if !ok {
 		return
 	}
@@ -117,12 +116,12 @@ func (m ArtifactModule) getBuildArtifactHandler(c *gin.Context) {
 		First(&artifact).
 		Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		problem.WriteDBNotFound(c, fmt.Sprintf(
+		ginutil.WriteDBNotFound(c, fmt.Sprintf(
 			"Artifact with ID %d was not found on build with ID %d.",
 			artifactID, buildID))
 		return
 	} else if err != nil {
-		problem.WriteBodyReadError(c, err, fmt.Sprintf(
+		ginutil.WriteBodyReadError(c, err, fmt.Sprintf(
 			"Failed fetching artifact with ID %d on build with ID %d.",
 			artifactID, buildID))
 		return
@@ -146,7 +145,7 @@ func (m ArtifactModule) getBuildArtifactHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/tests-results [get]
 func (m ArtifactModule) getBuildTestsResultsHandler(c *gin.Context) {
-	buildID, ok := httputils.ParseParamUint(c, "buildid")
+	buildID, ok := ginutil.ParseParamUint(c, "buildid")
 	if !ok {
 		return
 	}
@@ -159,7 +158,7 @@ func (m ArtifactModule) getBuildTestsResultsHandler(c *gin.Context) {
 		Find(&testRunFiles).
 		Error
 	if err != nil {
-		problem.WriteDBReadError(c, err, fmt.Sprintf(
+		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
 			"Failed fetching test result artifacts for build with ID %d from database.",
 			buildID))
 		return
@@ -198,14 +197,14 @@ func (m ArtifactModule) getBuildTestsResultsHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/artifact [post]
 func (m ArtifactModule) postBuildArtifactHandler(c *gin.Context) {
-	buildID, ok := httputils.ParseParamUint(c, "buildid")
+	buildID, ok := ginutil.ParseParamUint(c, "buildid")
 	if !ok {
 		return
 	}
 
 	form, err := c.MultipartForm()
 	if err != nil {
-		problem.WriteMultipartFormReadError(c, err, fmt.Sprintf(
+		ginutil.WriteMultipartFormReadError(c, err, fmt.Sprintf(
 			"Failed reading multipart-form content from request body when uploading new artifact for build with ID %d.",
 			buildID))
 		return
@@ -215,7 +214,7 @@ func (m ArtifactModule) postBuildArtifactHandler(c *gin.Context) {
 		if fhs := form.File[k]; len(fhs) > 0 {
 			f, err := fhs[0].Open()
 			if err != nil {
-				problem.WriteMultipartFormReadError(c, err, fmt.Sprintf(
+				ginutil.WriteMultipartFormReadError(c, err, fmt.Sprintf(
 					"Failed with starting to read file content from multipart form request body when uploading new artifact for build with ID %d.",
 					buildID))
 				return
@@ -223,7 +222,7 @@ func (m ArtifactModule) postBuildArtifactHandler(c *gin.Context) {
 
 			data, err := ioutil.ReadAll(f)
 			if err != nil {
-				problem.WriteMultipartFormReadError(c, err, fmt.Sprintf(
+				ginutil.WriteMultipartFormReadError(c, err, fmt.Sprintf(
 					"Failed reading file content from multipart form request body when uploading new artifact for build with ID %d.",
 					buildID))
 				return
@@ -238,7 +237,7 @@ func (m ArtifactModule) postBuildArtifactHandler(c *gin.Context) {
 
 			err = m.Database.Create(&artifact).Error
 			if err != nil {
-				problem.WriteDBWriteError(c, err, fmt.Sprintf(
+				ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
 					"Failed saving artifact with name %q for build with ID %d in database.",
 					artifact.FileName, buildID))
 				return

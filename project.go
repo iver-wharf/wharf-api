@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -16,9 +17,8 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/gin-gonic/gin"
 	"github.com/iver-wharf/messagebus-go"
-	"github.com/iver-wharf/wharf-api/pkg/httputils"
 	"github.com/iver-wharf/wharf-api/pkg/orderby"
-	"github.com/iver-wharf/wharf-api/pkg/problem"
+	"github.com/iver-wharf/wharf-core/pkg/problem"
 	"gopkg.in/guregu/null.v4"
 	"gorm.io/gorm"
 )
@@ -91,7 +91,7 @@ func (m ProjectModule) getProjectsHandler(c *gin.Context) {
 		Find(&projects).
 		Error
 	if err != nil {
-		problem.WriteDBReadError(c, err, "Failed fetching list of projects from database.")
+		ginutil.WriteDBReadError(c, err, "Failed fetching list of projects from database.")
 		return
 	}
 	c.JSON(http.StatusOK, projects)
@@ -107,7 +107,7 @@ func (m ProjectModule) getProjectsHandler(c *gin.Context) {
 func (m ProjectModule) searchProjectsHandler(c *gin.Context) {
 	var query Project
 	if err := c.ShouldBindJSON(&query); err != nil {
-		problem.WriteInvalidBindError(c, err,
+		ginutil.WriteInvalidBindError(c, err,
 			"One or more parameters failed to parse when reading the request body for the project object to search with.")
 		return
 	}
@@ -118,7 +118,7 @@ func (m ProjectModule) searchProjectsHandler(c *gin.Context) {
 		Find(&projects).
 		Error
 	if err != nil {
-		problem.WriteDBReadError(c, err, "Failed searching for projects in database.")
+		ginutil.WriteDBReadError(c, err, "Failed searching for projects in database.")
 		return
 	}
 	c.JSON(http.StatusOK, projects)
@@ -137,15 +137,15 @@ func (m ProjectModule) searchProjectsHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /projects/{projectid}/builds [get]
 func (m ProjectModule) getBuildsSliceHandler(c *gin.Context) {
-	projectID, ok := httputils.ParseParamUint(c, "projectid")
+	projectID, ok := ginutil.ParseParamUint(c, "projectid")
 	if !ok {
 		return
 	}
-	limit, ok := httputils.ParseQueryInt(c, "limit")
+	limit, ok := ginutil.ParseQueryInt(c, "limit")
 	if !ok {
 		return
 	}
-	offset, ok := httputils.ParseQueryInt(c, "offset")
+	offset, ok := ginutil.ParseQueryInt(c, "offset")
 	if !ok {
 		return
 	}
@@ -153,7 +153,7 @@ func (m ProjectModule) getBuildsSliceHandler(c *gin.Context) {
 	orderBySlice, err := orderby.ParseSlice(orderByQueryParams, buildJSONToColumns)
 	if err != nil {
 		joinedOrders := strings.Join(orderByQueryParams, ", ")
-		problem.WriteInvalidParamError(c, err, "orderby", fmt.Sprintf(
+		ginutil.WriteInvalidParamError(c, err, "orderby", fmt.Sprintf(
 			"Failed parsing the %d sort ordering values: %s",
 			len(orderByQueryParams),
 			joinedOrders))
@@ -162,7 +162,7 @@ func (m ProjectModule) getBuildsSliceHandler(c *gin.Context) {
 
 	builds, err := m.getBuilds(projectID, limit, offset, orderBySlice)
 	if err != nil {
-		problem.WriteDBReadError(c, err, fmt.Sprintf(
+		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
 			"Failed fetching builds for project with ID %d from database.",
 			projectID))
 		return
@@ -170,7 +170,7 @@ func (m ProjectModule) getBuildsSliceHandler(c *gin.Context) {
 
 	count, err := m.getBuildsCount(projectID)
 	if err != nil {
-		problem.WriteDBReadError(c, err, fmt.Sprintf(
+		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
 			"Failed fetching build count for project with ID %d from database.",
 			projectID))
 		return
@@ -190,16 +190,16 @@ func (m ProjectModule) getBuildsSliceHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /project/{projectid} [get]
 func (m ProjectModule) getProjectHandler(c *gin.Context) {
-	projectID, ok := httputils.ParseParamUint(c, "projectid")
+	projectID, ok := ginutil.ParseParamUint(c, "projectid")
 	if !ok {
 		return
 	}
 	project, err := m.FindProjectByID(projectID)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		problem.WriteDBNotFound(c, fmt.Sprintf("Project with ID %d was not found.", projectID))
+		ginutil.WriteDBNotFound(c, fmt.Sprintf("Project with ID %d was not found.", projectID))
 		return
 	} else if err != nil {
-		problem.WriteDBReadError(c, err, fmt.Sprintf("Failed fetching project with ID %d from database.", projectID))
+		ginutil.WriteDBReadError(c, err, fmt.Sprintf("Failed fetching project with ID %d from database.", projectID))
 		return
 	}
 	c.JSON(http.StatusOK, &project)
@@ -224,7 +224,7 @@ func (m ProjectModule) postProjectHandler(c *gin.Context) {
 	var project Project
 
 	if err := c.ShouldBindJSON(&project); err != nil {
-		problem.WriteInvalidBindError(c, err,
+		ginutil.WriteInvalidBindError(c, err,
 			"One or more parameters failed to parse when reading the request body for the project object to update.")
 		return
 	}
@@ -236,12 +236,12 @@ func (m ProjectModule) postProjectHandler(c *gin.Context) {
 			First(&existingProject).
 			Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			problem.WriteDBNotFound(c, fmt.Sprintf(
+			ginutil.WriteDBNotFound(c, fmt.Sprintf(
 				"Project with ID %d was not found. Please post a project model with 'projectId' left unset or set to 0 if you wish to create a new project.",
 				project.ProjectID))
 			return
 		} else if err != nil {
-			problem.WriteDBReadError(c, err, fmt.Sprintf(
+			ginutil.WriteDBReadError(c, err, fmt.Sprintf(
 				"Failed fetching project with ID %d from database.",
 				project.ProjectID))
 			return
@@ -253,7 +253,7 @@ func (m ProjectModule) postProjectHandler(c *gin.Context) {
 			Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			if err := m.Database.Create(&project).Error; err != nil {
-				problem.WriteDBWriteError(c, err, fmt.Sprintf(
+				ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
 					"Failed creating new project with group %q, token ID %d, and name %q in database.",
 					project.GroupName, project.TokenID, project.Name))
 			} else {
@@ -261,7 +261,7 @@ func (m ProjectModule) postProjectHandler(c *gin.Context) {
 			}
 			return
 		} else if err != nil {
-			problem.WriteDBReadError(c, err, fmt.Sprintf(
+			ginutil.WriteDBReadError(c, err, fmt.Sprintf(
 				"Failed to lookup project with group %q, token ID %d, and name %q from database.",
 				project.GroupName, project.TokenID, project.Name))
 			return
@@ -288,22 +288,22 @@ func (m ProjectModule) postProjectHandler(c *gin.Context) {
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @router /project/{projectid} [delete]
 func (m ProjectModule) deleteProjectHandler(c *gin.Context) {
-	projectID, ok := httputils.ParseParamUint(c, "projectid")
+	projectID, ok := ginutil.ParseParamUint(c, "projectid")
 	if !ok {
 		return
 	}
 
 	project, err := m.FindProjectByID(projectID)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		problem.WriteDBNotFound(c, fmt.Sprintf("Project with ID %d was not found in the database.", projectID))
+		ginutil.WriteDBNotFound(c, fmt.Sprintf("Project with ID %d was not found in the database.", projectID))
 	} else if err != nil {
-		problem.WriteDBReadError(c, err, fmt.Sprintf("Failed fetching project with ID %d from database.", projectID))
+		ginutil.WriteDBReadError(c, err, fmt.Sprintf("Failed fetching project with ID %d from database.", projectID))
 		return
 	}
 
 	err = m.Database.Delete(&project).Error
 	if err != nil {
-		problem.WriteDBWriteError(c, err, fmt.Sprintf("Failed deleting project with ID %d from database.", projectID))
+		ginutil.WriteDBWriteError(c, err, fmt.Sprintf("Failed deleting project with ID %d from database.", projectID))
 		return
 	}
 
@@ -329,7 +329,7 @@ func (m ProjectModule) putProjectHandler(c *gin.Context) {
 	var project Project
 	err := c.ShouldBindJSON(&project)
 	if err != nil {
-		problem.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading the request body.")
+		ginutil.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading the request body.")
 		return
 	}
 
@@ -337,12 +337,12 @@ func (m ProjectModule) putProjectHandler(c *gin.Context) {
 	if project.ProjectID != 0 {
 		existingProject, err = m.FindProjectByID(project.ProjectID)
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			problem.WriteDBNotFound(c, fmt.Sprintf(
+			ginutil.WriteDBNotFound(c, fmt.Sprintf(
 				"Project with ID %d was not found in the database.",
 				project.ProjectID))
 			return
 		} else if err != nil {
-			problem.WriteDBReadError(c, err, fmt.Sprintf(
+			ginutil.WriteDBReadError(c, err, fmt.Sprintf(
 				"Failed fetching project by ID %d from database.",
 				project.ProjectID))
 			return
@@ -355,7 +355,7 @@ func (m ProjectModule) putProjectHandler(c *gin.Context) {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			existingProject = project
 		} else if err != nil {
-			problem.WriteDBReadError(c, err, fmt.Sprintf(
+			ginutil.WriteDBReadError(c, err, fmt.Sprintf(
 				"Failed fetching project with name %q and group name %q from the database.",
 				project.Name, project.GroupName))
 			return
@@ -363,7 +363,7 @@ func (m ProjectModule) putProjectHandler(c *gin.Context) {
 	}
 
 	if existingProject.GroupName != project.GroupName {
-		problem.WriteProblem(c, problem.Response{
+		ginutil.WriteProblem(c, problem.Response{
 			Type:  "/prob/api/project/cannot-change-group",
 			Title: "Project group cannot be changed.",
 			Detail: fmt.Sprintf(
@@ -377,7 +377,7 @@ func (m ProjectModule) putProjectHandler(c *gin.Context) {
 	project.ProjectID = existingProject.ProjectID
 
 	if err := m.Database.Save(&project).Error; err != nil {
-		problem.WriteDBWriteError(c, err, fmt.Sprintf(
+		ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
 			"Failed writing project with name %q and group name %q to database.",
 			project.Name, project.GroupName))
 		return
@@ -402,23 +402,23 @@ func (m ProjectModule) putProjectHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Database or code execution engine is unreachable"
 // @router /project/{projectid}/{stage}/run [post]
 func (m ProjectModule) runStageHandler(c *gin.Context) {
-	projectID, ok := httputils.ParseParamUint(c, "projectid")
+	projectID, ok := ginutil.ParseParamUint(c, "projectid")
 	if !ok {
 		return
 	}
 
 	project, err := m.FindProjectByID(projectID)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		problem.WriteDBNotFound(c, fmt.Sprintf("Project with ID %d was not found in the database.", projectID))
+		ginutil.WriteDBNotFound(c, fmt.Sprintf("Project with ID %d was not found in the database.", projectID))
 		return
 	} else if err != nil {
-		problem.WriteDBReadError(c, err, fmt.Sprintf("Failed fetching project with ID %d from database.", projectID))
+		ginutil.WriteDBReadError(c, err, fmt.Sprintf("Failed fetching project with ID %d from database.", projectID))
 		return
 	}
 
 	body, err := c.GetRawData()
 	if err != nil {
-		problem.WriteBodyReadError(c, err, fmt.Sprintf(
+		ginutil.WriteBodyReadError(c, err, fmt.Sprintf(
 			"Failed to read the input variables body when starting a new build for project with ID %d.",
 			projectID))
 		return
@@ -431,7 +431,7 @@ func (m ProjectModule) runStageHandler(c *gin.Context) {
 	if !hasBranch {
 		b, ok := findDefaultBranch(project.Branches)
 		if !ok {
-			problem.WriteDBNotFound(c, fmt.Sprintf(
+			ginutil.WriteDBNotFound(c, fmt.Sprintf(
 				"No branch to build for project with ID %d was specified, and no default branch was found on the project.",
 				projectID))
 			return
@@ -448,7 +448,7 @@ func (m ProjectModule) runStageHandler(c *gin.Context) {
 		Stage:       stageName,
 	}
 	if err := m.Database.Create(&build).Error; err != nil {
-		problem.WriteDBWriteError(c, err, fmt.Sprintf(
+		ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
 			"Failed creating build on stage %q and branch %q for project with ID %d in database.",
 			stageName, branch, projectID))
 		return
@@ -460,7 +460,7 @@ func (m ProjectModule) runStageHandler(c *gin.Context) {
 		if saveErr := m.Database.Save(&build).Error; saveErr != nil {
 			c.Error(saveErr)
 		}
-		problem.WriteProblemError(c, err, problem.Response{
+		ginutil.WriteProblemError(c, err, problem.Response{
 			Type:   "/prob/api/project/run/params-deserialize",
 			Title:  "Parsing build parameters failed.",
 			Status: http.StatusBadRequest,
@@ -477,7 +477,7 @@ func (m ProjectModule) runStageHandler(c *gin.Context) {
 		if saveErr := m.Database.Save(&build).Error; saveErr != nil {
 			c.Error(saveErr)
 		}
-		problem.WriteDBWriteError(c, err, fmt.Sprintf(
+		ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
 			"Failed saving build parameters for build on stage %q and branch %q for project with ID %d in database.",
 			stageName, branch, projectID))
 		return
@@ -489,7 +489,7 @@ func (m ProjectModule) runStageHandler(c *gin.Context) {
 		if saveErr := m.Database.Save(&build).Error; saveErr != nil {
 			c.Error(saveErr)
 		}
-		problem.WriteProblemError(c, err, problem.Response{
+		ginutil.WriteProblemError(c, err, problem.Response{
 			Type:   "/prob/api/project/run/params-serialize",
 			Title:  "Serializing build parameters failed.",
 			Status: http.StatusBadRequest,
@@ -514,7 +514,7 @@ func (m ProjectModule) runStageHandler(c *gin.Context) {
 			c.Error(err)
 			build.IsInvalid = true
 			if saveErr := m.Database.Save(&build).Error; saveErr != nil {
-				problem.WriteDBWriteError(c, saveErr, fmt.Sprintf(
+				ginutil.WriteDBWriteError(c, saveErr, fmt.Sprintf(
 					"Failed to marking build with ID %d as invalid after failing to publish event message to message queue.",
 					build.BuildID))
 				fmt.Printf("Error on build save: %+v", saveErr)
@@ -536,7 +536,7 @@ func (m ProjectModule) runStageHandler(c *gin.Context) {
 			c.Error(saveErr)
 		}
 
-		problem.WriteProblemError(c, err, problem.Response{
+		ginutil.WriteProblemError(c, err, problem.Response{
 			Type:   "/prob/api/project/run/trigger",
 			Title:  "Triggering build failed.",
 			Status: http.StatusBadGateway,

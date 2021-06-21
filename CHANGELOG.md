@@ -19,6 +19,8 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
 - Changed version of GORMv2 from v1.20.12 to v1.21.11. No major changes, but as
   a bug in GORM was fixed we could finally move to the latest version. (#34)
+  
+- Changed references to wharf-core pkg/problem and pkg/ginutil. (#33)
 
 ## v4.1.0 (2021-06-10)
 

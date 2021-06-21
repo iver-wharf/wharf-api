@@ -7,8 +7,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/iver-wharf/wharf-api/pkg/httputils"
-	"github.com/iver-wharf/wharf-api/pkg/problem"
+	"github.com/iver-wharf/wharf-core/pkg/ginutil"
+	"github.com/iver-wharf/wharf-core/pkg/problem"
 	"gorm.io/gorm"
 )
 
@@ -54,7 +54,7 @@ func (m ProviderModule) getProvidersHandler(c *gin.Context) {
 	var providers []Provider
 	err := m.Database.Limit(100).Find(&providers).Error
 	if err != nil {
-		problem.WriteDBReadError(c, err, "Failed fetching list of projects from database.")
+		ginutil.WriteDBReadError(c, err, "Failed fetching list of projects from database.")
 		return
 	}
 	c.JSON(http.StatusOK, providers)
@@ -71,7 +71,7 @@ func (m ProviderModule) getProvidersHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /provider/{providerid} [get]
 func (m ProviderModule) getProviderHandler(c *gin.Context) {
-	providerID, ok := httputils.ParseParamUint(c, "providerid")
+	providerID, ok := ginutil.ParseParamUint(c, "providerid")
 	if !ok {
 		return
 	}
@@ -79,12 +79,12 @@ func (m ProviderModule) getProviderHandler(c *gin.Context) {
 	var provider Provider
 	err := m.Database.First(&provider, providerID).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		problem.WriteDBNotFound(c, fmt.Sprintf(
+		ginutil.WriteDBNotFound(c, fmt.Sprintf(
 			"Provider with ID %d was not found.",
 			providerID))
 		return
 	} else if err != nil {
-		problem.WriteDBReadError(c, err, fmt.Sprintf(
+		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
 			"Failed fetching provider with ID %d from database.",
 			providerID))
 		return
@@ -109,7 +109,7 @@ func (m ProviderModule) getProviderHandler(c *gin.Context) {
 func (m ProviderModule) postSearchProviderHandler(c *gin.Context) {
 	var provider Provider
 	if err := c.ShouldBindJSON(&provider); err != nil {
-		problem.WriteInvalidBindError(c, err,
+		ginutil.WriteInvalidBindError(c, err,
 			"One or more parameters failed to parse when reading the request body for the provider object to search with.")
 		return
 	}
@@ -121,7 +121,7 @@ func (m ProviderModule) postSearchProviderHandler(c *gin.Context) {
 			Find(&providers).
 			Error
 		if err != nil {
-			problem.WriteDBReadError(c, err, fmt.Sprintf(
+			ginutil.WriteDBReadError(c, err, fmt.Sprintf(
 				"Failed fetching list of providers with name %q, URL %q, upload URL %q, and with token ID %d from database.",
 				provider.Name, provider.URL, provider.UploadURL, provider.TokenID))
 			return
@@ -132,7 +132,7 @@ func (m ProviderModule) postSearchProviderHandler(c *gin.Context) {
 			Find(&providers).
 			Error
 		if err != nil {
-			problem.WriteDBReadError(c, err, fmt.Sprintf(
+			ginutil.WriteDBReadError(c, err, fmt.Sprintf(
 				"Failed fetching list of providers with name %q, URL %q, and with upload URL %q from database.",
 				provider.Name, provider.URL, provider.UploadURL))
 			return
@@ -158,13 +158,13 @@ func (m ProviderModule) postSearchProviderHandler(c *gin.Context) {
 func (m ProviderModule) postProviderHandler(c *gin.Context) {
 	var provider Provider
 	if err := c.ShouldBindJSON(&provider); err != nil {
-		problem.WriteInvalidBindError(c, err,
+		ginutil.WriteInvalidBindError(c, err,
 			"One or more parameters failed to parse when reading the request body for the provider object to search with.")
 		return
 	}
 
 	if provider.Name != Azuredevops.toString() && provider.Name != Gitlab.toString() && provider.Name != Github.toString() {
-		problem.WriteProblem(c, problem.Response{
+		ginutil.WriteProblem(c, problem.Response{
 			Type:   "/prob/api/provider/invalid-name",
 			Title:  "Invalid provider name.",
 			Status: http.StatusBadRequest,
@@ -178,7 +178,7 @@ func (m ProviderModule) postProviderHandler(c *gin.Context) {
 
 	// Sets provider.TokenID through association
 	if err := m.Database.Create(&provider).Error; err != nil {
-		problem.WriteDBWriteError(c, err, fmt.Sprintf(
+		ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
 			"Failed to create provider with name %q and URL %q to database.",
 			provider.Name, provider.URL))
 		return
@@ -202,12 +202,12 @@ func (m ProviderModule) postProviderHandler(c *gin.Context) {
 func (m ProviderModule) putProviderHandler(c *gin.Context) {
 	var inputProvider Provider
 	if err := c.ShouldBindJSON(&inputProvider); err != nil {
-		problem.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading the request body.")
+		ginutil.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading the request body.")
 		return
 	}
 	var provider Provider
 	if err := m.Database.Where(inputProvider).FirstOrCreate(&provider).Error; err != nil {
-		problem.WriteDBWriteError(c, err, fmt.Sprintf(
+		ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
 			"Failed fetch or create on inputProvider with name %q.",
 			inputProvider.Name))
 		return
