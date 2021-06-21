@@ -32,7 +32,5 @@ require (
 	golang.org/x/tools v0.1.3 // indirect
 	gopkg.in/guregu/null.v4 v4.0.0
 	gorm.io/driver/postgres v1.0.8
-	// Cannot upgrade pas 1.20.x due to issue that was introduced in 1.21.0
-	// https://github.com/go-gorm/gorm/issues/4316
-	gorm.io/gorm v1.20.12
+	gorm.io/gorm v1.21.11
 )
