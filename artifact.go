@@ -11,7 +11,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
-	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -243,9 +242,11 @@ func (m ArtifactModule) postBuildArtifactHandler(c *gin.Context) {
 				return
 			}
 
-			log.
-				WithFields(log.Fields{"filename": artifact.Name, "build": buildID, "artifact": artifact.ArtifactID}).
-				Infoln("File saved as artifact")
+			log.Info().
+				WithString("filename", artifact.Name).
+				WithUint("build", buildID).
+				WithUint("artifact", artifact.ArtifactID).
+				Message("File saved as artifact")
 		}
 	}
 

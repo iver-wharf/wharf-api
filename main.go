@@ -2,14 +2,15 @@ package main
 
 import (
 	"fmt"
-	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"math/rand"
 	"net/http"
 	"os"
 	"strings"
 	"time"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/iver-wharf/wharf-core/pkg/ginutil"
+	"github.com/iver-wharf/wharf-core/pkg/logger"
+	"github.com/iver-wharf/wharf-core/pkg/logger/consolepretty"
 
 	"github.com/dustin/go-broadcast"
 	"github.com/gin-contrib/cors"
@@ -22,6 +23,8 @@ import (
 )
 
 var logBroadcaster broadcast.Broadcaster
+
+var log = logger.NewScoped("WHARF")
 
 // @title Wharf main API
 // @description Wharf backend API that manages data storage for projects,
@@ -41,11 +44,12 @@ func main() {
 
 	docs.SwaggerInfo.Version = AppVersion.Version
 
-	initLogger(log.TraceLevel)
+	logger.AddOutput(logger.LevelDebug, consolepretty.Default)
+
 	if localCertFile, _ := os.LookupEnv("CA_CERTS"); localCertFile != "" {
 		client, err := httputils.NewClientWithCerts(localCertFile)
 		if err != nil {
-			log.WithError(err).Errorln("Failed to get net/http.Client with certs")
+			log.Error().WithError(err).Message("Failed to get net/http.Client with certs")
 			os.Exit(1)
 		}
 		http.DefaultClient = client
@@ -55,19 +59,19 @@ func main() {
 
 	config, err := getDatabaseConfigFromEnvironment()
 	if err != nil {
-		log.WithError(err).Errorln("Config error")
+		log.Error().WithError(err).Message("Config error")
 		os.Exit(1)
 	}
 
 	db, err := openDatabase(config)
 	if err != nil {
-		log.WithError(err).Errorln("Database error")
+		log.Error().WithError(err).Message("Database error")
 		os.Exit(2)
 	}
 
 	err = runDatabaseMigrations(db)
 	if err != nil {
-		log.WithError(err).Errorln("Migration error")
+		log.Error().WithError(err).Message("Migration error")
 		os.Exit(3)
 	}
 
@@ -80,7 +84,7 @@ func main() {
 
 	allowCors, ok := os.LookupEnv("ALLOW_CORS")
 	if ok && allowCors == "YES" {
-		log.Infoln("Allowing CORS")
+		log.Info().Message("Allowing CORS")
 		r.Use(cors.Default())
 	}
 
@@ -90,20 +94,20 @@ func main() {
 
 	mq, err := GetMQConnection()
 	if err != nil {
-		log.WithError(err).Errorln("Message queue error.")
+		log.Error().WithError(err).Message("Message queue error.")
 		os.Exit(4)
 	} else if mq == nil {
-		log.Infoln("RabbitMQ integration has been disabled in the config. Skipping connection instantiation.")
+		log.Info().Message("RabbitMQ integration has been disabled in the config. Skipping connection instantiation.")
 	} else {
 		err = mq.Connect()
 		if err != nil {
-			log.WithError(err).Errorln("Unable to connect to the RabbitMQ queue.")
+			log.Error().WithError(err).Message("Unable to connect to the RabbitMQ queue.")
 			os.Exit(5)
 		}
 
 		go func() {
 			<-mq.UnexpectedClose
-			log.Errorln("Unexpected RabbitMQ close")
+			log.Error().Message("Unexpected RabbitMQ close.")
 			os.Exit(6)
 		}()
 	}
@@ -137,41 +141,27 @@ func getBindAddress() string {
 func setupBasicAuth(router *gin.Engine) {
 	basicAuth := os.Getenv("BASIC_AUTH")
 	if basicAuth == "" {
-		log.Infoln("BASIC_AUTH environment variable not set, skipping basic-auth setup.")
+		log.Info().Message("BASIC_AUTH environment variable not set, skipping basic-auth setup.")
 		return
 	}
 
 	accounts := gin.Accounts{}
+	var accountNames []string
 
 	for _, account := range strings.Split(basicAuth, ",") {
 		split := strings.Split(account, ":")
+		user, pass := split[0], split[1]
 
-		accounts[split[0]] = split[1]
+		accounts[user] = pass
+		accountNames = append(accountNames, user)
 	}
 
-	log.WithField("accounts", accounts).Debugln("Setup:")
+	log.Debug().WithString("usernames", strings.Join(accountNames, ",")).
+		Messagef("Set up basic authentication for %d users.", len(accountNames))
 
 	router.Use(gin.BasicAuth(accounts))
 }
 
 func seed() {
 	rand.Seed(time.Now().UTC().UnixNano())
-}
-
-func initLogger(level log.Level) {
-	log.SetFormatter(&log.TextFormatter{
-		ForceColors:               true,
-		DisableColors:             false,
-		EnvironmentOverrideColors: false,
-		DisableTimestamp:          false,
-		FullTimestamp:             true,
-		TimestampFormat:           "",
-		DisableSorting:            false,
-		SortingFunc:               nil,
-		DisableLevelTruncation:    false,
-		QuoteEmptyFields:          false,
-		FieldMap:                  nil,
-		CallerPrettyfier:          nil,
-	})
-	log.SetLevel(level)
 }
