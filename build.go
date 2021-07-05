@@ -325,7 +325,7 @@ func (m BuildModule) updateBuildStatus(buildID uint, statusID BuildStatus) (Buil
 
 	if m.MessageQueue != nil {
 		if err := m.MessageQueue.PublishMessage(message); err != nil {
-			fmt.Printf("Send message fails: %v\n", err)
+			log.Error().WithError(err).Message("Failed sending build-status update message.")
 		}
 	}
 

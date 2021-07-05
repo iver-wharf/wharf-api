@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"math/rand"
 	"net/http"
 	"os"
@@ -37,14 +36,14 @@ var log = logger.NewScoped("WHARF")
 // @basePath /api
 // @query.collection.format multi
 func main() {
+	logger.AddOutput(logger.LevelDebug, consolepretty.Default)
+
 	if err := loadEmbeddedVersionFile(); err != nil {
-		fmt.Println("Failed to read embedded version.yaml file:", err)
+		log.Error().WithError(err).Message("Failed to read embedded version.yaml file.")
 		os.Exit(1)
 	}
 
 	docs.SwaggerInfo.Version = AppVersion.Version
-
-	logger.AddOutput(logger.LevelDebug, consolepretty.Default)
 
 	if localCertFile, _ := os.LookupEnv("CA_CERTS"); localCertFile != "" {
 		client, err := httputils.NewClientWithCerts(localCertFile)

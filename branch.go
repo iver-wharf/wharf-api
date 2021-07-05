@@ -3,8 +3,9 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"net/http"
+
+	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -169,7 +170,10 @@ func (m BranchModule) PutBranches(branches []Branch) error {
 					Delete(&oldDbBranch).Error; err != nil {
 					return err
 				}
-				fmt.Printf("Deleted branch: %v from project: %v \n", oldDbBranch.Name, oldDbBranch.ProjectID)
+				log.Info().
+					WithString("branch", oldDbBranch.Name).
+					WithUint("project", oldDbBranch.ProjectID).
+					Message("Deleted branch from project.")
 			}
 		}
 

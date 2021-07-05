@@ -3,12 +3,13 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 
 	"encoding/json"
 	"net/http"
@@ -510,21 +511,21 @@ func (m ProjectModule) runStageHandler(c *gin.Context) {
 			Build:      build,
 			Parameters: buildParams,
 		}); err != nil {
-			fmt.Printf("Error on message publish: %+v", err)
+			log.Error().WithError(err).Message("Failed to publish message.")
 			c.Error(err)
 			build.IsInvalid = true
 			if saveErr := m.Database.Save(&build).Error; saveErr != nil {
 				ginutil.WriteDBWriteError(c, saveErr, fmt.Sprintf(
 					"Failed to marking build with ID %d as invalid after failing to publish event message to message queue.",
 					build.BuildID))
-				fmt.Printf("Error on build save: %+v", saveErr)
+				log.Error().WithError(saveErr).Message("Failed to save build.")
 				return
 			}
 		}
 	}
 
 	if os.Getenv("MOCK_LOCAL_CI_RESPONSE") != "" {
-		fmt.Println("MOCK_LOCAL_CI_RESPONSE env var set to true, mocking CI response.")
+		log.Info().Message("MOCK_LOCAL_CI_RESPONSE env var set to true, mocking CI response.")
 		c.JSON(http.StatusOK, build.BuildReferenceWrapper())
 		return
 	}
@@ -587,16 +588,18 @@ func ParseBuildParams(buildID uint, buildDef []byte, vars []byte) ([]BuildParam,
 	var def BuildDefinition
 	err := yaml.Unmarshal(buildDef, &def)
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
+		log.Error().WithError(err).Message("Failed unmarshaling build-def.")
 		return []BuildParam{}, err
 	}
 
-	fmt.Printf("Unmarshaled build-def, found %v inputs\n", len(def.Inputs))
+	log.Info().
+		WithInt("inputs", len(def.Inputs)).
+		Message("Unmarshaled build-def.")
 
 	m := make(map[string]interface{})
 	err = json.Unmarshal(vars, &m)
 	if err != nil {
-		fmt.Printf("Error unmarshaling json: %+v\n", err)
+		log.Error().WithError(err).Message("Failed unmarshaling input variables JSON.")
 		return []BuildParam{}, err
 	}
 
@@ -627,10 +630,11 @@ func triggerBuild(params []Param) (string, error) {
 		}
 	}
 
-	tokenStr := fmt.Sprintf("?token=%s", token)
-
-	url := fmt.Sprintf("%s%s%s", triggerURL, tokenStr, q)
-	fmt.Printf("POSTing to url: %v\n", url)
+	url := fmt.Sprintf("%s?token=%s%s", triggerURL, token, q)
+	log.Info().
+		WithString("method", "POST").
+		WithString("url", fmt.Sprintf("%s?token=%s%s", triggerURL, "*****", q)).
+		Message("Triggering build.")
 
 	var resp, err = http.Post(url, "", nil)
 	if err != nil {
@@ -663,11 +667,11 @@ func getParams(project Project, build Build, vars []BuildParam) ([]Param, error)
 
 		v, err = yaml.Marshal(m)
 		if err != nil {
-			fmt.Printf("Error marshaling yaml: %+v\n", err)
+			log.Error().WithError(err).Message("Failed to marshal input variables YAML for build.")
 			return []Param{}, err
 		}
 	} else {
-		fmt.Println("Skipping input variables, nothing in body")
+		log.Debug().Message("Skipping input variables, nothing in body.")
 	}
 
 	token := ""
