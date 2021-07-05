@@ -22,6 +22,11 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   
 - Changed references to wharf-core pkg/problem and pkg/ginutil. (#33)
 
+- Changed all logging via `fmt.Print` and sirupsen/logrus to instead use the new
+  `github.com/iver-wharf/wharf-core/pkg/logger`. (#37)
+
+- Removed dependency on `github.com/sirupsen/logrus`. (#37)
+
 ## v4.1.0 (2021-06-10)
 
 - Added endpoint `PUT /provider` as an idempotent way of creating a
