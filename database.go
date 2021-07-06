@@ -15,18 +15,6 @@ import (
 	"gorm.io/gorm/schema"
 )
 
-type DatabaseConfig struct {
-	Host            string
-	Port            string
-	User            string
-	Password        string
-	Name            string
-	MaxIdleConns    int
-	MaxOpenConns    int
-	MaxConnLifetime time.Duration
-	Log             bool
-}
-
 func (p *Project) MarshalJSON() ([]byte, error) {
 	type Alias Project
 	return json.Marshal(&struct {
@@ -67,7 +55,7 @@ func (b *Build) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func openDatabase(config DatabaseConfig) (*gorm.DB, error) {
+func openDatabase(config DBConfig) (*gorm.DB, error) {
 	const retryDelay = 2 * time.Second
 	const maxAttempts = 3
 	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=postgres sslmode=disable",
@@ -132,15 +120,15 @@ func openDatabase(config DatabaseConfig) (*gorm.DB, error) {
 	return db, err
 }
 
-func getLogger(config DatabaseConfig) logger.Interface {
+func getLogger(config DBConfig) logger.Interface {
 	if config.Log {
 		return logger.Default.LogMode(logger.Info)
 	}
 	return logger.Default.LogMode(logger.Silent)
 }
 
-func getDatabaseConfigFromEnvironment() (DatabaseConfig, error) {
-	conf := DatabaseConfig{}
+func getDatabaseConfigFromEnvironment() (DBConfig, error) {
+	conf := DBConfig{}
 	var ok bool
 
 	conf.Host, ok = os.LookupEnv("DBHOST")
