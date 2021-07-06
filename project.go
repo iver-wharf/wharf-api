@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -27,6 +26,7 @@ import (
 type ProjectModule struct {
 	Database     *gorm.DB
 	MessageQueue *messagebus.MQConnection
+	Config       *Config
 }
 
 type PaginatedBuilds struct {
@@ -37,10 +37,6 @@ type PaginatedBuilds struct {
 type BuildReferenceWrapper struct {
 	BuildReference string `json:"buildRef"`
 }
-
-var wharfInstance = os.Getenv("WHARF_INSTANCE")
-var triggerURL = os.Getenv("CI_URL")
-var token = os.Getenv("CI_TOKEN")
 
 func (m ProjectModule) Register(g *gin.RouterGroup) {
 	projects := g.Group("/projects")
@@ -484,7 +480,7 @@ func (m ProjectModule) runStageHandler(c *gin.Context) {
 		return
 	}
 
-	jobParams, err := getParams(project, build, buildParams)
+	jobParams, err := getParams(project, build, buildParams, m.Config.InstanceID)
 	if err != nil {
 		build.IsInvalid = true
 		if saveErr := m.Database.Save(&build).Error; saveErr != nil {
@@ -524,13 +520,13 @@ func (m ProjectModule) runStageHandler(c *gin.Context) {
 		}
 	}
 
-	if os.Getenv("MOCK_LOCAL_CI_RESPONSE") != "" {
-		log.Info().Message("MOCK_LOCAL_CI_RESPONSE env var set to true, mocking CI response.")
+	if m.Config.CI.MockTriggerResponse {
+		log.Info().Message("Setting for mocking build triggers was true, mocking CI response.")
 		c.JSON(http.StatusOK, build.BuildReferenceWrapper())
 		return
 	}
 
-	_, err = triggerBuild(jobParams)
+	_, err = triggerBuild(jobParams, m.Config.CI)
 	if err != nil {
 		build.IsInvalid = true
 		if saveErr := m.Database.Save(&build).Error; saveErr != nil {
@@ -622,7 +618,7 @@ func ParseBuildParams(buildID uint, buildDef []byte, vars []byte) ([]BuildParam,
 	return params, nil
 }
 
-func triggerBuild(params []Param) (string, error) {
+func triggerBuild(params []Param, conf CIConfig) (string, error) {
 	q := ""
 	for _, param := range params {
 		if param.Value != "" {
@@ -630,10 +626,13 @@ func triggerBuild(params []Param) (string, error) {
 		}
 	}
 
-	url := fmt.Sprintf("%s?token=%s%s", triggerURL, token, q)
+	tokenStr := fmt.Sprintf("?token=%s", conf.TriggerToken)
+
+	url := fmt.Sprintf("%s%s%s", conf.TriggerURL, tokenStr, q)
+	fmt.Printf("POSTing to url: %v\n", url)
 	log.Info().
 		WithString("method", "POST").
-		WithString("url", fmt.Sprintf("%s?token=%s%s", triggerURL, "*****", q)).
+		WithString("url", fmt.Sprintf("%s?token=%s%s", conf.TriggerURL, "*****", q)).
 		Message("Triggering build.")
 
 	var resp, err = http.Post(url, "", nil)
@@ -655,7 +654,7 @@ func triggerBuild(params []Param) (string, error) {
 	return strBody, err2
 }
 
-func getParams(project Project, build Build, vars []BuildParam) ([]Param, error) {
+func getParams(project Project, build Build, vars []BuildParam, wharfInstanceID string) ([]Param, error) {
 	var err error
 	var v []byte
 	if len(vars) > 0 {
@@ -690,7 +689,7 @@ func getParams(project Project, build Build, vars []BuildParam) ([]Param, error)
 		{Type: "string", Name: "GIT_FULLURL", Value: project.GitURL},
 		{Type: "string", Name: "GIT_TOKEN", Value: token},
 		{Type: "string", Name: "WHARF_PROJECT_ID", Value: strconv.FormatUint(uint64(project.ProjectID), 10)},
-		{Type: "string", Name: "WHARF_INSTANCE", Value: wharfInstance},
+		{Type: "string", Name: "WHARF_INSTANCE", Value: wharfInstanceID},
 	}
 
 	if build.Environment.Valid {

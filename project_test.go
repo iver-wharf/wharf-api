@@ -8,6 +8,8 @@ import (
 	"gopkg.in/guregu/null.v4"
 )
 
+const wharfInstanceID = "test"
+
 func TestParseBuildParams(t *testing.T) {
 	type testCase struct {
 		name     string
@@ -94,7 +96,7 @@ func TestGetParamsWithOptionalEnvironment(t *testing.T) {
 				Environment: tc.environment,
 			}
 
-			params, err := getParams(project, build, vars)
+			params, err := getParams(project, build, vars, wharfInstanceID)
 			require.Nil(t, err)
 
 			hasEnv := false

@@ -213,6 +213,7 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 ## v0.7.5 (2020-05-29)
 
 - Added Iver self-signed certs to be loaded into the Go `http.DefaultClient`.
+  (!10)
 
 ## v0.7.2 (2020-05-06)
 
