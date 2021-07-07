@@ -386,9 +386,9 @@ func (cfg *Config) addBackwardCompatibleConfigs() error {
 
 func (cfg *CIConfig) addOldCIConfigEnvVars() error {
 	var err error
-	lookupSeveralEnv(map[string]*string{
-		"CI_URL":   &cfg.TriggerURL,
-		"CI_TOKEN": &cfg.TriggerToken,
+	lookupMultipleEnv(map[*string]string{
+		&cfg.TriggerURL:   "CI_URL",
+		&cfg.TriggerToken: "CI_TOKEN",
 	})
 	if cfg.MockTriggerResponse, err = lookupOptionalEnvBool("MOCK_LOCAL_CI_RESPONSE", cfg.MockTriggerResponse); err != nil {
 		return err
@@ -397,9 +397,9 @@ func (cfg *CIConfig) addOldCIConfigEnvVars() error {
 }
 
 func (cfg *HTTPConfig) addOldHTTPConfigEnvVars() error {
-	lookupSeveralEnv(map[string]*string{
-		"BIND_ADDRESS": &cfg.BindAddress,
-		"BASIC_AUTH":   &cfg.BasicAuth,
+	lookupMultipleEnv(map[*string]string{
+		&cfg.BindAddress: "BIND_ADDRESS",
+		&cfg.BasicAuth:   "BASIC_AUTH",
 	})
 
 	if value, ok := os.LookupEnv("ALLOW_CORS"); ok && value == "YES" {
@@ -417,11 +417,11 @@ func (cfg *CertConfig) addOldCertConfigEnvVars() error {
 
 func (cfg *DBConfig) addOldDBConfigEnvVars() error {
 	var err error
-	lookupSeveralEnv(map[string]*string{
-		"DBHOST": &cfg.Host,
-		"DBUSER": &cfg.Username,
-		"DBPASS": &cfg.Password,
-		"DBNAME": &cfg.Name,
+	lookupMultipleEnv(map[*string]string{
+		&cfg.Host:     "DBHOST",
+		&cfg.Username: "DBUSER",
+		&cfg.Password: "DBPASS",
+		&cfg.Name:     "DBNAME",
 	})
 	if cfg.Port, err = lookupOptionalEnvInt("DBPort", cfg.Port); err != nil {
 		return err
@@ -446,13 +446,13 @@ func (cfg *MQConfig) addOldMQConfigEnvVars() error {
 	if cfg.Enabled, err = lookupOptionalEnvBool("RABBITMQENABLED", cfg.Enabled); err != nil {
 		return err
 	}
-	lookupSeveralEnv(map[string]*string{
-		"RABBITMQUSER":  &cfg.Username,
-		"RABBITMQPASS":  &cfg.Password,
-		"RABBITMQHOST":  &cfg.Host,
-		"RABBITMQPORT":  &cfg.Port,
-		"RABBITMQVHOST": &cfg.VHost,
-		"RABBITMQNAME":  &cfg.QueueName,
+	lookupMultipleEnv(map[*string]string{
+		&cfg.Username:  "RABBITMQUSER",
+		&cfg.Password:  "RABBITMQPASS",
+		&cfg.Host:      "RABBITMQHOST",
+		&cfg.Port:      "RABBITMQPORT",
+		&cfg.VHost:     "RABBITMQVHOST",
+		&cfg.QueueName: "RABBITMQNAME",
 	})
 	if cfg.DisableSSL, err = lookupOptionalEnvBool("RABBITMQDISABLESSL", cfg.DisableSSL); err != nil {
 		return err
@@ -463,10 +463,10 @@ func (cfg *MQConfig) addOldMQConfigEnvVars() error {
 	return nil
 }
 
-func lookupSeveralEnv(mappings map[string]*string) {
-	for k, v := range mappings {
-		if value, ok := os.LookupEnv(k); ok {
-			*v = value
+func lookupMultipleEnv(mappings map[*string]string) {
+	for ptr, key := range mappings {
+		if value, ok := os.LookupEnv(key); ok {
+			*ptr = value
 		}
 	}
 }
