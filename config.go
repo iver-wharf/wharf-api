@@ -26,7 +26,7 @@ import (
 // variables they are joined together by underscores.
 //
 // All environment variables must be uppercased, while YAML files are
-// case-insensitive. Keeping camelCasing in YAML config files are recommended
+// case-insensitive. Keeping camelCasing in YAML config files is recommended
 // for consistency.
 type Config struct {
 	CI   CIConfig
@@ -35,11 +35,11 @@ type Config struct {
 	DB   DBConfig
 	MQ   MQConfig
 
-	// InstanceID may be an artibrary string that is used to identify different
+	// InstanceID may be an arbitrary string that is used to identify different
 	// Wharf installations from each other. Needed when you use multiple Wharf
 	// installations in the same environment, such as the same Kubernetes
 	// namespace or the same Jenkins instance, to let Wharf know which builds
-	// belongs to which Wharf installation.
+	// belong to which Wharf installation.
 	//
 	// For backward compatability, that may be removed in the next major release
 	// (v5.0.0), the environment variable WHARF_INSTANCE, which was added in
@@ -241,7 +241,7 @@ type DBConfig struct {
 // MQConfig holds settings for connecting to a message queue
 // (ex: AMQP/RabbitMQ), such as credentials and hostnames.
 type MQConfig struct {
-	// Enabled controls wether the message queue integration is turned
+	// Enabled controls whether the message queue integration is turned
 	// on or off.
 	//
 	// For backward compatability, that may be removed in the next major release
@@ -298,7 +298,7 @@ type MQConfig struct {
 	// Added in v4.2.0.
 	QueueName string
 
-	// QueueName is the name of the AMQP virtual host that wharf-api will use.
+	// VHost is the name of the AMQP virtual host that wharf-api will use.
 	//
 	// For backward compatability, that may be removed in the next major release
 	// (v5.0.0), the environment variable RABBITMQVHOST, which was added in
@@ -308,7 +308,7 @@ type MQConfig struct {
 	VHost string
 
 	// DisableSSL will make wharf-api connect to the message queue service via
-	// AMQP when set to true, and will connect using AMQPS when set to false.
+	// AMQP when set to true, and AMQPS when set to false.
 	//
 	// For backward compatability, that may be removed in the next major release
 	// (v5.0.0), the environment variable RABBITMQDISABLESSL, which was added in
@@ -386,12 +386,10 @@ func (cfg *Config) addBackwardCompatibleConfigs() error {
 
 func (cfg *CIConfig) addOldCIConfigEnvVars() error {
 	var err error
-	if value, ok := os.LookupEnv("CI_URL"); ok {
-		cfg.TriggerURL = value
-	}
-	if value, ok := os.LookupEnv("CI_TOKEN"); ok {
-		cfg.TriggerToken = value
-	}
+	lookupSeveralEnv(map[string]*string{
+		"CI_URL":   &cfg.TriggerURL,
+		"CI_TOKEN": &cfg.TriggerToken,
+	})
 	if cfg.MockTriggerResponse, err = lookupOptionalEnvBool("MOCK_LOCAL_CI_RESPONSE", cfg.MockTriggerResponse); err != nil {
 		return err
 	}
@@ -399,14 +397,13 @@ func (cfg *CIConfig) addOldCIConfigEnvVars() error {
 }
 
 func (cfg *HTTPConfig) addOldHTTPConfigEnvVars() error {
-	if value, ok := os.LookupEnv("BIND_ADDRESS"); ok {
-		cfg.BindAddress = value
-	}
+	lookupSeveralEnv(map[string]*string{
+		"BIND_ADDRESS": &cfg.BindAddress,
+		"BASIC_AUTH":   &cfg.BasicAuth,
+	})
+	
 	if value, ok := os.LookupEnv("ALLOW_CORS"); ok && value == "YES" {
 		cfg.CORS.AllowAllOrigins = true
-	}
-	if value, ok := os.LookupEnv("BASIC_AUTH"); ok {
-		cfg.BasicAuth = value
 	}
 	return nil
 }
@@ -420,20 +417,14 @@ func (cfg *CertConfig) addOldCertConfigEnvVars() error {
 
 func (cfg *DBConfig) addOldDBConfigEnvVars() error {
 	var err error
-	if value, ok := os.LookupEnv("DBHOST"); ok {
-		cfg.Host = value
-	}
+	lookupSeveralEnv(map[string]*string{
+		"DBHOST": &cfg.Host,
+		"DBUSER": &cfg.Username,
+		"DBPASS": &cfg.Password,
+		"DBNAME": &cfg.Name,
+	})
 	if cfg.Port, err = lookupOptionalEnvInt("DBPort", cfg.Port); err != nil {
 		return err
-	}
-	if value, ok := os.LookupEnv("DBUSER"); ok {
-		cfg.Username = value
-	}
-	if value, ok := os.LookupEnv("DBPASS"); ok {
-		cfg.Password = value
-	}
-	if value, ok := os.LookupEnv("DBNAME"); ok {
-		cfg.Name = value
 	}
 	if cfg.MaxIdleConns, err = lookupOptionalEnvInt("DBMAXIDLECONNS", cfg.MaxIdleConns); err != nil {
 		return err
@@ -455,24 +446,14 @@ func (cfg *MQConfig) addOldMQConfigEnvVars() error {
 	if cfg.Enabled, err = lookupOptionalEnvBool("RABBITMQENABLED", cfg.Enabled); err != nil {
 		return err
 	}
-	if value, ok := os.LookupEnv("RABBITMQUSER"); ok {
-		cfg.Username = value
-	}
-	if value, ok := os.LookupEnv("RABBITMQPASS"); ok {
-		cfg.Password = value
-	}
-	if value, ok := os.LookupEnv("RABBITMQHOST"); ok {
-		cfg.Host = value
-	}
-	if value, ok := os.LookupEnv("RABBITMQPORT"); ok {
-		cfg.Port = value
-	}
-	if value, ok := os.LookupEnv("RABBITMQVHOST"); ok {
-		cfg.VHost = value
-	}
-	if value, ok := os.LookupEnv("RABBITMQNAME"); ok {
-		cfg.QueueName = value
-	}
+	lookupSeveralEnv(map[string]*string{
+		"RABBITMQUSER":  &cfg.Username,
+		"RABBITMQPASS":  &cfg.Password,
+		"RABBITMQHOST":  &cfg.Host,
+		"RABBITMQPORT":  &cfg.Port,
+		"RABBITMQVHOST": &cfg.VHost,
+		"RABBITMQNAME":  &cfg.QueueName,
+	})
 	if cfg.DisableSSL, err = lookupOptionalEnvBool("RABBITMQDISABLESSL", cfg.DisableSSL); err != nil {
 		return err
 	}
@@ -480,6 +461,14 @@ func (cfg *MQConfig) addOldMQConfigEnvVars() error {
 		return err
 	}
 	return nil
+}
+
+func lookupSeveralEnv(mappings map[string]*string) {
+	for k, v := range mappings {
+		if value, ok := os.LookupEnv(k); ok {
+			*v = value
+		}
+	}
 }
 
 func lookupOptionalEnvBool(name string, fallback bool) (bool, error) {
