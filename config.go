@@ -1,11 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"os"
-	"strconv"
 	"time"
 
+	"github.com/iver-wharf/wharf-api/pkg/env"
 	"github.com/iver-wharf/wharf-core/pkg/config"
 )
 
@@ -385,23 +384,21 @@ func (cfg *Config) addBackwardCompatibleConfigs() error {
 }
 
 func (cfg *CIConfig) addOldCIConfigEnvVars() error {
-	var err error
-	lookupMultipleEnv(map[*string]string{
+	env.BindMultiple(map[*string]string{
 		&cfg.TriggerURL:   "CI_URL",
 		&cfg.TriggerToken: "CI_TOKEN",
 	})
-	if cfg.MockTriggerResponse, err = lookupOptionalEnvBool("MOCK_LOCAL_CI_RESPONSE", cfg.MockTriggerResponse); err != nil {
+	if err := env.BindBool(&cfg.MockTriggerResponse, "MOCK_LOCAL_CI_RESPONSE"); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (cfg *HTTPConfig) addOldHTTPConfigEnvVars() error {
-	lookupMultipleEnv(map[*string]string{
+	env.BindMultiple(map[*string]string{
 		&cfg.BindAddress: "BIND_ADDRESS",
 		&cfg.BasicAuth:   "BASIC_AUTH",
 	})
-
 	if value, ok := os.LookupEnv("ALLOW_CORS"); ok && value == "YES" {
 		cfg.CORS.AllowAllOrigins = true
 	}
@@ -409,44 +406,38 @@ func (cfg *HTTPConfig) addOldHTTPConfigEnvVars() error {
 }
 
 func (cfg *CertConfig) addOldCertConfigEnvVars() error {
-	if value, ok := os.LookupEnv("CA_CERTS"); ok {
-		cfg.CertsFile = value
-	}
+	env.BindNoEmpty(&cfg.CertsFile, "CA_CERTS")
 	return nil
 }
 
 func (cfg *DBConfig) addOldDBConfigEnvVars() error {
-	var err error
-	lookupMultipleEnv(map[*string]string{
+	env.BindMultiple(map[*string]string{
 		&cfg.Host:     "DBHOST",
 		&cfg.Username: "DBUSER",
 		&cfg.Password: "DBPASS",
 		&cfg.Name:     "DBNAME",
 	})
-	if cfg.Port, err = lookupOptionalEnvInt("DBPort", cfg.Port); err != nil {
+	if err := env.BindMultipleInt(map[*int]string{
+		&cfg.Port:         "DBPORT",
+		&cfg.MaxIdleConns: "DBMAXIDLECONNS",
+		&cfg.MaxOpenConns: "DBMAXOPENCONNS",
+	}); err != nil {
 		return err
 	}
-	if cfg.MaxIdleConns, err = lookupOptionalEnvInt("DBMAXIDLECONNS", cfg.MaxIdleConns); err != nil {
+	if err := env.BindDuration(&cfg.MaxConnLifetime, "DBMAXCONNLIFETIME"); err != nil {
 		return err
 	}
-	if cfg.MaxOpenConns, err = lookupOptionalEnvInt("DBMAXOPENCONNS", cfg.MaxOpenConns); err != nil {
-		return err
-	}
-	if cfg.MaxConnLifetime, err = lookupOptionalEnvDuration("DBMAXCONNLIFETIME", cfg.MaxConnLifetime); err != nil {
-		return err
-	}
-	if cfg.Log, err = lookupOptionalEnvBool("DBLOG", cfg.Log); err != nil {
+	if err := env.BindBool(&cfg.Log, "DBLOG"); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (cfg *MQConfig) addOldMQConfigEnvVars() error {
-	var err error
-	if cfg.Enabled, err = lookupOptionalEnvBool("RABBITMQENABLED", cfg.Enabled); err != nil {
+	if err := env.BindBool(&cfg.Enabled, "RABBITMQENABLED"); err != nil {
 		return err
 	}
-	lookupMultipleEnv(map[*string]string{
+	env.BindMultiple(map[*string]string{
 		&cfg.Username:  "RABBITMQUSER",
 		&cfg.Password:  "RABBITMQPASS",
 		&cfg.Host:      "RABBITMQHOST",
@@ -454,71 +445,11 @@ func (cfg *MQConfig) addOldMQConfigEnvVars() error {
 		&cfg.VHost:     "RABBITMQVHOST",
 		&cfg.QueueName: "RABBITMQNAME",
 	})
-	if cfg.DisableSSL, err = lookupOptionalEnvBool("RABBITMQDISABLESSL", cfg.DisableSSL); err != nil {
+	if err := env.BindBool(&cfg.DisableSSL, "RABBITMQDISABLESSL"); err != nil {
 		return err
 	}
-	if cfg.ConnAttempts, err = lookupOptionalEnvUInt64("RABBITMQCONNATTEMPTS", cfg.ConnAttempts); err != nil {
+	if err := env.BindUInt64(&cfg.ConnAttempts, "RABBITMQCONNATTEMPTS"); err != nil {
 		return err
 	}
 	return nil
-}
-
-func lookupMultipleEnv(mappings map[*string]string) {
-	for ptr, key := range mappings {
-		if value, ok := os.LookupEnv(key); ok {
-			*ptr = value
-		}
-	}
-}
-
-func lookupOptionalEnvBool(name string, fallback bool) (bool, error) {
-	if envStr, ok := lookupEnvNoEmpty(name); ok {
-		envBool, err := strconv.ParseBool(envStr)
-		if err != nil {
-			return false, fmt.Errorf("env: %q: unable to parse bool: %q", name, envStr)
-		}
-		return envBool, nil
-	}
-	return fallback, nil
-}
-
-func lookupOptionalEnvUInt64(name string, fallback uint64) (uint64, error) {
-	if envStr, ok := lookupEnvNoEmpty(name); ok {
-		envInt, err := strconv.ParseUint(envStr, 10, 64)
-		if err != nil {
-			return 0, fmt.Errorf("env: %q: unable to parse uint64: %q", name, envStr)
-		}
-		return envInt, nil
-	}
-	return fallback, nil
-}
-
-func lookupOptionalEnvInt(name string, fallback int) (int, error) {
-	if envStr, ok := lookupEnvNoEmpty(name); ok {
-		envInt, err := strconv.ParseInt(envStr, 10, strconv.IntSize)
-		if err != nil {
-			return 0, fmt.Errorf("env: %q: unable to parse int: %q", name, envStr)
-		}
-		return int(envInt), nil
-	}
-	return fallback, nil
-}
-
-func lookupOptionalEnvDuration(name string, fallback time.Duration) (time.Duration, error) {
-	if envStr, ok := lookupEnvNoEmpty(name); ok {
-		envDuration, err := time.ParseDuration(envStr)
-		if err != nil {
-			return 0, fmt.Errorf("env: %q: unable to parse duration: %q", name, envStr)
-		}
-		return envDuration, nil
-	}
-	return fallback, nil
-}
-
-func lookupEnvNoEmpty(key string) (string, bool) {
-	var str, ok = os.LookupEnv(key)
-	if str == "" {
-		return "", false
-	}
-	return str, ok
 }
