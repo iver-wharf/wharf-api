@@ -41,7 +41,7 @@ type Config struct {
 	// namespace or the same Jenkins instance, to let Wharf know which builds
 	// belong to which Wharf installation.
 	//
-	// For backward compatability, that may be removed in the next major release
+	// For backward compatibility, that may be removed in the next major release
 	// (v5.0.0), the environment variable WHARF_INSTANCE, which was added in
 	// v0.7.9, also sets this value.
 	//
@@ -56,7 +56,7 @@ type CIConfig struct {
 	// the "Generic Webhook Trigger":
 	// https://plugins.jenkins.io/generic-webhook-trigger
 	//
-	// For backward compatability, that may be removed in the next major release
+	// For backward compatibility, that may be removed in the next major release
 	// (v5.0.0), the environment variable CI_URL, which was added in v0.6.0,
 	// also sets this value.
 	//
@@ -68,7 +68,7 @@ type CIConfig struct {
 	// (https://plugins.jenkins.io/generic-webhook-trigger) then this token is
 	// configured in the webhook settings.
 	//
-	// For backward compatability, that may be removed in the next major release
+	// For backward compatibility, that may be removed in the next major release
 	// (v5.0.0), the environment variable CI_URL, which was added in v0.6.0,
 	// also sets this value.
 	//
@@ -82,7 +82,7 @@ type CIConfig struct {
 	// Useful when running Wharf locally and you want to test the behavior of
 	// starting a new build, without actually needing a local Jenkins set up.
 	//
-	// For backward compatability, that may be removed in the next major release
+	// For backward compatibility, that may be removed in the next major release
 	// (v5.0.0), the environment variable MOCK_LOCAL_CI_RESPONSE, which was
 	// added in v0.6.0, also sets this value.
 	//
@@ -98,7 +98,7 @@ type HTTPConfig struct {
 	// the HTTP server to. An IP-address of 0.0.0.0 will bind to all
 	// IP-addresses.
 	//
-	// For backward compatability, that may be removed in the next major release
+	// For backward compatibility, that may be removed in the next major release
 	// (v5.0.0), the environment variable BIND_ADDRESS, which was added in
 	// v4.1.0, also sets this value.
 	//
@@ -111,7 +111,7 @@ type HTTPConfig struct {
 	// "john" with the password "secretpass":
 	// 	BasicAuth="admin:1234,john:secretpass"
 	//
-	// For backward compatability, that may be removed in the next major release
+	// For backward compatibility, that may be removed in the next major release
 	// (v5.0.0), the environment variable BASIC_AUTH, which was added in v0.5.5,
 	// also sets this value.
 	//
@@ -123,7 +123,7 @@ type HTTPConfig struct {
 type CORSConfig struct {
 	// AllowAllOrigins enables all
 	//
-	// For backward compatability, that may be removed in the next major release
+	// For backward compatibility, that may be removed in the next major release
 	// (v5.0.0), the environment variable ALLOW_CORS, which was added in v0.5.5,
 	// when set to "YES" will then set this value to true.
 	//
@@ -138,7 +138,7 @@ type CertConfig struct {
 	// use in addition to the certificates from the system
 	// (such as from /etc/ssl/certs/).
 	//
-	// For backward compatability, that may be removed in the next major release
+	// For backward compatibility, that may be removed in the next major release
 	// (v5.0.0), the environment variable CA_CERTS, which was added in v0.7.5,
 	// also sets this value.
 	//
@@ -151,7 +151,7 @@ type CertConfig struct {
 type DBConfig struct {
 	// Host is the network hostname wharf-api will connect to.
 	//
-	// For backward compatability, that may be removed in the next major release
+	// For backward compatibility, that may be removed in the next major release
 	// (v5.0.0), the environment variable DBHOST, which was added in v0.5.5,
 	// also sets this value.
 	//
@@ -160,7 +160,7 @@ type DBConfig struct {
 
 	// Port is the network port wharf-api will connect to.
 	//
-	// For backward compatability, that may be removed in the next major release
+	// For backward compatibility, that may be removed in the next major release
 	// (v5.0.0), the environment variable DBPORT, which was added in v0.5.5,
 	// also sets this value.
 	//
@@ -170,7 +170,7 @@ type DBConfig struct {
 	// Username is the username part of credentials used when connecting to the
 	// database.
 	//
-	// For backward compatability, that may be removed in the next major release
+	// For backward compatibility, that may be removed in the next major release
 	// (v5.0.0), the environment variable DBUSER, which was added in v0.5.5,
 	// also sets this value.
 	//
@@ -180,7 +180,7 @@ type DBConfig struct {
 	// Password is the username part of credentials used when connecting to the
 	// database.
 	//
-	// For backward compatability, that may be removed in the next major release
+	// For backward compatibility, that may be removed in the next major release
 	// (v5.0.0), the environment variable DBPASS, which was added in v0.5.5,
 	// also sets this value.
 	//
@@ -190,7 +190,7 @@ type DBConfig struct {
 	// Name is the database name that wharf-api will store its data in. Some
 	// databases also call this the "schema" name.
 	//
-	// For backward compatability, that may be removed in the next major release
+	// For backward compatibility, that may be removed in the next major release
 	// (v5.0.0), the environment variable DBNAME, which was added in v0.5.5,
 	// also sets this value.
 	//
@@ -200,7 +200,7 @@ type DBConfig struct {
 	// MaxIdleConns is the maximum number of idle connections that wharf-api
 	// will keep alive.
 	//
-	// For backward compatability, that may be removed in the next major release
+	// For backward compatibility, that may be removed in the next major release
 	// (v5.0.0), the environment variable DBMAXIDLECONNS, which was added in
 	// v0.5.5, also sets this value.
 	//
@@ -210,7 +210,7 @@ type DBConfig struct {
 	// MaxOpenConns is the maximum number of open connections that wharf-api
 	// will use at a single point in time.
 	//
-	// For backward compatability, that may be removed in the next major release
+	// For backward compatibility, that may be removed in the next major release
 	// (v5.0.0), the environment variable DBMAXOPENCONNS, which was added in
 	// v0.5.5, also sets this value.
 	//
@@ -221,7 +221,7 @@ type DBConfig struct {
 	// any connection exceeds this limit, while not in use, it will be
 	// disconnected.
 	//
-	// For backward compatability, that may be removed in the next major release
+	// For backward compatibility, that may be removed in the next major release
 	// (v5.0.0), the environment variable DBMAXCONNLIFETIME, which was added in
 	// v0.5.5, also sets this value.
 	//
@@ -230,7 +230,7 @@ type DBConfig struct {
 
 	// Log enables/disables database SQL query logging.
 	//
-	// For backward compatability, that may be removed in the next major release
+	// For backward compatibility, that may be removed in the next major release
 	// (v5.0.0), the environment variable DBLOG, which was added in v0.5.5,
 	// also sets this value.
 	//
@@ -244,7 +244,7 @@ type MQConfig struct {
 	// Enabled controls whether the message queue integration is turned
 	// on or off.
 	//
-	// For backward compatability, that may be removed in the next major release
+	// For backward compatibility, that may be removed in the next major release
 	// (v5.0.0), the environment variable RABBITMQENABLED, which was added in
 	// v3.0.0, also sets this value.
 	//
@@ -253,7 +253,7 @@ type MQConfig struct {
 
 	// Host is the network hostname wharf-api will connect to.
 	//
-	// For backward compatability, that may be removed in the next major release
+	// For backward compatibility, that may be removed in the next major release
 	// (v5.0.0), the environment variable RABBITMQHOST, which was added in
 	// v0.7.9, also sets this value.
 	//
@@ -262,7 +262,7 @@ type MQConfig struct {
 
 	// Host is the network port wharf-api will connect to.
 	//
-	// For backward compatability, that may be removed in the next major release
+	// For backward compatibility, that may be removed in the next major release
 	// (v5.0.0), the environment variable RABBITMQPORT, which was added in
 	// v0.7.9, also sets this value.
 	//
@@ -272,7 +272,7 @@ type MQConfig struct {
 	// Username is the username part of credentials used when connecting to the
 	// message queue instance (usually RabbitMQ).
 	//
-	// For backward compatability, that may be removed in the next major release
+	// For backward compatibility, that may be removed in the next major release
 	// (v5.0.0), the environment variable RABBITMQUSER, which was added in
 	// v0.7.9, also sets this value.
 	//
@@ -282,7 +282,7 @@ type MQConfig struct {
 	// Password is the password part of credentials used when connecting to the
 	// message queue instance (usually RabbitMQ).
 	//
-	// For backward compatability, that may be removed in the next major release
+	// For backward compatibility, that may be removed in the next major release
 	// (v5.0.0), the environment variable RABBITMQPASS, which was added in
 	// v0.7.9, also sets this value.
 	//
@@ -291,7 +291,7 @@ type MQConfig struct {
 
 	// QueueName is the name of the AMQP message queue that wharf-api will use.
 	//
-	// For backward compatability, that may be removed in the next major release
+	// For backward compatibility, that may be removed in the next major release
 	// (v5.0.0), the environment variable RABBITMQNAME, which was added in
 	// v0.7.9, also sets this value.
 	//
@@ -300,7 +300,7 @@ type MQConfig struct {
 
 	// VHost is the name of the AMQP virtual host that wharf-api will use.
 	//
-	// For backward compatability, that may be removed in the next major release
+	// For backward compatibility, that may be removed in the next major release
 	// (v5.0.0), the environment variable RABBITMQVHOST, which was added in
 	// v0.7.9, also sets this value.
 	//
@@ -310,7 +310,7 @@ type MQConfig struct {
 	// DisableSSL will make wharf-api connect to the message queue service via
 	// AMQP when set to true, and AMQPS when set to false.
 	//
-	// For backward compatability, that may be removed in the next major release
+	// For backward compatibility, that may be removed in the next major release
 	// (v5.0.0), the environment variable RABBITMQDISABLESSL, which was added in
 	// v0.7.9, also sets this value.
 	//
@@ -321,7 +321,7 @@ type MQConfig struct {
 	// initial AMQP connection. If all those attempts fail, then the wharf-api
 	// application will exit.
 	//
-	// For backward compatability, that may be removed in the next major release
+	// For backward compatibility, that may be removed in the next major release
 	// (v5.0.0), the environment variable RABBITMQCONNATTEMPTS, which was added
 	// in v0.7.9, also sets this value.
 	//
@@ -401,7 +401,7 @@ func (cfg *HTTPConfig) addOldHTTPConfigEnvVars() error {
 		"BIND_ADDRESS": &cfg.BindAddress,
 		"BASIC_AUTH":   &cfg.BasicAuth,
 	})
-	
+
 	if value, ok := os.LookupEnv("ALLOW_CORS"); ok && value == "YES" {
 		cfg.CORS.AllowAllOrigins = true
 	}
