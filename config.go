@@ -384,18 +384,22 @@ func (cfg *Config) addBackwardCompatibleConfigs() error {
 }
 
 func (cfg *CIConfig) addOldCIConfigEnvVars() error {
-	env.BindMultiple(map[*string]string{
+	if err := env.BindMultiple(map[*string]string{
 		&cfg.TriggerURL:   "CI_URL",
 		&cfg.TriggerToken: "CI_TOKEN",
-	})
+	}); err != nil {
+		return err
+	}
 	return env.BindBool(&cfg.MockTriggerResponse, "MOCK_LOCAL_CI_RESPONSE")
 }
 
 func (cfg *HTTPConfig) addOldHTTPConfigEnvVars() error {
-	env.BindMultiple(map[*string]string{
+	if err := env.BindMultiple(map[*string]string{
 		&cfg.BindAddress: "BIND_ADDRESS",
 		&cfg.BasicAuth:   "BASIC_AUTH",
-	})
+	}); err != nil {
+		return err
+	}
 	if value, ok := os.LookupEnv("ALLOW_CORS"); ok && value == "YES" {
 		cfg.CORS.AllowAllOrigins = true
 	}
@@ -408,12 +412,14 @@ func (cfg *CertConfig) addOldCertConfigEnvVars() error {
 }
 
 func (cfg *DBConfig) addOldDBConfigEnvVars() error {
-	env.BindMultiple(map[*string]string{
+	if err := env.BindMultiple(map[*string]string{
 		&cfg.Host:     "DBHOST",
 		&cfg.Username: "DBUSER",
 		&cfg.Password: "DBPASS",
 		&cfg.Name:     "DBNAME",
-	})
+	}); err != nil {
+		return err
+	}
 	if err := env.BindMultipleInt(map[*int]string{
 		&cfg.Port:         "DBPORT",
 		&cfg.MaxIdleConns: "DBMAXIDLECONNS",
@@ -431,14 +437,16 @@ func (cfg *MQConfig) addOldMQConfigEnvVars() error {
 	if err := env.BindBool(&cfg.Enabled, "RABBITMQENABLED"); err != nil {
 		return err
 	}
-	env.BindMultiple(map[*string]string{
+	if err := env.BindMultiple(map[*string]string{
 		&cfg.Username:  "RABBITMQUSER",
 		&cfg.Password:  "RABBITMQPASS",
 		&cfg.Host:      "RABBITMQHOST",
 		&cfg.Port:      "RABBITMQPORT",
 		&cfg.VHost:     "RABBITMQVHOST",
 		&cfg.QueueName: "RABBITMQNAME",
-	})
+	}); err != nil {
+		return err
+	}
 	if err := env.BindBool(&cfg.DisableSSL, "RABBITMQDISABLESSL"); err != nil {
 		return err
 	}

@@ -9,19 +9,28 @@ import (
 
 // Bind updates the Go variable via the pointer with the value of the
 // environment variable, if set and not empty.
-func Bind(ptr *string, key string) {
+//
+// An error is returned if it failed to get the environment variable.
+func Bind(ptr *string, key string) error {
 	if value, ok := os.LookupEnv(key); ok {
 		*ptr = value
 	}
+	return nil // can't fail, but just for consitency with the other funcs
 }
 
 // BindMultiple updates the Go variables via the pointers with the values of the
 // environment variables, if set and not empty, for each respective pair in
 // the map.
-func BindMultiple(mappings map[*string]string) {
+//
+// An error is returned if it failed to get any of the environment variables for
+// the mappings.
+func BindMultiple(mappings map[*string]string) error {
 	for ptr, key := range mappings {
-		Bind(ptr, key)
+		if err := Bind(ptr, key); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 // LookupNoEmpty retrieves the value of the environment variable but returns
@@ -36,12 +45,11 @@ func LookupNoEmpty(key string) (string, bool) {
 
 // BindNoEmpty updates the Go variable via the pointer with the value of the
 // environment variable, if set and not empty.
-func BindNoEmpty(ptr *string, key string) bool {
+func BindNoEmpty(ptr *string, key string) error {
 	if str, ok := LookupNoEmpty(key); ok {
 		*ptr = str
-		return true
 	}
-	return false
+	return nil // can't fail, but just for consitency with the other funcs
 }
 
 // LookupOptionalBool retrieves the environment variable value, parsed as a

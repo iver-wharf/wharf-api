@@ -58,3 +58,8 @@ func TestBindMultiple(t *testing.T) {
 	assert.Equal(t, "two", myStruct.b)
 	assert.Equal(t, "tre", myStruct.c)
 }
+
+func TestBindMultiple_noErrorOnNilMap(t *testing.T) {
+	assert.NoError(t, BindMultiple(nil))
+	assert.NoError(t, BindMultipleInt(nil))
+}
