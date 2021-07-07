@@ -8,7 +8,7 @@ import (
 )
 
 // Bind updates the Go variable via the pointer with the value of the
-// environment variable, if set.
+// environment variable, if set and not empty.
 func Bind(ptr *string, key string) {
 	if value, ok := os.LookupEnv(key); ok {
 		*ptr = value
@@ -16,7 +16,8 @@ func Bind(ptr *string, key string) {
 }
 
 // BindMultiple updates the Go variables via the pointers with the values of the
-// environment variables, if set, for each respective pair in the map.
+// environment variables, if set and not empty, for each respective pair in
+// the map.
 func BindMultiple(mappings map[*string]string) {
 	for ptr, key := range mappings {
 		Bind(ptr, key)
@@ -24,7 +25,7 @@ func BindMultiple(mappings map[*string]string) {
 }
 
 // LookupNoEmpty retrieves the value of the environment variable but returns
-// false if the environment variable was empty or not set.
+// false if the environment variable was not set or empty.
 func LookupNoEmpty(key string) (string, bool) {
 	var str, ok = os.LookupEnv(key)
 	if str == "" {
@@ -44,7 +45,8 @@ func BindNoEmpty(ptr *string, key string) bool {
 }
 
 // LookupOptionalBool retrieves the environment variable value, parsed as a
-// bool, or returns the fallback value if the environment variable is unset.
+// bool, or returns the fallback value if the environment variable is unset or
+// empty.
 //
 // An error is returned if it failed to parse.
 func LookupOptionalBool(name string, fallback bool) (bool, error) {
@@ -58,13 +60,18 @@ func LookupOptionalBool(name string, fallback bool) (bool, error) {
 	return fallback, nil
 }
 
+// BindBool updates the Go variable via the pointer with the value of the
+// environment variable, parsed as a bool, if set and not empty.
+//
+// An error is returned if it failed to parse.
 func BindBool(ptr *bool, name string) (err error) {
 	*ptr, err = LookupOptionalBool(name, *ptr)
 	return
 }
 
 // LookupOptionalUInt64 retrieves the environment variable value, parsed as an
-// uin64, or returns the fallback value if the environment variable is unset.
+// uin64, or returns the fallback value if the environment variable is unset or
+// empty.
 //
 // An error is returned if it failed to parse.
 func LookupOptionalUInt64(name string, fallback uint64) (uint64, error) {
@@ -78,13 +85,18 @@ func LookupOptionalUInt64(name string, fallback uint64) (uint64, error) {
 	return fallback, nil
 }
 
+// BindUInt64 updates the Go variable via the pointer with the value of the
+// environment variable, parsed as an uint64, if set and not empty.
+//
+// An error is returned if it failed to parse.
 func BindUInt64(ptr *uint64, name string) (err error) {
 	*ptr, err = LookupOptionalUInt64(name, *ptr)
 	return
 }
 
 // LookupOptionalInt retrieves the environment variable value, parsed as an
-// int, or returns the fallback value if the environment variable is unset.
+// int, or returns the fallback value if the environment variable is unset or
+// empty.
 //
 // An error is returned if it failed to parse.
 func LookupOptionalInt(name string, fallback int) (int, error) {
@@ -98,11 +110,20 @@ func LookupOptionalInt(name string, fallback int) (int, error) {
 	return fallback, nil
 }
 
+// BindInt updates the Go variable via the pointer with the value of the
+// environment variable, parsed as an int, if set and not empty.
+//
+// An error is returned if it failed to parse.
 func BindInt(ptr *int, name string) (err error) {
 	*ptr, err = LookupOptionalInt(name, *ptr)
 	return
 }
 
+// BindMultipleInt updates the Go variables via the pointers with the values of
+// the environment variables, parsed as ints, if set and not empty, for each
+// respective pair in the map.
+//
+// An error is returned if it failed to parse any of the mappings.
 func BindMultipleInt(mappings map[*int]string) error {
 	for ptr, key := range mappings {
 		if err := BindInt(ptr, key); err != nil {
@@ -114,7 +135,7 @@ func BindMultipleInt(mappings map[*int]string) error {
 
 // LookupOptionalDuration retrieves the environment variable value, parsed as an
 // time.Duration, or returns the fallback value if the environment variable is
-// unset.
+// unset or empty.
 //
 // An error is returned if it failed to parse.
 func LookupOptionalDuration(name string, fallback time.Duration) (time.Duration, error) {
@@ -128,6 +149,10 @@ func LookupOptionalDuration(name string, fallback time.Duration) (time.Duration,
 	return fallback, nil
 }
 
+// BindDuration updates the Go variable via the pointer with the value of the
+// environment variable, parsed as time.Duration, if set and not empty.
+//
+// An error is returned if it failed to parse.
 func BindDuration(ptr *time.Duration, name string) (err error) {
 	*ptr, err = LookupOptionalDuration(name, *ptr)
 	return

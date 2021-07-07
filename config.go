@@ -388,10 +388,7 @@ func (cfg *CIConfig) addOldCIConfigEnvVars() error {
 		&cfg.TriggerURL:   "CI_URL",
 		&cfg.TriggerToken: "CI_TOKEN",
 	})
-	if err := env.BindBool(&cfg.MockTriggerResponse, "MOCK_LOCAL_CI_RESPONSE"); err != nil {
-		return err
-	}
-	return nil
+	return env.BindBool(&cfg.MockTriggerResponse, "MOCK_LOCAL_CI_RESPONSE")
 }
 
 func (cfg *HTTPConfig) addOldHTTPConfigEnvVars() error {
@@ -427,10 +424,7 @@ func (cfg *DBConfig) addOldDBConfigEnvVars() error {
 	if err := env.BindDuration(&cfg.MaxConnLifetime, "DBMAXCONNLIFETIME"); err != nil {
 		return err
 	}
-	if err := env.BindBool(&cfg.Log, "DBLOG"); err != nil {
-		return err
-	}
-	return nil
+	return env.BindBool(&cfg.Log, "DBLOG")
 }
 
 func (cfg *MQConfig) addOldMQConfigEnvVars() error {
@@ -448,8 +442,5 @@ func (cfg *MQConfig) addOldMQConfigEnvVars() error {
 	if err := env.BindBool(&cfg.DisableSSL, "RABBITMQDISABLESSL"); err != nil {
 		return err
 	}
-	if err := env.BindUInt64(&cfg.ConnAttempts, "RABBITMQCONNATTEMPTS"); err != nil {
-		return err
-	}
-	return nil
+	return env.BindUInt64(&cfg.ConnAttempts, "RABBITMQCONNATTEMPTS")
 }
