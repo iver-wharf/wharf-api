@@ -23,9 +23,9 @@ func Bind(ptr *string, key string) error {
 // the map.
 //
 // An error is returned if it failed to get any of the environment variables for
-// the mappings.
-func BindMultiple(mappings map[*string]string) error {
-	for ptr, key := range mappings {
+// the bindings.
+func BindMultiple(bindings map[*string]string) error {
+	for ptr, key := range bindings {
 		if err := Bind(ptr, key); err != nil {
 			return err
 		}
@@ -131,9 +131,9 @@ func BindInt(ptr *int, name string) (err error) {
 // the environment variables, parsed as ints, if set and not empty, for each
 // respective pair in the map.
 //
-// An error is returned if it failed to parse any of the mappings.
-func BindMultipleInt(mappings map[*int]string) error {
-	for ptr, key := range mappings {
+// An error is returned if it failed to parse any of the bindings.
+func BindMultipleInt(bindings map[*int]string) error {
+	for ptr, key := range bindings {
 		if err := BindInt(ptr, key); err != nil {
 			return err
 		}
