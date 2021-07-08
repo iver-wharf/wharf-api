@@ -19,6 +19,12 @@ with.
 - Database [ORM](https://en.wikipedia.org/wiki/Object%E2%80%93relational_mapping)
   using [gorm.io/gorm](https://gorm.io/).
 
+## Configuring
+
+The wharf-api program can be configured via environment variables and through
+optional config files. See the docs on the `Config` type over at:
+<https://pkg.go.dev/github.com/iver-wharf/wharf-api#Config>
+
 ## Development
 
 1. Install Go 1.16 or later: <https://golang.org/>
