@@ -12,7 +12,7 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 	https://changelog.md/
 -->
 
-## v4.1.1 (WIP)
+## v4.1.1 (2021-07-12)
 
 - Changed version of Docker base images:
 
