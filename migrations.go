@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 
-	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -52,7 +51,7 @@ type constraintToDrop struct {
 }
 
 func dropOldConstraints(db *gorm.DB, constraints []constraintToDrop) error {
-	log.Debugf("Dropping %d old constraints", len(constraints))
+	log.Debug().WithInt("constraints", len(constraints)).Message("Dropping old constraints.")
 	for _, constraint := range constraints {
 		if err := dropOldConstraint(db, constraint.table, constraint.name); err != nil {
 			return err
@@ -63,24 +62,36 @@ func dropOldConstraints(db *gorm.DB, constraints []constraintToDrop) error {
 
 func dropOldConstraint(db *gorm.DB, table string, constraintName string) error {
 	if db.Migrator().HasConstraint(table, constraintName) {
-		log.Infof("Dropping old constraint for table %q: %q\n", table, constraintName)
+		log.Info().
+			WithString("table", table).
+			WithString("constraint", constraintName).
+			Message("Dropping old constraint.")
 		if err := db.Migrator().DropConstraint(table, constraintName); err != nil {
 			return fmt.Errorf("drop old constraint: %w", err)
 		}
 	} else {
-		log.Debugf("No old constraint to remove for table %q with name: %q\n", table, constraintName)
+		log.Debug().
+			WithString("table", table).
+			WithString("constraint", constraintName).
+			Message("No old constraint to remove.")
 	}
 	return nil
 }
 
 func dropOldColumn(db *gorm.DB, model interface{}, columnName string) error {
 	if db.Migrator().HasColumn(model, columnName) {
-		log.Infof("Dropping old column for type %T: %q\n", model, columnName)
+		log.Info().
+			WithString("column", columnName).
+			WithString("model", fmt.Sprintf("%T", model)).
+			Message("Dropping old column.")
 		if err := db.Migrator().DropColumn(model, columnName); err != nil {
 			return fmt.Errorf("drop old column: %w", err)
 		}
 	} else {
-		log.Debugf("No old column to remove for type %T with name: %q\n", model, columnName)
+		log.Debug().
+			WithString("column", columnName).
+			WithString("model", fmt.Sprintf("%T", model)).
+			Message("No old column to remove.")
 	}
 	return nil
 }

@@ -6,7 +6,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/iver-wharf/wharf-core/pkg/logger"
 )
+
+var log = logger.New()
 
 // NewClientWithCerts creates a fresh net/http.Client populated with some
 // root CA certificates from file.
@@ -19,9 +23,9 @@ func NewClientWithCerts(localCertFile string) (*http.Client, error) {
 	// Get the SystemCertPool, continue with an empty pool on error
 	if rootCAs == nil {
 		rootCAs = x509.NewCertPool()
-		fmt.Println("using empty cert pool")
+		log.Info().Message("Using empty cert pool.")
 	} else {
-		fmt.Println("using system cert pool")
+		log.Info().Message("Using system cert pool.")
 	}
 
 	// Read in the cert file
@@ -30,11 +34,12 @@ func NewClientWithCerts(localCertFile string) (*http.Client, error) {
 		return nil, fmt.Errorf("failed to append %q to RootCAs: %v", localCertFile, err)
 	}
 
-	fmt.Printf("loaded certs from %s\n", localCertFile)
+	log.Info().WithString("certsFile", localCertFile).Message("Loaded certs from file.")
 
 	// Append our cert to the system pool
 	if ok := rootCAs.AppendCertsFromPEM(certs); !ok {
-		fmt.Println("no certs appended, using system certs only")
+		log.Warn().WithString("certsFile", localCertFile).
+			Message("No new certs appended. Using system certs only.")
 	}
 
 	// Trust the augmented cert pool in our client

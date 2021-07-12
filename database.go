@@ -43,7 +43,10 @@ func ParseBuildDefinition(project *Project) interface{} {
 		var t interface{}
 		err := yaml.Unmarshal([]byte(project.BuildDefinition), &t)
 		if err != nil {
-			fmt.Printf("Error parsing build-definition: %v\n", err)
+			log.Error().
+				WithError(err).
+				WithUint("project", project.ProjectID).
+				Message("Failed to parse build-definition.")
 			return nil
 		}
 
@@ -65,6 +68,8 @@ func (b *Build) MarshalJSON() ([]byte, error) {
 }
 
 func openDatabase(config DatabaseConfig) (*gorm.DB, error) {
+	const retryDelay = 2 * time.Second
+	const maxAttempts = 3
 	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=postgres sslmode=disable",
 		config.Host,
 		config.Port,
@@ -73,13 +78,18 @@ func openDatabase(config DatabaseConfig) (*gorm.DB, error) {
 
 	var db *gorm.DB
 	var err error
-	for retry := 0; retry < 2; retry++ {
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
 		db, err = gorm.Open(postgres.Open(psqlInfo), &gorm.Config{})
 		if err == nil {
 			break
 		}
-		fmt.Printf("Error: %v\n", err)
-		time.Sleep(2 * time.Second)
+		log.Error().
+			WithError(err).
+			WithInt("attempt", attempt).
+			WithInt("maxAttempts", maxAttempts).
+			WithDuration("retryAfter", retryDelay).
+			Message("Error connecting to database.")
+		time.Sleep(retryDelay)
 	}
 	if err != nil {
 		return db, err
@@ -109,7 +119,11 @@ func openDatabase(config DatabaseConfig) (*gorm.DB, error) {
 		return db, err
 	}
 
-	fmt.Printf("Setting database config, idle: %v, open: %v, lifetime: %v\n", config.MaxIdleConns, config.MaxOpenConns, config.MaxConnLifetime)
+	log.Debug().
+		WithInt("maxIdleConns", config.MaxIdleConns).
+		WithInt("maxOpenConns", config.MaxOpenConns).
+		WithDuration("maxConnLifetime", config.MaxConnLifetime).
+		Message("Setting database config.")
 	sqlDb.SetMaxIdleConns(config.MaxIdleConns)
 	sqlDb.SetMaxOpenConns(config.MaxOpenConns)
 	sqlDb.SetConnMaxLifetime(config.MaxConnLifetime)
