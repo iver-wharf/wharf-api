@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"math/rand"
 	"net/http"
 	"os"
@@ -37,16 +38,24 @@ var log = logger.NewScoped("WHARF")
 // @query.collection.format multi
 func main() {
 	logger.AddOutput(logger.LevelDebug, consolepretty.Default)
-
-	if err := loadEmbeddedVersionFile(); err != nil {
+	var (
+		config Config
+		err    error
+	)
+	if err = loadEmbeddedVersionFile(); err != nil {
 		log.Error().WithError(err).Message("Failed to read embedded version.yaml file.")
+		os.Exit(1)
+	}
+
+	if config, err = loadConfig(); err != nil {
+		fmt.Println("Failed to read config:", err)
 		os.Exit(1)
 	}
 
 	docs.SwaggerInfo.Version = AppVersion.Version
 
-	if localCertFile, _ := os.LookupEnv("CA_CERTS"); localCertFile != "" {
-		client, err := httputils.NewClientWithCerts(localCertFile)
+	if config.CA.CertsFile != "" {
+		client, err := httputils.NewClientWithCerts(config.CA.CertsFile)
 		if err != nil {
 			log.Error().WithError(err).Message("Failed to get net/http.Client with certs")
 			os.Exit(1)
@@ -56,13 +65,7 @@ func main() {
 
 	seed()
 
-	config, err := getDatabaseConfigFromEnvironment()
-	if err != nil {
-		log.Error().WithError(err).Message("Config error")
-		os.Exit(1)
-	}
-
-	db, err := openDatabase(config)
+	db, err := openDatabase(config.DB)
 	if err != nil {
 		log.Error().WithError(err).Message("Database error")
 		os.Exit(2)
@@ -81,17 +84,18 @@ func main() {
 		gin.CustomRecovery(ginutil.RecoverProblemHandle),
 	)
 
-	allowCors, ok := os.LookupEnv("ALLOW_CORS")
-	if ok && allowCors == "YES" {
-		log.Info().Message("Allowing CORS")
-		r.Use(cors.Default())
+	if config.HTTP.CORS.AllowAllOrigins {
+		log.Info().Message("Allowing all origins in CORS.")
+		corsConfig := cors.DefaultConfig()
+		corsConfig.AllowAllOrigins = true
+		r.Use(cors.New(corsConfig))
 	}
 
 	HealthModule{}.Register(r)
 
-	setupBasicAuth(r)
+	setupBasicAuth(r, config)
 
-	mq, err := GetMQConnection()
+	mq, err := GetMQConnection(config.MQ)
 	if err != nil {
 		log.Error().WithError(err).Message("Message queue error.")
 		os.Exit(4)
@@ -112,7 +116,7 @@ func main() {
 	}
 
 	modules := []HTTPModule{
-		ProjectModule{Database: db, MessageQueue: mq},
+		ProjectModule{Database: db, MessageQueue: mq, Config: &config},
 		BuildModule{Database: db, MessageQueue: mq},
 		TokenModule{Database: db},
 		BranchModule{Database: db},
@@ -126,28 +130,19 @@ func main() {
 	api.GET("/version", getVersionHandler)
 	api.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	_ = r.Run(getBindAddress())
+	_ = r.Run(config.HTTP.BindAddress)
 }
 
-func getBindAddress() string {
-	bindAddress, isBindAddressDefined := os.LookupEnv("BIND_ADDRESS")
-	if !isBindAddressDefined || bindAddress == "" {
-		return "0.0.0.0:8080"
-	}
-	return bindAddress
-}
-
-func setupBasicAuth(router *gin.Engine) {
-	basicAuth := os.Getenv("BASIC_AUTH")
-	if basicAuth == "" {
-		log.Info().Message("BASIC_AUTH environment variable not set, skipping basic-auth setup.")
+func setupBasicAuth(router *gin.Engine, config Config) {
+	if config.HTTP.BasicAuth == "" {
+		log.Info().Message("BasicAuth setting not set, skipping BasicAuth setup.")
 		return
 	}
 
 	accounts := gin.Accounts{}
 	var accountNames []string
 
-	for _, account := range strings.Split(basicAuth, ",") {
+	for _, account := range strings.Split(config.HTTP.BasicAuth, ",") {
 		split := strings.Split(account, ":")
 		user, pass := split[0], split[1]
 

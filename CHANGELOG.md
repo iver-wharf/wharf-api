@@ -12,6 +12,17 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 	https://changelog.md/
 -->
 
+## v4.2.0 (WIP)
+
+- Added config loading from YAML files using
+  `github.com/iver-wharf/wharf-core/pkg/config` together with new config models
+  for configuring wharf-api. See `config.go` or the reference documentation on
+  the `Config` type for information on how to configure wharf-api. (#38)
+
+- Deprecated all environment variable configs. They are still supported, but may
+  be removed in the next major release (v5.0.0). Please refer to the new config
+  schema seen in `config.go` and `config_example_test.go`. (#38)
+
 ## v4.1.1 (2021-07-12)
 
 - Changed version of Docker base images:
@@ -213,6 +224,7 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 ## v0.7.5 (2020-05-29)
 
 - Added Iver self-signed certs to be loaded into the Go `http.DefaultClient`.
+  (!10)
 
 ## v0.7.2 (2020-05-06)
 
