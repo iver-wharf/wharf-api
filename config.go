@@ -4,8 +4,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/iver-wharf/wharf-api/pkg/env"
 	"github.com/iver-wharf/wharf-core/pkg/config"
+	"github.com/iver-wharf/wharf-core/pkg/env"
 )
 
 // Config holds all configurable settings for wharf-api.
@@ -357,98 +357,46 @@ func loadConfig() (Config, error) {
 	}
 	cfgBuilder.AddEnvironmentVariables("WHARF")
 
-	var (
-		cfg Config
-		err = cfgBuilder.Unmarshal(&cfg)
-	)
-	if err == nil {
-		err = cfg.addBackwardCompatibleConfigs()
+	var cfg Config
+	err := cfgBuilder.Unmarshal(&cfg)
+	if err != nil {
+		return Config{}, err
+	}
+	if err := cfg.addBackwardCompatibleConfigs(); err != nil {
+		return Config{}, err
 	}
 	return cfg, err
 }
 
 func (cfg *Config) addBackwardCompatibleConfigs() error {
-	if value, ok := os.LookupEnv("WHARF_INSTANCE"); ok {
-		cfg.InstanceID = value
-	}
-	if err := cfg.HTTP.addOldHTTPConfigEnvVars(); err != nil {
-		return err
-	}
-	if err := cfg.CA.addOldCertConfigEnvVars(); err != nil {
-		return err
-	}
-	if err := cfg.DB.addOldDBConfigEnvVars(); err != nil {
-		return err
-	}
-	return cfg.MQ.addOldMQConfigEnvVars()
-}
-
-func (cfg *CIConfig) addOldCIConfigEnvVars() error {
-	if err := env.BindMultiple(map[*string]string{
-		&cfg.TriggerURL:   "CI_URL",
-		&cfg.TriggerToken: "CI_TOKEN",
-	}); err != nil {
-		return err
-	}
-	return env.BindBool(&cfg.MockTriggerResponse, "MOCK_LOCAL_CI_RESPONSE")
-}
-
-func (cfg *HTTPConfig) addOldHTTPConfigEnvVars() error {
-	if err := env.BindMultiple(map[*string]string{
-		&cfg.BindAddress: "BIND_ADDRESS",
-		&cfg.BasicAuth:   "BASIC_AUTH",
-	}); err != nil {
-		return err
-	}
 	if value, ok := os.LookupEnv("ALLOW_CORS"); ok && value == "YES" {
-		cfg.CORS.AllowAllOrigins = true
+		cfg.HTTP.CORS.AllowAllOrigins = true
 	}
-	return nil
-}
-
-func (cfg *CertConfig) addOldCertConfigEnvVars() error {
-	env.BindNoEmpty(&cfg.CertsFile, "CA_CERTS")
-	return nil
-}
-
-func (cfg *DBConfig) addOldDBConfigEnvVars() error {
-	if err := env.BindMultiple(map[*string]string{
-		&cfg.Host:     "DBHOST",
-		&cfg.Username: "DBUSER",
-		&cfg.Password: "DBPASS",
-		&cfg.Name:     "DBNAME",
-	}); err != nil {
-		return err
-	}
-	if err := env.BindMultipleInt(map[*int]string{
-		&cfg.Port:         "DBPORT",
-		&cfg.MaxIdleConns: "DBMAXIDLECONNS",
-		&cfg.MaxOpenConns: "DBMAXOPENCONNS",
-	}); err != nil {
-		return err
-	}
-	if err := env.BindDuration(&cfg.MaxConnLifetime, "DBMAXCONNLIFETIME"); err != nil {
-		return err
-	}
-	return env.BindBool(&cfg.Log, "DBLOG")
-}
-
-func (cfg *MQConfig) addOldMQConfigEnvVars() error {
-	if err := env.BindBool(&cfg.Enabled, "RABBITMQENABLED"); err != nil {
-		return err
-	}
-	if err := env.BindMultiple(map[*string]string{
-		&cfg.Username:  "RABBITMQUSER",
-		&cfg.Password:  "RABBITMQPASS",
-		&cfg.Host:      "RABBITMQHOST",
-		&cfg.Port:      "RABBITMQPORT",
-		&cfg.VHost:     "RABBITMQVHOST",
-		&cfg.QueueName: "RABBITMQNAME",
-	}); err != nil {
-		return err
-	}
-	if err := env.BindBool(&cfg.DisableSSL, "RABBITMQDISABLESSL"); err != nil {
-		return err
-	}
-	return env.BindUInt64(&cfg.ConnAttempts, "RABBITMQCONNATTEMPTS")
+	return env.BindMultiple(map[interface{}]string{
+		&cfg.CI.MockTriggerResponse: "MOCK_LOCAL_CI_RESPONSE",
+		&cfg.CI.TriggerToken:        "CI_TOKEN",
+		&cfg.CI.TriggerURL:          "CI_URL",
+		&cfg.HTTP.BasicAuth:         "BASIC_AUTH",
+		&cfg.HTTP.BindAddress:       "BIND_ADDRESS",
+		&cfg.CA.CertsFile:           "CA_CERTS",
+		&cfg.DB.Host:                "DBHOST",
+		&cfg.DB.Log:                 "DBLOG",
+		&cfg.DB.MaxConnLifetime:     "DBMAXCONNLIFETIME",
+		&cfg.DB.MaxIdleConns:        "DBMAXIDLECONNS",
+		&cfg.DB.MaxOpenConns:        "DBMAXOPENCONNS",
+		&cfg.DB.Name:                "DBNAME",
+		&cfg.DB.Password:            "DBPASS",
+		&cfg.DB.Port:                "DBPORT",
+		&cfg.DB.Username:            "DBUSER",
+		&cfg.MQ.ConnAttempts:        "RABBITMQCONNATTEMPTS",
+		&cfg.MQ.DisableSSL:          "RABBITMQDISABLESSL",
+		&cfg.MQ.Enabled:             "RABBITMQENABLED",
+		&cfg.MQ.Host:                "RABBITMQHOST",
+		&cfg.MQ.Password:            "RABBITMQPASS",
+		&cfg.MQ.Port:                "RABBITMQPORT",
+		&cfg.MQ.QueueName:           "RABBITMQNAME",
+		&cfg.MQ.Username:            "RABBITMQUSER",
+		&cfg.MQ.VHost:               "RABBITMQVHOST",
+		&cfg.InstanceID:             "WHARF_INSTANCE",
+	})
 }
