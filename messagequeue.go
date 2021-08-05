@@ -13,13 +13,13 @@ func GetMQConnection(config MQConfig) (*messagebus.MQConnection, error) {
 	}
 
 	return messagebus.NewConnection(
-		config.Host, 
+		config.Host,
 		config.Port,
-		config.Username, 
+		config.Username,
 		config.Password,
-		config.QueueName, 
+		config.QueueName,
 		config.VHost,
-		config.DisableSSL, 
+		config.DisableSSL,
 		config.ConnAttempts,
 	)
 }
