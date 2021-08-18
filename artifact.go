@@ -20,20 +20,12 @@ type ArtifactModule struct {
 }
 
 type SummaryOfTestResultSummaries struct {
-	BuildID   uint          `json:"buildId"`
-	Total     uint          `json:"total"`
-	Failed    uint          `json:"failed"`
-	Passed    uint          `json:"passed"`
-	Skipped   uint          `json:"skipped"`
-	Summaries []JSONSummary `json:"artifacts"`
-}
-
-type JSONSummary struct {
-	ArtifactID uint   `json:"artifactId"`
-	FileName   string `json:"fileName"`
-	Failed     uint   `json:"failed"`
-	Passed     uint   `json:"passed"`
-	Skipped    uint   `json:"skipped"`
+	BuildID   uint                `json:"buildId"`
+	Total     uint                `json:"total"`
+	Failed    uint                `json:"failed"`
+	Passed    uint                `json:"passed"`
+	Skipped   uint                `json:"skipped"`
+	Summaries []TestResultSummary `json:"summaries"`
 }
 
 func (m ArtifactModule) Register(g *gin.RouterGroup) {
@@ -64,7 +56,7 @@ func (m ArtifactModule) getBuildArtifactsHandler(c *gin.Context) {
 		return
 	}
 
-	var artifacts []Artifact
+	artifacts := []Artifact{}
 	err := m.Database.
 		Where(&Artifact{BuildID: uint(buildID)}).
 		Find(&artifacts).
@@ -129,13 +121,11 @@ func (m ArtifactModule) getBuildArtifactHandler(c *gin.Context) {
 }
 
 // getBuildTestsResultsHandler godoc
-//
-// Deprecated: /build/{buildid}/test-results-summary should be used instead.
-//
+// @deprecated /build/{buildid}/test-results-summary should be used instead.
 // @summary Get build tests results from .trx files
 // @tags artifact
 // @param buildid path int true "Build ID"
-// @success 200 {object} DeprecatedTestsResults "OK"
+// @success 200 {object} TestsResults
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
@@ -146,7 +136,7 @@ func (m ArtifactModule) getBuildTestsResultsHandler(c *gin.Context) {
 		return
 	}
 
-	var testRunFiles []Artifact
+	testRunFiles := []Artifact{}
 
 	err := m.Database.
 		Where(&Artifact{BuildID: uint(buildID)}).
@@ -160,7 +150,7 @@ func (m ArtifactModule) getBuildTestsResultsHandler(c *gin.Context) {
 		return
 	}
 
-	var testsResults DeprecatedTestsResults
+	var testsResults TestsResults
 	var testRun TestRun
 
 	for _, testRunFile := range testRunFiles {
@@ -170,11 +160,11 @@ func (m ArtifactModule) getBuildTestsResultsHandler(c *gin.Context) {
 	}
 
 	if testsResults.Failed == 0 && testsResults.Passed == 0 {
-		testsResults.Status = DeprecatedTestStatusNoTests
+		testsResults.Status = TestStatusNoTests
 	} else if testsResults.Failed == 0 {
-		testsResults.Status = DeprecatedTestStatusSuccess
+		testsResults.Status = TestStatusSuccess
 	} else {
-		testsResults.Status = DeprecatedTestStatusFailed
+		testsResults.Status = TestStatusFailed
 	}
 
 	c.JSON(http.StatusOK, testsResults)
@@ -211,7 +201,9 @@ func (m ArtifactModule) postBuildArtifactHandler(c *gin.Context) {
 			BuildID:  buildID,
 		}
 
-		err := m.Database.Create(&artifact).Error
+		err := m.Database.
+			Create(&artifact).
+			Error
 		if err != nil {
 			ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
 				"Failed saving artifact with name %q for build with ID %d in database.",
@@ -237,7 +229,7 @@ type file struct {
 
 // putTestResultDataHandler godoc
 // @summary Post test result data
-// @tags artifact test-result test-result-data
+// @tags artifact
 // @accept multipart/form-data
 // @param buildid path int true "Build ID"
 // @param file formData file true "test result data artifact file"
@@ -256,7 +248,7 @@ func (m ArtifactModule) putTestResultDataHandler(c *gin.Context) {
 		return
 	}
 
-	var artifacts []*Artifact
+	artifacts := []*Artifact{}
 	for _, f := range files {
 		artifact := &Artifact{
 			Data:     f.data,
@@ -275,23 +267,35 @@ func (m ArtifactModule) putTestResultDataHandler(c *gin.Context) {
 
 		artifacts = append(artifacts, artifact)
 
-		log.Info().
+		log.Debug().
 			WithString("filename", artifact.Name).
 			WithUint("build", buildID).
 			WithUint("artifact", artifact.ArtifactID).
 			Message("File saved as artifact")
 	}
 
-	var summaries []TestResultSummary
-	var details []TestResultDetail
+	summaries := []*TestResultSummary{}
+	details := []*TestResultDetail{}
 
 	for _, artifact := range artifacts {
-		detail, summary := parseAsTRX(artifact.Data)
+		detail, summary, err := parseAsTRX(artifact.Data)
+		if err != nil {
+			log.Warn().
+				WithError(err).
+				WithString("filename", artifact.Name).
+				WithUint("build", buildID).
+				WithUint("artifact", artifact.ArtifactID).
+				Message("Failed to unmarshal; invalid JSON format")
+			continue
+		}
+
 		for _, d := range detail {
 			d.ArtifactID = artifact.ArtifactID
 			d.BuildID = buildID
 		}
 		summary.ArtifactID = artifact.ArtifactID
+		summary.FileName = artifact.FileName
+		summary.Artifact = artifact
 		summary.BuildID = buildID
 
 		summaries = append(summaries, summary)
@@ -303,10 +307,12 @@ func (m ArtifactModule) putTestResultDataHandler(c *gin.Context) {
 		Passed:    0,
 		Skipped:   0,
 		Total:     0,
-		Summaries: make([]JSONSummary, len(summaries)),
+		Summaries: make([]TestResultSummary, 0, len(summaries)),
 		BuildID:   buildID}
 	for _, summary := range summaries {
-		err := m.Database.Create(&summary).Error
+		err := m.Database.
+			Create(summary).
+			Error
 		if err != nil {
 			ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
 				"Failed saving test result summary from artifact with ID %d, for build"+
@@ -320,7 +326,7 @@ func (m ArtifactModule) putTestResultDataHandler(c *gin.Context) {
 		summaryOfSummaries.Skipped += summary.Skipped
 		summaryOfSummaries.Summaries = append(
 			summaryOfSummaries.Summaries,
-			convertTestResultSummaryToJSONSummary(summary))
+			*summary)
 	}
 
 	summaryOfSummaries.Total =
@@ -328,20 +334,25 @@ func (m ArtifactModule) putTestResultDataHandler(c *gin.Context) {
 			summaryOfSummaries.Passed +
 			summaryOfSummaries.Skipped
 
-	for _, detail := range details {
-		err := m.Database.Create(&detail).Error
-		if err != nil {
-			ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
-				"Failed saving test result detail from artifact with ID %d, for build"+
-					" with ID %d in database.",
-				detail.ArtifactID, buildID))
-			return
-		}
+	err := m.Database.
+		CreateInBatches(details, 100).
+		Error
+	if err != nil {
+		ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
+			"Failed saving test result details for build with ID %d in database.",
+			buildID))
 	}
 
 	c.JSON(http.StatusOK, summaryOfSummaries)
 }
 
+// getBuildAllTestResultDetailsHandler godoc
+// @summary Get all test result details for specified build
+// @tags artifact
+// @param buildid path int true "Build ID"
+// @success 200 {object} []TestResultDetail
+// @failure 400 {object} problem.Response "Bad request"
+// @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/test-result-details [get]
 func (m ArtifactModule) getBuildAllTestResultDetailsHandler(c *gin.Context) {
 	buildID, ok := ginutil.ParseParamUint(c, "buildid")
@@ -349,7 +360,7 @@ func (m ArtifactModule) getBuildAllTestResultDetailsHandler(c *gin.Context) {
 		return
 	}
 
-	var details []TestResultDetail
+	details := []TestResultDetail{}
 	err := m.Database.
 		Where(&TestResultDetail{BuildID: uint(buildID)}).
 		Find(&details).
@@ -365,19 +376,25 @@ func (m ArtifactModule) getBuildAllTestResultDetailsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, details)
 }
 
-// @router /build/{buildid}/test-result-details/{artifactid} [get]
+// getBuildTestResultDetailsHandler godoc
+// @summary Get test result details for specified test
+// @tags artifact
+// @param buildid path int true "Build ID"
+// @param artifactId path int true "Artifact ID"
+// @success 200 {object} []TestResultDetail
+// @router /build/{buildid}/test-result-details/{artifactId} [get]
 func (m ArtifactModule) getBuildTestResultDetailsHandler(c *gin.Context) {
 	buildID, ok := ginutil.ParseParamUint(c, "buildid")
 	if !ok {
 		return
 	}
 
-	artifactID, ok := ginutil.ParseParamUint(c, "artifactid")
+	artifactID, ok := ginutil.ParseParamUint(c, "artifactId")
 	if !ok {
 		return
 	}
 
-	var details []TestResultDetail
+	details := []TestResultDetail{}
 	err := m.Database.
 		Where(&TestResultDetail{BuildID: uint(buildID), ArtifactID: artifactID}).
 		Find(&details).
@@ -393,6 +410,13 @@ func (m ArtifactModule) getBuildTestResultDetailsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, details)
 }
 
+// getBuildTestResultsSummaryHandler godoc
+// @summary Get test result summary of all tests for specified build
+// @tags artifact
+// @param buildid path int true "Build ID"
+// @success 200 {object} SummaryOfTestResultSummaries
+// @failure 400 {object} problem.Response "Bad Request"
+// @failure 502 {object} problem.Response "Bad Gateway"
 // @router /build/{buildid}/test-results-summary [get]
 func (m ArtifactModule) getBuildTestResultsSummaryHandler(c *gin.Context) {
 	buildID, ok := ginutil.ParseParamUint(c, "buildid")
@@ -400,8 +424,9 @@ func (m ArtifactModule) getBuildTestResultsSummaryHandler(c *gin.Context) {
 		return
 	}
 
-	var summaries []TestResultSummary
+	summaries := []TestResultSummary{}
 	err := m.Database.
+		Preload("Artifact").
 		Where(&TestResultSummary{BuildID: uint(buildID)}).
 		Find(&summaries).
 		Error
@@ -413,20 +438,17 @@ func (m ArtifactModule) getBuildTestResultsSummaryHandler(c *gin.Context) {
 		return
 	}
 
-	summary := SummaryOfTestResultSummaries{}
+	summary := SummaryOfTestResultSummaries{
+		BuildID:   buildID,
+		Summaries: summaries}
+
 	for _, v := range summaries {
 		summary.Failed += v.Failed
 		summary.Passed += v.Passed
 		summary.Skipped += v.Skipped
-
-		jsonSummary := JSONSummary{}
-		jsonSummary.ArtifactID = v.ArtifactID
-		jsonSummary.Failed = v.Failed
-		jsonSummary.Skipped = v.Skipped
-		jsonSummary.Passed = v.Passed
-		jsonSummary.FileName = v.Artifact.FileName
-		summary.Summaries = append(summary.Summaries, jsonSummary)
 	}
+
+	summary.Total = summary.Failed + summary.Passed + summary.Skipped
 
 	c.JSON(http.StatusOK, summary)
 }
@@ -440,7 +462,7 @@ func parseMultipartFormData(c *gin.Context) ([]*file, bool) {
 		return nil, false
 	}
 
-	var files []*file
+	files := []*file{}
 
 	form, err := c.MultipartForm()
 	if err != nil {
@@ -479,18 +501,18 @@ func parseMultipartFormData(c *gin.Context) ([]*file, bool) {
 	return files, true
 }
 
-type DeprecatedTestStatus string
+type TestStatus string
 
 const (
-	DeprecatedTestStatusSuccess DeprecatedTestStatus = "Success"
-	DeprecatedTestStatusFailed  DeprecatedTestStatus = "Failed"
-	DeprecatedTestStatusNoTests DeprecatedTestStatus = "No tests"
+	TestStatusSuccess TestStatus = "Success"
+	TestStatusFailed  TestStatus = "Failed"
+	TestStatusNoTests TestStatus = "No tests"
 )
 
-type DeprecatedTestsResults struct {
-	Passed uint                 `json:"passed"`
-	Failed uint                 `json:"failed"`
-	Status DeprecatedTestStatus `json:"status" enums:"Success,Failed,No tests"`
+type TestsResults struct {
+	Passed uint       `json:"passed"`
+	Failed uint       `json:"failed"`
+	Status TestStatus `json:"status" enums:"Success,Failed,No tests"`
 }
 
 type DeprecatedTestRun struct {
@@ -588,11 +610,13 @@ type Counters struct {
 	Pending             uint     `xml:"pending,attr"`
 }
 
-func parseAsTRX(data []byte) ([]TestResultDetail, TestResultSummary) {
+func parseAsTRX(data []byte) ([]*TestResultDetail, *TestResultSummary, error) {
 	var testRun TestRun
-	xml.Unmarshal(data, &testRun)
+	if err := xml.Unmarshal(data, &testRun); err != nil {
+		return []*TestResultDetail{}, &TestResultSummary{}, err
+	}
 
-	var details []TestResultDetail
+	details := []*TestResultDetail{}
 	for _, utr := range testRun.Results.UnitTestResults {
 		detail := TestResultDetail{}
 		detail.Name = utr.TestName
@@ -601,6 +625,8 @@ func parseAsTRX(data []byte) ([]TestResultDetail, TestResultSummary) {
 			detail.Status = TestResultStatusSuccess
 		} else if utr.Outcome == "Failed" {
 			detail.Status = TestResultStatusFailed
+		} else if utr.Outcome == "NotExecuted" {
+			detail.Status = TestResultStatusSkipped
 		}
 
 		if detail.Status != TestResultStatusSuccess {
@@ -619,7 +645,7 @@ func parseAsTRX(data []byte) ([]TestResultDetail, TestResultSummary) {
 			detail.CompletedOn = &endTime
 		}
 
-		details = append(details, detail)
+		details = append(details, &detail)
 	}
 
 	summary := TestResultSummary{}
@@ -628,16 +654,5 @@ func parseAsTRX(data []byte) ([]TestResultDetail, TestResultSummary) {
 	summary.Skipped = testRun.ResultSummary.Counters.NotExecuted
 	summary.Total = testRun.ResultSummary.Counters.Total
 
-	return details, summary
-}
-
-func convertTestResultSummaryToJSONSummary(summary TestResultSummary) JSONSummary {
-	jsonSummary := JSONSummary{}
-	jsonSummary.ArtifactID = summary.ArtifactID
-	jsonSummary.Failed = summary.Failed
-	jsonSummary.Skipped = summary.Skipped
-	jsonSummary.Passed = summary.Passed
-	jsonSummary.FileName = summary.Artifact.FileName
-
-	return jsonSummary
+	return details, &summary, nil
 }

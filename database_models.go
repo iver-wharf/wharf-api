@@ -145,7 +145,7 @@ const (
 
 type Artifact struct {
 	ArtifactID uint   `gorm:"primaryKey" json:"artifactId"`
-	BuildID    uint   `gorm:"not null;index:param_idx_build_id" json:"buildId"`
+	BuildID    uint   `gorm:"not null;index:artifact_idx_build_id" json:"buildId"`
 	Build      *Build `gorm:"foreignKey:BuildID;constraint:OnUpdate:RESTRICT,OnDelete:RESTRICT" json:"-"`
 	Name       string `gorm:"not null" json:"name"`
 	FileName   string `gorm:"nullable" json:"fileName"`
@@ -154,10 +154,11 @@ type Artifact struct {
 
 type TestResultSummary struct {
 	TestResultSummaryID uint      `gorm:"primaryKey" json:"testResultSummaryId"`
+	FileName            string    `gorm:"nullable" json:"fileName"`
 	ArtifactID          uint      `gorm:"not null;index:testresultsummary_idx_artifact_id" json:"artifactId"`
-	Artifact            *Artifact `gorm:"foreignKey:ArtifactID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"-"`
+	Artifact            *Artifact `gorm:"foreignKey:ArtifactID;constraint:OnUpdate:RESTRICT,OnDelete:RESTRICT" json:"-"`
 	BuildID             uint      `gorm:"not null;index:testresultsummary_idx_build_id" json:"buildId"`
-	Build               *Build    `gorm:"foreignKey:BuildID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"-"`
+	Build               *Build    `gorm:"foreignKey:BuildID;constraint:OnUpdate:RESTRICT,OnDelete:RESTRICT" json:"-"`
 	Total               uint      `gorm:"not null" json:"total"`
 	Failed              uint      `gorm:"not null" json:"failed"`
 	Passed              uint      `gorm:"not null" json:"passed"`
@@ -170,17 +171,18 @@ const (
 	TestResultStatusSuccess TestResultStatus = "Success"
 	TestResultStatusFailed  TestResultStatus = "Failed"
 	TestResultStatusNoTests TestResultStatus = "No tests"
+	TestResultStatusSkipped TestResultStatus = "Skipped"
 )
 
 type TestResultDetail struct {
 	TestResultDetailID uint             `gorm:"primaryKey" json:"testResultDetailId"`
-	ArtifactID         uint             `gorm:"not null;index:testresult_idx_artifact_id" json:"artifactId"`
-	Artifact           *Artifact        `gorm:"foreignKey:ArtifactID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"-"`
-	BuildID            uint             `gorm:"not null;index:testresult_idx_build_id" json:"buildId"`
-	Build              *Build           `gorm:"foreignKey:BuildID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"-"`
+	ArtifactID         uint             `gorm:"not null;index:testresultdetail_idx_artifact_id" json:"artifactId"`
+	Artifact           *Artifact        `gorm:"foreignKey:ArtifactID;constraint:OnUpdate:RESTRICT,OnDelete:RESTRICT" json:"-"`
+	BuildID            uint             `gorm:"not null;index:testresultdetail_idx_build_id" json:"buildId"`
+	Build              *Build           `gorm:"foreignKey:BuildID;constraint:OnUpdate:RESTRICT,OnDelete:RESTRICT" json:"-"`
 	Name               string           `gorm:"not null" json:"name"`
-	Message            null.String      `gorm:"nullable" json:"message"`
+	Message            null.String      `gorm:"nullable" json:"message" swaggertype:"string"`
 	StartedOn          *time.Time       `gorm:"nullable;default:NULL;" json:"startedOn" format:"date-time"`
 	CompletedOn        *time.Time       `gorm:"nullable;default:NULL;" json:"completedOn" format:"date-time"`
-	Status             TestResultStatus `gorm:"not null" enums:"Failed,Passed,Skipped"`
+	Status             TestResultStatus `gorm:"not null" enums:"Failed,Passed,Skipped" json:"status"`
 }

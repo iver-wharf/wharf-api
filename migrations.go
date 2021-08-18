@@ -10,7 +10,8 @@ func runDatabaseMigrations(db *gorm.DB) error {
 	tables := []interface{}{
 		&Token{}, &Provider{}, &Project{},
 		&Branch{}, &Build{}, &Log{},
-		&Artifact{}, &BuildParam{}, &Param{}}
+		&Artifact{}, &BuildParam{}, &Param{},
+		&TestResultDetail{}, &TestResultSummary{}}
 
 	db.DisableForeignKeyConstraintWhenMigrating = true
 	if err := db.AutoMigrate(tables...); err != nil {
