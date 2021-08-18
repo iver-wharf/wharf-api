@@ -23,6 +23,8 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   be removed in the next major release (v5.0.0). Please refer to the new config
   schema seen in `config.go` and `config_example_test.go`. (#38)
 
+- Added Makefile to simplify building and developing the project locally. (#41)
+
 ## v4.1.1 (2021-07-12)
 
 - Changed version of Docker base images:
