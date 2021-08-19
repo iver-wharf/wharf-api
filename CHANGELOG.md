@@ -27,6 +27,17 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
 - Reworked handling of test results. (#43)
 
+  - Added models
+
+    - Database models
+
+      - TestResultDetail
+      - TestResultSummary
+
+    - Response models
+
+      - SummaryOfTestResultSummaries
+
   - New endpoints
 
     - `PUT /build/{buildid}/test-result-data`
