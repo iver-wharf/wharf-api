@@ -9,7 +9,7 @@ test: swag
 	go test -v ./...
 
 docker:
-	@echo docker build . \
+	docker build . \
 		-t "quay.io/iver-wharf/wharf-api:latest" \
 		-t "quay.io/iver-wharf/wharf-api:$(version)" \
 		--build-arg BUILD_VERSION="$(version)" \
