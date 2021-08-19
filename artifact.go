@@ -15,6 +15,11 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	buildIDParamName    = "buildid"
+	artifactIDParamName = "artifactId"
+)
+
 type ArtifactModule struct {
 	Database *gorm.DB
 }
@@ -51,8 +56,9 @@ func (m ArtifactModule) Register(g *gin.RouterGroup) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/artifacts [get]
 func (m ArtifactModule) getBuildArtifactsHandler(c *gin.Context) {
-	buildID, ok := ginutil.ParseParamUint(c, "buildid")
-	if !ok {
+	var buildID uint
+	if ok := parseRequestData(c, nil,
+		uintParam{buildIDParamName, &buildID}); !ok {
 		return
 	}
 
@@ -83,12 +89,10 @@ func (m ArtifactModule) getBuildArtifactsHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/artifact/{artifactId} [get]
 func (m ArtifactModule) getBuildArtifactHandler(c *gin.Context) {
-	buildID, ok := ginutil.ParseParamUint(c, "buildid")
-	if !ok {
-		return
-	}
-	artifactID, ok := ginutil.ParseParamUint(c, "artifactId")
-	if !ok {
+	var buildID, artifactID uint
+	if ok := parseRequestData(c, nil,
+		uintParam{buildIDParamName, &buildID},
+		uintParam{artifactIDParamName, &artifactID}); !ok {
 		return
 	}
 
@@ -125,14 +129,15 @@ func (m ArtifactModule) getBuildArtifactHandler(c *gin.Context) {
 // @summary Get build tests results from .trx files
 // @tags artifact
 // @param buildid path int true "Build ID"
-// @success 200 {object} TestsResults
+// @success 200 {object} testsResults
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/tests-results [get]
 func (m ArtifactModule) getBuildTestsResultsHandler(c *gin.Context) {
-	buildID, ok := ginutil.ParseParamUint(c, "buildid")
-	if !ok {
+	var buildID uint
+	if ok := parseRequestData(c, nil,
+		uintParam{buildIDParamName, &buildID}); !ok {
 		return
 	}
 
@@ -183,13 +188,10 @@ func (m ArtifactModule) getBuildTestsResultsHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/artifact [post]
 func (m ArtifactModule) postBuildArtifactHandler(c *gin.Context) {
-	buildID, ok := ginutil.ParseParamUint(c, "buildid")
-	if !ok {
-		return
-	}
-
-	files, ok := parseMultipartFormData(c)
-	if !ok {
+	var buildID uint
+	files := []*file{}
+	if ok := parseRequestData(c, &files,
+		uintParam{buildIDParamName, &buildID}); !ok {
 		return
 	}
 
@@ -238,13 +240,10 @@ type file struct {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/test-result-data [put]
 func (m ArtifactModule) putTestResultDataHandler(c *gin.Context) {
-	buildID, ok := ginutil.ParseParamUint(c, "buildid")
-	if !ok {
-		return
-	}
-
-	files, ok := parseMultipartFormData(c)
-	if !ok {
+	var buildID uint
+	files := []*file{}
+	if ok := parseRequestData(c, &files,
+		uintParam{buildIDParamName, &buildID}); !ok {
 		return
 	}
 
@@ -355,8 +354,9 @@ func (m ArtifactModule) putTestResultDataHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/test-result-details [get]
 func (m ArtifactModule) getBuildAllTestResultDetailsHandler(c *gin.Context) {
-	buildID, ok := ginutil.ParseParamUint(c, "buildid")
-	if !ok {
+	var buildID uint
+	if ok := parseRequestData(c, nil,
+		uintParam{buildIDParamName, &buildID}); !ok {
 		return
 	}
 
@@ -384,13 +384,10 @@ func (m ArtifactModule) getBuildAllTestResultDetailsHandler(c *gin.Context) {
 // @success 200 {object} []TestResultDetail
 // @router /build/{buildid}/test-result-details/{artifactId} [get]
 func (m ArtifactModule) getBuildTestResultDetailsHandler(c *gin.Context) {
-	buildID, ok := ginutil.ParseParamUint(c, "buildid")
-	if !ok {
-		return
-	}
-
-	artifactID, ok := ginutil.ParseParamUint(c, "artifactId")
-	if !ok {
+	var buildID, artifactID uint
+	if ok := parseRequestData(c, nil,
+		uintParam{buildIDParamName, &buildID},
+		uintParam{artifactIDParamName, &artifactID}); !ok {
 		return
 	}
 
@@ -419,8 +416,9 @@ func (m ArtifactModule) getBuildTestResultDetailsHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Bad Gateway"
 // @router /build/{buildid}/test-results-summary [get]
 func (m ArtifactModule) getBuildTestResultsSummaryHandler(c *gin.Context) {
-	buildID, ok := ginutil.ParseParamUint(c, "buildid")
-	if !ok {
+	var buildID uint
+	if ok := parseRequestData(c, nil,
+		uintParam{buildIDParamName, &buildID}); !ok {
 		return
 	}
 
@@ -457,8 +455,9 @@ func (m ArtifactModule) getBuildTestResultsSummaryHandler(c *gin.Context) {
 // Returns a slice of file pointers on success, or an empty slice if there were
 // none but parsing was successful.
 func parseMultipartFormData(c *gin.Context) ([]*file, bool) {
-	buildID, ok := ginutil.ParseParamUint(c, "buildid")
-	if !ok {
+	var buildID uint
+	if ok := parseRequestData(c, nil,
+		uintParam{buildIDParamName, &buildID}); !ok {
 		return nil, false
 	}
 
@@ -625,4 +624,28 @@ func parseAsTRX(data []byte) ([]*TestResultDetail, *TestResultSummary, error) {
 	summary.Total = myTestRun.ResultSummary.Counters.Total
 
 	return details, &summary, nil
+}
+
+type uintParam struct {
+	name string
+	ptr  *uint
+}
+
+func parseRequestData(c *gin.Context, files *[]*file, params ...uintParam) bool {
+	var ok bool
+	if files != nil {
+		*files, ok = parseMultipartFormData(c)
+		if !ok {
+			return false
+		}
+	}
+
+	for _, param := range params {
+		*param.ptr, ok = ginutil.ParseParamUint(c, param.name)
+		if !ok {
+			return false
+		}
+	}
+
+	return true
 }
