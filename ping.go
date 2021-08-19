@@ -6,9 +6,9 @@ import (
 
 type HealthModule struct{}
 
-func (m HealthModule) Register(e *gin.Engine) {
-	e.GET("/", m.ping)
-	e.GET("/health", m.health)
+func (m HealthModule) Register(g *gin.RouterGroup) {
+	g.GET("/ping", m.ping)
+	g.GET("/health", m.health)
 }
 
 type Ping struct {

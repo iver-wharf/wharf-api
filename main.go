@@ -91,8 +91,6 @@ func main() {
 		r.Use(cors.New(corsConfig))
 	}
 
-	HealthModule{}.Register(r)
-
 	setupBasicAuth(r, config)
 
 	mq, err := GetMQConnection(config.MQ)
@@ -120,7 +118,8 @@ func main() {
 		BuildModule{Database: db, MessageQueue: mq},
 		TokenModule{Database: db},
 		BranchModule{Database: db},
-		ProviderModule{Database: db}}
+		ProviderModule{Database: db},
+		HealthModule{}}
 
 	api := r.Group("/api")
 	for _, module := range modules {
