@@ -42,17 +42,22 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
     - `PUT /build/{buildid}/test-result-data`
 
-      - This should be used instead of `POST /build/{buildid}/artifact` when uploading test result files.
+      - This should be used instead of `POST /build/{buildid}/artifact` when
+        uploading test result files.
 
     - `GET /build/{buildid}/test-result-details`
+
     - `GET /build/{buildid}/test-result-details/{artifactid}`
+
     - `GET /build/{buildid}/test-results-summary`
 
   - Deprecated endpoints
 
     - `GET /build/{buildid}/tests-results`
 
-      - Use `GET /build/{buildid}/test-results-summary` instead. Slightly different.
+      - Use `GET /build/{buildid}/test-results-summary` instead. The response
+        data has changed slightly; it has additional properties, and does not
+        have a `status` property.
 
 ## v4.1.1 (2021-07-12)
 

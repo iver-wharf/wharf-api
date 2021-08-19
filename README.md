@@ -29,7 +29,7 @@ optional config files. See the docs on the `Config` type over at:
 
 1. Install Go 1.16 or later: <https://golang.org/>
 
-2. Install dependencies using [GNU Make](https://www.gnu.org/software/make/) or 
+2. Install dependencies using [GNU Make](https://www.gnu.org/software/make/) or
    [GNUWin32](http://gnuwin32.sourceforge.net/install.html)
 
    ```console
