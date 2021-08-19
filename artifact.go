@@ -19,6 +19,7 @@ type ArtifactModule struct {
 	Database *gorm.DB
 }
 
+// SummaryOfTestResultSummaries contains data about several test result files.
 type SummaryOfTestResultSummaries struct {
 	BuildID   uint                `json:"buildId"`
 	Total     uint                `json:"total"`
@@ -149,24 +150,24 @@ func (m ArtifactModule) getBuildTestsResultsHandler(c *gin.Context) {
 		return
 	}
 
-	var testsResults TestsResults
-	var testRun TestRun
+	var myTestsResults testsResults
+	var myTestRun testRun
 
 	for _, testRunFile := range testRunFiles {
-		xml.Unmarshal(testRunFile.Data, &testRun)
-		testsResults.Passed += testRun.ResultSummary.Counters.Passed
-		testsResults.Failed += testRun.ResultSummary.Counters.Failed
+		xml.Unmarshal(testRunFile.Data, &myTestRun)
+		myTestsResults.Passed += myTestRun.ResultSummary.Counters.Passed
+		myTestsResults.Failed += myTestRun.ResultSummary.Counters.Failed
 	}
 
-	if testsResults.Failed == 0 && testsResults.Passed == 0 {
-		testsResults.Status = TestStatusNoTests
-	} else if testsResults.Failed == 0 {
-		testsResults.Status = TestStatusSuccess
+	if myTestsResults.Failed == 0 && myTestsResults.Passed == 0 {
+		myTestsResults.Status = testStatusNoTests
+	} else if myTestsResults.Failed == 0 {
+		myTestsResults.Status = testStatusSuccess
 	} else {
-		testsResults.Status = TestStatusFailed
+		myTestsResults.Status = testStatusFailed
 	}
 
-	c.JSON(http.StatusOK, testsResults)
+	c.JSON(http.StatusOK, myTestsResults)
 }
 
 // postBuildArtifactHandler godoc
@@ -500,96 +501,66 @@ func parseMultipartFormData(c *gin.Context) ([]*file, bool) {
 	return files, true
 }
 
-type TestStatus string
+type testStatus string
 
 const (
-	TestStatusSuccess TestStatus = "Success"
-	TestStatusFailed  TestStatus = "Failed"
-	TestStatusNoTests TestStatus = "No tests"
+	testStatusSuccess testStatus = "Success"
+	testStatusFailed  testStatus = "Failed"
+	testStatusNoTests testStatus = "No tests"
 )
 
-type TestsResults struct {
+type testsResults struct {
 	Passed uint       `json:"passed"`
 	Failed uint       `json:"failed"`
-	Status TestStatus `json:"status" enums:"Success,Failed,No tests"`
+	Status testStatus `json:"status" enums:"Success,Failed,No tests"`
 }
 
-type DeprecatedTestRun struct {
+type testRun struct {
 	XMLName       xml.Name      `xml:"TestRun"`
-	ResultSummary ResultSummary `xml:"ResultSummary"`
+	Results       results       `xml:"Results"`
+	ResultSummary resultSummary `xml:"ResultSummary"`
 }
 
-type DeprecatedResultSummary struct {
-	XMLName  xml.Name `xml:"ResultSummary"`
-	Counters Counters `xml:"Counters"`
-}
-
-type DeprecatedCounters struct {
-	XMLName             xml.Name `xml:"Counters"`
-	Total               uint     `xml:"total,attr"`
-	Executed            uint     `xml:"executed,attr"`
-	Passed              uint     `xml:"passed,attr"`
-	Failed              uint     `xml:"failed,attr"`
-	Error               uint     `xml:"error,attr"`
-	Timeout             uint     `xml:"timeout,attr"`
-	Aborted             uint     `xml:"aborted,attr"`
-	Inconclusive        uint     `xml:"inconclusive,attr"`
-	PassedButRunAborted uint     `xml:"passedButRunAborted,attr"`
-	NotRunnable         uint     `xml:"notRunnable,attr"`
-	NotExecuted         uint     `xml:"notExecuted,attr"`
-	Disconnected        uint     `xml:"disconnected,attr"`
-	Warning             uint     `xml:"warning,attr"`
-	Completed           uint     `xml:"completed,attr"`
-	InProgress          uint     `xml:"inProgress,attr"`
-	Pending             uint     `xml:"pending,attr"`
-}
-
-type TestRun struct {
-	XMLName       xml.Name      `xml:"TestRun"`
-	Results       Results       `xml:"Results"`
-	ResultSummary ResultSummary `xml:"ResultSummary"`
-}
-
-type Results struct {
+type results struct {
 	XMLName         xml.Name         `xml:"Results"`
-	UnitTestResults []UnitTestResult `xml:"UnitTestResult"`
+	UnitTestResults []unitTestResult `xml:"UnitTestResult"`
 }
 
-type UnitTestResult struct {
+type unitTestResult struct {
 	XMLName   xml.Name `xml:"UnitTestResult"`
 	TestName  string   `xml:"testName,attr"`
 	Duration  string   `xml:"duration,attr"`
 	StartTime string   `xml:"startTime,attr"`
 	EndTime   string   `xml:"endTime,attr"`
 	Outcome   string   `xml:"outcome,attr"`
-	Output    Output   `xml:"Output"`
+	Output    output   `xml:"Output"`
 }
 
-type Output struct {
+type output struct {
 	XMLName   xml.Name  `xml:"Output"`
-	ErrorInfo ErrorInfo `xml:"ErrorInfo"`
+	ErrorInfo errorInfo `xml:"ErrorInfo"`
 }
 
-type ErrorInfo struct {
+type errorInfo struct {
 	XMLName    xml.Name   `xml:"ErrorInfo"`
-	Message    Message    `xml:"Message"`
-	StackTrace StackTrace `xml:"StackTrace"`
+	Message    message    `xml:"Message"`
+	StackTrace stackTrace `xml:"StackTrace"`
 }
 
-type Message struct {
+type message struct {
 	InnerXML string `xml:",innerxml"`
 }
 
-type StackTrace struct {
+type stackTrace struct {
 	InnerXML string `xml:",innerxml"`
 }
 
-type ResultSummary struct {
+type resultSummary struct {
 	XMLName  xml.Name `xml:"ResultSummary"`
-	Counters Counters `xml:"Counters"`
+	Counters counters `xml:"Counters"`
 }
 
-type Counters struct {
+type counters struct {
 	XMLName             xml.Name `xml:"Counters"`
 	Total               uint     `xml:"total,attr"`
 	Executed            uint     `xml:"executed,attr"`
@@ -610,25 +581,25 @@ type Counters struct {
 }
 
 func parseAsTRX(data []byte) ([]*TestResultDetail, *TestResultSummary, error) {
-	var testRun TestRun
-	if err := xml.Unmarshal(data, &testRun); err != nil {
+	var myTestRun testRun
+	if err := xml.Unmarshal(data, &myTestRun); err != nil {
 		return []*TestResultDetail{}, &TestResultSummary{}, err
 	}
 
 	details := []*TestResultDetail{}
-	for _, utr := range testRun.Results.UnitTestResults {
+	for _, utr := range myTestRun.Results.UnitTestResults {
 		detail := TestResultDetail{}
 		detail.Name = utr.TestName
 
 		if utr.Outcome == "Passed" {
-			detail.Status = TestResultStatusSuccess
+			detail.Status = testResultStatusSuccess
 		} else if utr.Outcome == "Failed" {
-			detail.Status = TestResultStatusFailed
+			detail.Status = testResultStatusFailed
 		} else if utr.Outcome == "NotExecuted" {
-			detail.Status = TestResultStatusSkipped
+			detail.Status = testResultStatusSkipped
 		}
 
-		if detail.Status != TestResultStatusSuccess {
+		if detail.Status != testResultStatusSuccess {
 			detail.Message.SetValid(fmt.Sprintf("%s\n%s",
 				utr.Output.ErrorInfo.Message.InnerXML,
 				utr.Output.ErrorInfo.StackTrace.InnerXML))
@@ -648,10 +619,10 @@ func parseAsTRX(data []byte) ([]*TestResultDetail, *TestResultSummary, error) {
 	}
 
 	summary := TestResultSummary{}
-	summary.Failed = testRun.ResultSummary.Counters.Failed
-	summary.Passed = testRun.ResultSummary.Counters.Passed
-	summary.Skipped = testRun.ResultSummary.Counters.NotExecuted
-	summary.Total = testRun.ResultSummary.Counters.Total
+	summary.Failed = myTestRun.ResultSummary.Counters.Failed
+	summary.Passed = myTestRun.ResultSummary.Counters.Passed
+	summary.Skipped = myTestRun.ResultSummary.Counters.NotExecuted
+	summary.Total = myTestRun.ResultSummary.Counters.Total
 
 	return details, &summary, nil
 }

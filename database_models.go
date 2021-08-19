@@ -152,6 +152,7 @@ type Artifact struct {
 	Data       []byte `gorm:"nullable" json:"-"`
 }
 
+// TestResultSummary contains data about a single test result file.
 type TestResultSummary struct {
 	TestResultSummaryID uint      `gorm:"primaryKey" json:"testResultSummaryId"`
 	FileName            string    `gorm:"nullable" json:"fileName"`
@@ -165,15 +166,16 @@ type TestResultSummary struct {
 	Skipped             uint      `gorm:"not null" json:"skipped"`
 }
 
-type TestResultStatus string
+type testResultStatus string
 
 const (
-	TestResultStatusSuccess TestResultStatus = "Success"
-	TestResultStatusFailed  TestResultStatus = "Failed"
-	TestResultStatusNoTests TestResultStatus = "No tests"
-	TestResultStatusSkipped TestResultStatus = "Skipped"
+	testResultStatusSuccess testResultStatus = "Success"
+	testResultStatusFailed  testResultStatus = "Failed"
+	testResultStatusNoTests testResultStatus = "No tests"
+	testResultStatusSkipped testResultStatus = "Skipped"
 )
 
+// TestResultDetail contains data about a single test in a test result file.
 type TestResultDetail struct {
 	TestResultDetailID uint             `gorm:"primaryKey" json:"testResultDetailId"`
 	ArtifactID         uint             `gorm:"not null;index:testresultdetail_idx_artifact_id" json:"artifactId"`
@@ -184,5 +186,5 @@ type TestResultDetail struct {
 	Message            null.String      `gorm:"nullable" json:"message" swaggertype:"string"`
 	StartedOn          *time.Time       `gorm:"nullable;default:NULL;" json:"startedOn" format:"date-time"`
 	CompletedOn        *time.Time       `gorm:"nullable;default:NULL;" json:"completedOn" format:"date-time"`
-	Status             TestResultStatus `gorm:"not null" enums:"Failed,Passed,Skipped" json:"status"`
+	Status             testResultStatus `gorm:"not null" enums:"Failed,Passed,Skipped" json:"status"`
 }
