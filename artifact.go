@@ -32,12 +32,11 @@ func (m ArtifactModule) Register(g *gin.RouterGroup) {
 	g.GET("/artifacts", m.getBuildArtifactsHandler)
 	g.GET("/artifact/:artifactId", m.getBuildArtifactHandler)
 	g.POST("/artifact", m.postBuildArtifactHandler)
-	// implemented
 	g.PUT("/test-result-data", m.putTestResultDataHandler)
 	g.GET("/test-result-details", m.getBuildAllTestResultDetailsHandler)
 	g.GET("/test-result-details/:artifactId", m.getBuildTestResultDetailsHandler)
 	g.GET("/test-results-summary", m.getBuildTestResultsSummaryHandler)
-	// old, deprecated
+	// deprecated
 	g.GET("/tests-results", m.getBuildTestsResultsHandler)
 }
 
