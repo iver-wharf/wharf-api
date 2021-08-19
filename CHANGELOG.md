@@ -25,6 +25,8 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
 - Added Makefile to simplify building and developing the project locally. (#41)
 
+- Fixed `/health` and `/ping` endpoints.
+
 ## v4.1.1 (2021-07-12)
 
 - Changed version of Docker base images:
