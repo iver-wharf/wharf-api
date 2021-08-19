@@ -25,6 +25,24 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
 - Added Makefile to simplify building and developing the project locally. (#41)
 
+- Reworked handling of test results. (#43)
+
+  - New endpoints
+
+    - `PUT /build/{buildid}/test-result-data`
+
+      - This should be used instead of `POST /build/{buildid}/artifact` when uploading test result files.
+
+    - `GET /build/{buildid}/test-result-details`
+    - `GET /build/{buildid}/test-result-details/{artifactid}`
+    - `GET /build/{buildid}/test-results-summary`
+
+  - Deprecated endpoints
+
+    - `GET /build/{buildid}/tests-results`
+
+      - Use `GET /build/{buildid}/test-results-summary` instead. Slightly different.
+
 ## v4.1.1 (2021-07-12)
 
 - Changed version of Docker base images:
