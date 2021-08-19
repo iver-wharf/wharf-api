@@ -656,7 +656,7 @@ func parseBuildAndArtifactID(c *gin.Context) (buildID, artifactID uint, ok bool)
 	return buildID, artifactID, ok
 }
 
-func parseBuildAndArtifactIdAndFiles(c *gin.Context) (buildID, artifactID uint, files []*file, ok bool) {
+func parseBuildAndArtifactIDAndFiles(c *gin.Context) (buildID, artifactID uint, files []*file, ok bool) {
 	ok = parseRequestData(c, &files,
 		uintParam{buildIDParamName, &buildID},
 		uintParam{artifactIDParamName, &artifactID})
