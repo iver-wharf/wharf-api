@@ -25,6 +25,8 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
 - Added Makefile to simplify building and developing the project locally. (#41)
 
+- Added new endpoints `/api/ping` and `/api/health`. (#44)
+
 - Deprecated `/` and `/health` endpoints, soon to be moved to `/api/ping` and
   `/api/health` respectively, so they are aligned with the current Swagger
   documentation. (#44)
