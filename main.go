@@ -91,6 +91,8 @@ func main() {
 		r.Use(cors.New(corsConfig))
 	}
 
+	HealthModule{}.DeprecatedRegister(r)
+
 	setupBasicAuth(r, config)
 
 	mq, err := GetMQConnection(config.MQ)

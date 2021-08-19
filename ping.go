@@ -11,6 +11,11 @@ func (m HealthModule) Register(g *gin.RouterGroup) {
 	g.GET("/health", m.health)
 }
 
+func (m HealthModule) DeprecatedRegister(e *gin.Engine) {
+	e.GET("/", m.ping)
+	e.GET("/health", m.health)
+}
+
 type Ping struct {
 	Message string `json:"message"`
 }
