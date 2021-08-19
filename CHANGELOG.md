@@ -14,6 +14,9 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
 ## v4.2.0 (WIP)
 
+- Added support for the TZ environment variable (setting timezones ex.
+  `"Europe/Stockholm"`) through the tzdata package. (#40)
+
 - Added config loading from YAML files using
   `github.com/iver-wharf/wharf-core/pkg/config` together with new config models
   for configuring wharf-api. See `config.go` or the reference documentation on
