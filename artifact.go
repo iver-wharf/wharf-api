@@ -176,7 +176,7 @@ func (m ArtifactModule) getBuildTestsResultsHandler(c *gin.Context) {
 // @tags artifact
 // @accept multipart/form-data
 // @param buildid path int true "Build ID"
-// @param file formData file true "build artifact file"
+// @param file formData file true "Build artifact file"
 // @success 201 {object} string "Added new artifacts"
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
@@ -228,7 +228,7 @@ type file struct {
 // @tags artifact
 // @accept multipart/form-data
 // @param buildid path int true "Build ID"
-// @param file formData file true "test result data artifact file"
+// @param file formData file true "Test result artifact file"
 // @success 201 {object} SummaryOfTestResultSummaries "Added new test result data and created summary"
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 502 {object} problem.Response "Database is unreachable"
