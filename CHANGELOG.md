@@ -29,6 +29,9 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Added Makefile to simplify building and developing the project locally.
   (#41, #42)
 
+- Added documentation to the remaining types in the project. No more linting
+  errors! (#46)
+
 ## v4.1.1 (2021-07-12)
 
 - Changed version of Docker base images:
