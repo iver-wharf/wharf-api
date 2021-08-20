@@ -4,13 +4,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type HealthModule struct{}
+type healthModule struct{}
 
-func (m HealthModule) Register(e *gin.Engine) {
+func (m healthModule) Register(e *gin.Engine) {
 	e.GET("/", m.ping)
 	e.GET("/health", m.health)
 }
 
+// Ping pongs.
 type Ping struct {
 	Message string `json:"message"`
 }
@@ -22,10 +23,12 @@ type Ping struct {
 // @produce json
 // @success 200 {object} Ping
 // @router /ping [get]
-func (m HealthModule) ping(c *gin.Context) {
+func (m healthModule) ping(c *gin.Context) {
 	c.JSON(200, Ping{Message: "pong"})
 }
 
+// HealthStatus holds a human-readable string stating the health of the API and
+// its integrations, as well as a boolean for easy machine-readability.
 type HealthStatus struct {
 	Message   string `example:"API is healthy." json:"message"`
 	IsHealthy bool   `example:"true" json:"isHealthy"`
@@ -38,6 +41,6 @@ type HealthStatus struct {
 // @produce json
 // @success 200 {object} HealthStatus
 // @router /health [get]
-func (m HealthModule) health(c *gin.Context) {
+func (m healthModule) health(c *gin.Context) {
 	c.JSON(200, HealthStatus{Message: "API is healthy.", IsHealthy: true})
 }

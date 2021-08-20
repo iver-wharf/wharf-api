@@ -12,18 +12,18 @@ import (
 	"gorm.io/gorm/schema"
 )
 
-func (p *Project) MarshalJSON() ([]byte, error) {
+func (p *Project) marshalJSON() ([]byte, error) {
 	type Alias Project
 	return json.Marshal(&struct {
 		ParsedBuildDefinition interface{} `json:"build"`
 		*Alias
 	}{
-		ParsedBuildDefinition: ParseBuildDefinition(p),
+		ParsedBuildDefinition: parseBuildDefinition(p),
 		Alias:                 (*Alias)(p),
 	})
 }
 
-func ParseBuildDefinition(project *Project) interface{} {
+func parseBuildDefinition(project *Project) interface{} {
 	if project.BuildDefinition != "" {
 		var t interface{}
 		err := yaml.Unmarshal([]byte(project.BuildDefinition), &t)
@@ -41,7 +41,7 @@ func ParseBuildDefinition(project *Project) interface{} {
 	return nil
 }
 
-func (b *Build) MarshalJSON() ([]byte, error) {
+func (b *Build) marshalJSON() ([]byte, error) {
 	type Alias Build
 	return json.Marshal(&struct {
 		Status string `json:"status"`

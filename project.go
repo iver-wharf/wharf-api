@@ -23,22 +23,25 @@ import (
 	"gorm.io/gorm"
 )
 
-type ProjectModule struct {
+type projectModule struct {
 	Database     *gorm.DB
 	MessageQueue *messagebus.MQConnection
 	Config       *Config
 }
 
+// PaginatedBuilds is a list of builds as well as an explicit total cound field.
 type PaginatedBuilds struct {
 	Builds     *[]Build `json:"builds"`
 	TotalCount int64    `json:"totalCount"`
 }
 
+// BuildReferenceWrapper holds a build reference. A unique identifier to a
+// build.
 type BuildReferenceWrapper struct {
 	BuildReference string `json:"buildRef"`
 }
 
-func (m ProjectModule) Register(g *gin.RouterGroup) {
+func (m projectModule) Register(g *gin.RouterGroup) {
 	projects := g.Group("/projects")
 	{
 		projects.GET("", m.getProjectsHandler)
@@ -56,7 +59,7 @@ func (m ProjectModule) Register(g *gin.RouterGroup) {
 	}
 }
 
-func (m ProjectModule) FindProjectByID(id uint) (Project, error) {
+func (m projectModule) FindProjectByID(id uint) (Project, error) {
 	var project Project
 	err := m.Database.Set("gorm:auto_preload", false).
 		Where(&Project{ProjectID: id}).
@@ -78,7 +81,7 @@ func (m ProjectModule) FindProjectByID(id uint) (Project, error) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @router /projects [get]
-func (m ProjectModule) getProjectsHandler(c *gin.Context) {
+func (m projectModule) getProjectsHandler(c *gin.Context) {
 	var projects []Project
 	err := m.Database.
 		Preload(projectAssocProvider).
@@ -101,7 +104,7 @@ func (m ProjectModule) getProjectsHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @router /projects/search [post]
-func (m ProjectModule) searchProjectsHandler(c *gin.Context) {
+func (m projectModule) searchProjectsHandler(c *gin.Context) {
 	var query Project
 	if err := c.ShouldBindJSON(&query); err != nil {
 		ginutil.WriteInvalidBindError(c, err,
@@ -133,7 +136,7 @@ func (m ProjectModule) searchProjectsHandler(c *gin.Context) {
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /projects/{projectid}/builds [get]
-func (m ProjectModule) getBuildsSliceHandler(c *gin.Context) {
+func (m projectModule) getBuildsSliceHandler(c *gin.Context) {
 	projectID, ok := ginutil.ParseParamUint(c, "projectid")
 	if !ok {
 		return
@@ -186,7 +189,7 @@ func (m ProjectModule) getBuildsSliceHandler(c *gin.Context) {
 // @failure 404 {object} problem.Response "Project not found"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /project/{projectid} [get]
-func (m ProjectModule) getProjectHandler(c *gin.Context) {
+func (m projectModule) getProjectHandler(c *gin.Context) {
 	projectID, ok := ginutil.ParseParamUint(c, "projectid")
 	if !ok {
 		return
@@ -217,7 +220,7 @@ func (m ProjectModule) getProjectHandler(c *gin.Context) {
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /project [post]
-func (m ProjectModule) postProjectHandler(c *gin.Context) {
+func (m projectModule) postProjectHandler(c *gin.Context) {
 	var project Project
 
 	if err := c.ShouldBindJSON(&project); err != nil {
@@ -284,7 +287,7 @@ func (m ProjectModule) postProjectHandler(c *gin.Context) {
 // @failure 404 {object} problem.Response "Project to delete is not found"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @router /project/{projectid} [delete]
-func (m ProjectModule) deleteProjectHandler(c *gin.Context) {
+func (m projectModule) deleteProjectHandler(c *gin.Context) {
 	projectID, ok := ginutil.ParseParamUint(c, "projectid")
 	if !ok {
 		return
@@ -322,7 +325,7 @@ func (m ProjectModule) deleteProjectHandler(c *gin.Context) {
 // @failure 404 {object} problem.Response "Project to update was not found"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /project [put]
-func (m ProjectModule) putProjectHandler(c *gin.Context) {
+func (m projectModule) putProjectHandler(c *gin.Context) {
 	var project Project
 	err := c.ShouldBindJSON(&project)
 	if err != nil {
@@ -398,7 +401,7 @@ func (m ProjectModule) putProjectHandler(c *gin.Context) {
 // @failure 404 {object} problem.Response "Project was not found"
 // @failure 502 {object} problem.Response "Database or code execution engine is unreachable"
 // @router /project/{projectid}/{stage}/run [post]
-func (m ProjectModule) runStageHandler(c *gin.Context) {
+func (m projectModule) runStageHandler(c *gin.Context) {
 	projectID, ok := ginutil.ParseParamUint(c, "projectid")
 	if !ok {
 		return
@@ -451,7 +454,7 @@ func (m ProjectModule) runStageHandler(c *gin.Context) {
 		return
 	}
 
-	buildParams, err := ParseBuildParams(build.BuildID, []byte(project.BuildDefinition), body)
+	buildParams, err := parseBuildParams(build.BuildID, []byte(project.BuildDefinition), body)
 	if err != nil {
 		build.IsInvalid = true
 		if saveErr := m.Database.Save(&build).Error; saveErr != nil {
@@ -522,7 +525,7 @@ func (m ProjectModule) runStageHandler(c *gin.Context) {
 
 	if m.Config.CI.MockTriggerResponse {
 		log.Info().Message("Setting for mocking build triggers was true, mocking CI response.")
-		c.JSON(http.StatusOK, build.BuildReferenceWrapper())
+		c.JSON(http.StatusOK, build.buildReferenceWrapper())
 		return
 	}
 
@@ -544,26 +547,26 @@ func (m ProjectModule) runStageHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, build.BuildReferenceWrapper())
+	c.JSON(http.StatusOK, build.buildReferenceWrapper())
 }
 
-func (b Build) BuildReferenceWrapper() BuildReferenceWrapper {
+func (b Build) buildReferenceWrapper() BuildReferenceWrapper {
 	return BuildReferenceWrapper{BuildReference: strconv.FormatUint(uint64(b.BuildID), 10)}
 }
 
-func (m ProjectModule) FindBranches(projectID uint) ([]Branch, error) {
+func (m projectModule) FindBranches(projectID uint) ([]Branch, error) {
 	var branches []Branch
 	m.Database.Where(&Branch{ProjectID: projectID}).Find(&branches)
 	return branches, nil
 }
 
-func (m ProjectModule) FindProvider(providerID uint) (Provider, error) {
+func (m projectModule) FindProvider(providerID uint) (Provider, error) {
 	var provider Provider
 	m.Database.Where(&Provider{ProviderID: providerID}).Find(&provider)
 	return provider, nil
 }
 
-func (m ProjectModule) SaveBuildParams(params []BuildParam) error {
+func (m projectModule) SaveBuildParams(params []BuildParam) error {
 	for _, p := range params {
 		if err := m.Database.Create(&p).Error; err != nil {
 			return err
@@ -572,7 +575,7 @@ func (m ProjectModule) SaveBuildParams(params []BuildParam) error {
 	return nil
 }
 
-func ParseBuildParams(buildID uint, buildDef []byte, vars []byte) ([]BuildParam, error) {
+func parseBuildParams(buildID uint, buildDef []byte, vars []byte) ([]BuildParam, error) {
 	type BuildDefinition struct {
 		Inputs []struct {
 			Name    string
@@ -701,7 +704,7 @@ func getParams(project Project, build Build, vars []BuildParam, wharfInstanceID 
 
 var defaultGetBuildsOrderBy = orderby.OrderBy{Column: buildColumnBuildID, Direction: orderby.Desc}
 
-func (m ProjectModule) getBuilds(projectID uint, limit int, offset int, orderBySlice []orderby.OrderBy) ([]Build, error) {
+func (m projectModule) getBuilds(projectID uint, limit int, offset int, orderBySlice []orderby.OrderBy) ([]Build, error) {
 	var builds []Build
 	var query = m.Database.
 		Where(&Build{ProjectID: projectID}).
@@ -714,7 +717,7 @@ func (m ProjectModule) getBuilds(projectID uint, limit int, offset int, orderByS
 	return builds, nil
 }
 
-func (m ProjectModule) getBuildsCount(projectID uint) (int64, error) {
+func (m projectModule) getBuildsCount(projectID uint) (int64, error) {
 	var count int64
 	if err := m.Database.
 		Model(&Build{}).

@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// OrderBy specifies a column or field to be sorted and its sorting direction.
 type OrderBy struct {
 	Column    string
 	Direction Direction

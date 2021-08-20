@@ -19,6 +19,9 @@ const (
 	providerFieldTokenID   = "TokenID"
 )
 
+// Provider holds metadata about a connection to a remote provider. Some of
+// importance are the URL field of where to find the remote, and the token field
+// used to authenticate.
 type Provider struct {
 	ProviderID uint   `gorm:"primaryKey" json:"providerId"`
 	Name       string `gorm:"size:20;not null" json:"name" enum:"azuredevops,gitlab,github"`
@@ -33,6 +36,7 @@ const (
 	tokenFieldUserName = "UserName"
 )
 
+// Token holds credentials for a remote provider.
 type Token struct {
 	TokenID  uint   `gorm:"primaryKey" json:"tokenId"`
 	Token    string `gorm:"size:500; not null" json:"token" format:"password"`
@@ -49,6 +53,9 @@ const (
 	projectAssocToken     = "Token"
 )
 
+// Project holds data about an imported project. A lot of the data is expected
+// to be populated with data from the remote provider, such as the description
+// and avatar.
 type Project struct {
 	ProjectID       uint      `gorm:"primaryKey" json:"projectId"`
 	Name            string    `gorm:"size:500;not null" json:"name"`
@@ -71,6 +78,8 @@ const (
 	branchFieldTokenID   = "TokenID"
 )
 
+// Branch is a single branch in the VCS that can be targeted during builds.
+// For example a Git branch.
 type Branch struct {
 	BranchID  uint     `gorm:"primaryKey" json:"branchId"`
 	ProjectID uint     `gorm:"not null;index:branch_idx_project_id" json:"projectId"`
@@ -98,6 +107,8 @@ var buildJSONToColumns = map[string]string{
 	"isInvalid":   "is_invalid",
 }
 
+// Build holds data about the state of a build. Which parameters was used to
+// start it, what status it holds, et.al.
 type Build struct {
 	BuildID     uint         `gorm:"primaryKey" json:"buildId"`
 	StatusID    BuildStatus  `gorm:"not null" json:"statusId"`
@@ -113,6 +124,7 @@ type Build struct {
 	IsInvalid   bool         `gorm:"not null;default:false" json:"isInvalid"`
 }
 
+// BuildParam holds the name and value of an input parameter fed into a build.
 type BuildParam struct {
 	BuildParamID uint   `gorm:"primaryKey" json:"-"`
 	BuildID      uint   `gorm:"not null;index:buildparam_idx_build_id" json:"buildId"`
@@ -121,6 +133,7 @@ type BuildParam struct {
 	Value        string `gorm:"nullable" json:"value"`
 }
 
+// Log is a single logged line for a build.
 type Log struct {
 	LogID     uint      `gorm:"primaryKey" json:"logId"`
 	BuildID   uint      `gorm:"not null;index:log_idx_build_id" json:"buildId"`
@@ -129,6 +142,7 @@ type Log struct {
 	Timestamp time.Time `gorm:"not null" json:"timestamp" format:"date-time"`
 }
 
+// Param holds the definition of a input parameter for a project.
 type Param struct {
 	ParamID      int    `gorm:"primaryKey" json:"id"`
 	Name         string `gorm:"not null" json:"name"`
@@ -142,6 +156,8 @@ const (
 	artifactColumnFileName   = "file_name"
 )
 
+// Artifact holds the binary data as well as metadata about that binary such as
+// the file name and which build it belongs to.
 type Artifact struct {
 	ArtifactID uint   `gorm:"primaryKey" json:"artifactId"`
 	BuildID    uint   `gorm:"not null;index:param_idx_build_id" json:"buildId"`
