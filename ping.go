@@ -11,6 +11,8 @@ func (m HealthModule) Register(g *gin.RouterGroup) {
 	g.GET("/health", m.health)
 }
 
+// Deprecated because they are not part of the /api group for endpoints.
+// Tentatively planned for complete removal in v6.
 func (m HealthModule) DeprecatedRegister(e *gin.Engine) {
 	e.GET("/", m.ping)
 	e.GET("/health", m.health)
