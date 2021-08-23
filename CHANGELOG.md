@@ -29,6 +29,13 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Added Makefile to simplify building and developing the project locally.
   (#41, #42)
 
+- Added wharf-core logging for Gin debug and errors logging. (#45)
+
+- Added wharf-core logging for GORM debug logging. (#45)
+
+- Changed version of `github.com/iver-wharf/wharf-core` from v1.0.0 to v1.1.0.
+  (#45)
+
 - Added documentation to the remaining types in the project. No more linting
   errors! (#46)
 

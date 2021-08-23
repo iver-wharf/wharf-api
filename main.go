@@ -79,10 +79,15 @@ func main() {
 
 	r := gin.New()
 	r.Use(
-		//disable GIN logs for path "/health". Probes won't clog up logs now.
-		gin.LoggerWithWriter(gin.DefaultWriter, "/health"),
-		gin.CustomRecovery(ginutil.RecoverProblemHandle),
+		ginutil.LoggerWithConfig(ginutil.LoggerConfig{
+			//disable GIN logs for path "/health". Probes won't clog up logs now.
+			SkipPaths: []string{"/health"},
+		}),
+		ginutil.RecoverProblem,
 	)
+
+	gin.DefaultWriter = ginutil.DefaultLoggerWriter
+	gin.DefaultErrorWriter = ginutil.DefaultLoggerWriter
 
 	if config.HTTP.CORS.AllowAllOrigins {
 		log.Info().Message("Allowing all origins in CORS.")
