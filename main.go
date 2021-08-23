@@ -116,8 +116,8 @@ func main() {
 		r.Use(cors.New(corsConfig))
 	}
 
-  healthModule{}.DeprecatedRegister(r)
-  healthModule{}.Register(r.Group("/api"))
+	healthModule{}.DeprecatedRegister(r)
+	healthModule{}.Register(r.Group("/api"))
 
 	setupBasicAuth(r, config)
 
