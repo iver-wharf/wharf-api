@@ -6,24 +6,25 @@ import (
 	"time"
 
 	"github.com/ghodss/yaml"
+	"github.com/iver-wharf/wharf-core/pkg/gormutil"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
 )
 
-func (p *Project) MarshalJSON() ([]byte, error) {
+func (p *Project) marshalJSON() ([]byte, error) {
 	type Alias Project
 	return json.Marshal(&struct {
 		ParsedBuildDefinition interface{} `json:"build"`
 		*Alias
 	}{
-		ParsedBuildDefinition: ParseBuildDefinition(p),
+		ParsedBuildDefinition: parseBuildDefinition(p),
 		Alias:                 (*Alias)(p),
 	})
 }
 
-func ParseBuildDefinition(project *Project) interface{} {
+func parseBuildDefinition(project *Project) interface{} {
 	if project.BuildDefinition != "" {
 		var t interface{}
 		err := yaml.Unmarshal([]byte(project.BuildDefinition), &t)
@@ -41,7 +42,7 @@ func ParseBuildDefinition(project *Project) interface{} {
 	return nil
 }
 
-func (b *Build) MarshalJSON() ([]byte, error) {
+func (b *Build) marshalJSON() ([]byte, error) {
 	type Alias Build
 	return json.Marshal(&struct {
 		Status string `json:"status"`
@@ -61,10 +62,17 @@ func openDatabase(config DBConfig) (*gorm.DB, error) {
 		config.Username,
 		config.Password)
 
+	var gormConfig = gorm.Config{
+		NamingStrategy: schema.NamingStrategy{
+			SingularTable: true,
+		},
+		Logger: getLogger(config),
+	}
+
 	var db *gorm.DB
 	var err error
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
-		db, err = gorm.Open(postgres.Open(psqlInfo), &gorm.Config{})
+		db, err = gorm.Open(postgres.Open(psqlInfo), &gormConfig)
 		if err == nil {
 			break
 		}
@@ -89,12 +97,7 @@ func openDatabase(config DBConfig) (*gorm.DB, error) {
 		config.Password,
 		config.Name)
 
-	db, err = gorm.Open(postgres.Open(psqlInfo), &gorm.Config{
-		NamingStrategy: schema.NamingStrategy{
-			SingularTable: true,
-		},
-		Logger: getLogger(config),
-	})
+	db, err = gorm.Open(postgres.Open(psqlInfo), &gormConfig)
 	if err != nil {
 		return db, err
 	}
@@ -119,7 +122,7 @@ func openDatabase(config DBConfig) (*gorm.DB, error) {
 
 func getLogger(config DBConfig) logger.Interface {
 	if config.Log {
-		return logger.Default.LogMode(logger.Info)
+		return gormutil.DefaultLogger
 	}
 	return logger.Default.LogMode(logger.Silent)
 }

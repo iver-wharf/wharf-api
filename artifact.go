@@ -14,41 +14,56 @@ import (
 	"gorm.io/gorm"
 )
 
-type ArtifactModule struct {
+type artifactModule struct {
 	Database *gorm.DB
 }
 
-type TestRun struct {
+type testRun struct {
 	XMLName       xml.Name      `xml:"TestRun"`
-	ResultSummary ResultSummary `xml:"ResultSummary"`
+	ResultSummary resultSummary `xml:"ResultSummary"`
 }
 
-type ResultSummary struct {
+type resultSummary struct {
 	XMLName  xml.Name `xml:"ResultSummary"`
-	Counters Counters `xml:"Counters"`
+	Counters counters `xml:"Counters"`
 }
 
-type Counters struct {
+type counters struct {
 	XMLName xml.Name `xml:"Counters"`
 	Passed  int      `xml:"passed,attr"`
 	Failed  int      `xml:"failed,attr"`
 }
 
+// TestStatus is an enum of different states a test run or test summary can be
+// in.
 type TestStatus string
 
 const (
+	// TestStatusSuccess means the test run or test summary passed, or in the
+	// case that there are multiple tests then that there are no failing tests
+	// and at least one successful test.
 	TestStatusSuccess TestStatus = "Success"
-	TestStatusFailed  TestStatus = "Failed"
+
+	// TestStatusFailed means the test run or test summary failed, or in the
+	// case that there are multiple tests then that at least one test failed.
+	TestStatusFailed TestStatus = "Failed"
+
+	// TestStatusNoTests means the test run or test summary is inconclusive,
+	// where there are neither any passing nor failing tests.
 	TestStatusNoTests TestStatus = "No tests"
 )
 
+// TestsResults holds how many builds has passed and failed. A test result has
+// the status of "Failed" if there are any failed tests, "Success" if there are
+// any passing tests and no failed tests, and "No tests" if there are no failed
+// nor passing tests.
 type TestsResults struct {
 	Passed int        `json:"passed"`
 	Failed int        `json:"failed"`
 	Status TestStatus `json:"status" enums:"Success,Failed,No tests"`
 }
 
-func (m ArtifactModule) Register(g *gin.RouterGroup) {
+func (m artifactModule) Register(g *gin.RouterGroup) {
 	g.GET("/artifacts", m.getBuildArtifactsHandler)
 	g.GET("/artifact/:artifactId", m.getBuildArtifactHandler)
 	g.GET("/tests-results", m.getBuildTestsResultsHandler)
@@ -64,7 +79,7 @@ func (m ArtifactModule) Register(g *gin.RouterGroup) {
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/artifacts [get]
-func (m ArtifactModule) getBuildArtifactsHandler(c *gin.Context) {
+func (m artifactModule) getBuildArtifactsHandler(c *gin.Context) {
 	buildID, ok := ginutil.ParseParamUint(c, "buildid")
 	if !ok {
 		return
@@ -96,7 +111,7 @@ func (m ArtifactModule) getBuildArtifactsHandler(c *gin.Context) {
 // @failure 404 {object} problem.Response "Artifact not found"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/artifact/{artifactId} [get]
-func (m ArtifactModule) getBuildArtifactHandler(c *gin.Context) {
+func (m artifactModule) getBuildArtifactHandler(c *gin.Context) {
 	buildID, ok := ginutil.ParseParamUint(c, "buildid")
 	if !ok {
 		return
@@ -143,7 +158,7 @@ func (m ArtifactModule) getBuildArtifactHandler(c *gin.Context) {
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/tests-results [get]
-func (m ArtifactModule) getBuildTestsResultsHandler(c *gin.Context) {
+func (m artifactModule) getBuildTestsResultsHandler(c *gin.Context) {
 	buildID, ok := ginutil.ParseParamUint(c, "buildid")
 	if !ok {
 		return
@@ -163,24 +178,24 @@ func (m ArtifactModule) getBuildTestsResultsHandler(c *gin.Context) {
 		return
 	}
 
-	var testsResults TestsResults
-	var testRun TestRun
+	var results TestsResults
+	var run testRun
 
 	for _, testRunFile := range testRunFiles {
-		xml.Unmarshal(testRunFile.Data, &testRun)
-		testsResults.Passed += testRun.ResultSummary.Counters.Passed
-		testsResults.Failed += testRun.ResultSummary.Counters.Failed
+		xml.Unmarshal(testRunFile.Data, &run)
+		results.Passed += run.ResultSummary.Counters.Passed
+		results.Failed += run.ResultSummary.Counters.Failed
 	}
 
-	if testsResults.Failed == 0 && testsResults.Passed == 0 {
-		testsResults.Status = TestStatusNoTests
-	} else if testsResults.Failed == 0 {
-		testsResults.Status = TestStatusSuccess
+	if results.Failed == 0 && results.Passed == 0 {
+		results.Status = TestStatusNoTests
+	} else if results.Failed == 0 {
+		results.Status = TestStatusSuccess
 	} else {
-		testsResults.Status = TestStatusFailed
+		results.Status = TestStatusFailed
 	}
 
-	c.JSON(http.StatusOK, testsResults)
+	c.JSON(http.StatusOK, results)
 }
 
 // postBuildArtifactHandler godoc
@@ -195,7 +210,7 @@ func (m ArtifactModule) getBuildTestsResultsHandler(c *gin.Context) {
 // @failure 404 {object} problem.Response "Artifact not found"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/artifact [post]
-func (m ArtifactModule) postBuildArtifactHandler(c *gin.Context) {
+func (m artifactModule) postBuildArtifactHandler(c *gin.Context) {
 	buildID, ok := ginutil.ParseParamUint(c, "buildid")
 	if !ok {
 		return

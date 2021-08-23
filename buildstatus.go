@@ -2,12 +2,21 @@ package main
 
 import "strconv"
 
+// BuildStatus is an enum of different states for a build.
 type BuildStatus int
 
 const (
-	BuildScheduling = BuildStatus(iota)
+	// BuildScheduling means the build has been registered, but no code
+	// execution has begun yet. This is usually quite an ephemeral state.
+	BuildScheduling BuildStatus = iota
+	// BuildRunning means the build is executing right now. The execution
+	// engine has load in the target code paths and repositories.
 	BuildRunning
+	// BuildCompleted means the build has finished execution successfully.
 	BuildCompleted
+	// BuildFailed means that something went wrong with the build. Could be a
+	// misconfiguration in the .wharf-ci.yml file, or perhaps a scripting error
+	// in some build step.
 	BuildFailed
 )
 
@@ -33,6 +42,6 @@ var toID = map[string]BuildStatus{
 	"Failed":     BuildFailed,
 }
 
-func ParseBuildStatus(name string) BuildStatus {
+func parseBuildStatus(name string) BuildStatus {
 	return toID[name]
 }

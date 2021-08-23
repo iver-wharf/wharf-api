@@ -4,10 +4,15 @@ import (
 	"fmt"
 )
 
+// Direction tells if an ordering is in ascending order or descending order.
 type Direction byte
 
 const (
+	// Asc means "ascending sorting order". For example the numbers 1, 2, 3, 4
+	// are in ascending order, as well as the letters A, B, C, D.
 	Asc Direction = iota + 1
+	// Desc means "descending sorting order". For example the numbers 4, 3, 2, 1
+	// are in descending order, as well as the letters D, C, B, A.
 	Desc
 )
 

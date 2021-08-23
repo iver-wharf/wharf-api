@@ -56,7 +56,7 @@ inputs:
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := ParseBuildParams(tc.buildID, tc.buildDef, tc.params)
+			got, err := parseBuildParams(tc.buildID, tc.buildDef, tc.params)
 			require.Nil(t, err)
 			assert.Equal(t, len(tc.want), len(got))
 

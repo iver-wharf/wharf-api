@@ -12,23 +12,40 @@ import (
 	"gorm.io/gorm"
 )
 
-type ProviderName int
+// ProviderName is an enum of different providers that are available over at
+// https://github.com/iver-wharf
+type ProviderName byte
 
 const (
-	Azuredevops ProviderName = 0 + iota
-	Gitlab
-	Github
+	// ProviderAzureDevOps refers to the Azure DevOps provider plugin,
+	// https://github.com/iver-wharf/wharf-provider-azuredevops
+	ProviderAzureDevOps ProviderName = iota
+	// ProviderGitLab refers to the GitLab provider plugin,
+	// https://github.com/iver-wharf/wharf-provider-gitlab
+	ProviderGitLab
+	// ProviderGitHub refers to the GitHub provider plugin,
+	// https://github.com/iver-wharf/wharf-provider-github
+	ProviderGitHub
 )
 
 func (provider ProviderName) toString() string {
-	return [...]string{"azuredevops", "gitlab", "github"}[provider]
+	switch provider {
+	case ProviderAzureDevOps:
+		return "azuredevops"
+	case ProviderGitLab:
+		return "gitlab"
+	case ProviderGitHub:
+		return "github"
+	default:
+		return fmt.Sprintf("ProviderName(%d)", byte(provider))
+	}
 }
 
-type ProviderModule struct {
+type providerModule struct {
 	Database *gorm.DB
 }
 
-func (m ProviderModule) Register(g *gin.RouterGroup) {
+func (m providerModule) Register(g *gin.RouterGroup) {
 	providers := g.Group("/providers")
 	{
 		providers.GET("", m.getProvidersHandler)
@@ -50,7 +67,7 @@ func (m ProviderModule) Register(g *gin.RouterGroup) {
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /providers [get]
-func (m ProviderModule) getProvidersHandler(c *gin.Context) {
+func (m providerModule) getProvidersHandler(c *gin.Context) {
 	var providers []Provider
 	err := m.Database.Limit(100).Find(&providers).Error
 	if err != nil {
@@ -70,7 +87,7 @@ func (m ProviderModule) getProvidersHandler(c *gin.Context) {
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /provider/{providerid} [get]
-func (m ProviderModule) getProviderHandler(c *gin.Context) {
+func (m providerModule) getProviderHandler(c *gin.Context) {
 	providerID, ok := ginutil.ParseParamUint(c, "providerid")
 	if !ok {
 		return
@@ -106,7 +123,7 @@ func (m ProviderModule) getProviderHandler(c *gin.Context) {
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /providers/search [post]
-func (m ProviderModule) postSearchProviderHandler(c *gin.Context) {
+func (m providerModule) postSearchProviderHandler(c *gin.Context) {
 	var provider Provider
 	if err := c.ShouldBindJSON(&provider); err != nil {
 		ginutil.WriteInvalidBindError(c, err,
@@ -155,7 +172,7 @@ func (m ProviderModule) postSearchProviderHandler(c *gin.Context) {
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /provider [post]
-func (m ProviderModule) postProviderHandler(c *gin.Context) {
+func (m providerModule) postProviderHandler(c *gin.Context) {
 	var provider Provider
 	if err := c.ShouldBindJSON(&provider); err != nil {
 		ginutil.WriteInvalidBindError(c, err,
@@ -163,14 +180,14 @@ func (m ProviderModule) postProviderHandler(c *gin.Context) {
 		return
 	}
 
-	if provider.Name != Azuredevops.toString() && provider.Name != Gitlab.toString() && provider.Name != Github.toString() {
+	if provider.Name != ProviderAzureDevOps.toString() && provider.Name != ProviderGitLab.toString() && provider.Name != ProviderGitHub.toString() {
 		ginutil.WriteProblem(c, problem.Response{
 			Type:   "/prob/api/provider/invalid-name",
 			Title:  "Invalid provider name.",
 			Status: http.StatusBadRequest,
 			Detail: fmt.Sprintf(
 				"Provider name was %q but can only be one of the following values: %q, %q, %q.",
-				provider.Name, Azuredevops.toString(), Gitlab.toString(), Github.toString()),
+				provider.Name, ProviderAzureDevOps.toString(), ProviderGitLab.toString(), ProviderGitHub.toString()),
 			Instance: c.Request.RequestURI + "#name",
 		})
 		return
@@ -199,7 +216,7 @@ func (m ProviderModule) postProviderHandler(c *gin.Context) {
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /provider [put]
-func (m ProviderModule) putProviderHandler(c *gin.Context) {
+func (m providerModule) putProviderHandler(c *gin.Context) {
 	var inputProvider Provider
 	if err := c.ShouldBindJSON(&inputProvider); err != nil {
 		ginutil.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading the request body.")

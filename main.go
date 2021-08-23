@@ -76,7 +76,7 @@ func main() {
 		log.Error().WithError(err).Message("Migration error")
 		os.Exit(3)
 	}
-
+  
 	mq, err := GetMQConnection(config.MQ)
 	if err != nil {
 		log.Error().WithError(err).Message("Message queue error.")
@@ -96,13 +96,18 @@ func main() {
 			os.Exit(6)
 		}()
 	}
-
+  
 	r := gin.New()
 	r.Use(
-		//disable GIN logs for path "/health". Probes won't clog up logs now.
-		gin.LoggerWithWriter(gin.DefaultWriter, "/health"),
-		gin.CustomRecovery(ginutil.RecoverProblemHandle),
+		ginutil.LoggerWithConfig(ginutil.LoggerConfig{
+			//disable GIN logs for path "/health". Probes won't clog up logs now.
+			SkipPaths: []string{"/health"},
+		}),
+		ginutil.RecoverProblem,
 	)
+
+	gin.DefaultWriter = ginutil.DefaultLoggerWriter
+	gin.DefaultErrorWriter = ginutil.DefaultLoggerWriter
 
 	if config.HTTP.CORS.AllowAllOrigins {
 		log.Info().Message("Allowing all origins in CORS.")
@@ -111,18 +116,17 @@ func main() {
 		r.Use(cors.New(corsConfig))
 	}
 
-	healthModule := HealthModule{}
-	healthModule.DeprecatedRegister(r)
-	healthModule.Register(r.Group("/api"))
+  healthModule{}.DeprecatedRegister(r)
+  healthModule{}.Register(r.Group("/api"))
 
 	setupBasicAuth(r, config)
-
-	modules := []HTTPModule{
-		ProjectModule{Database: db, MessageQueue: mq, Config: &config},
-		BuildModule{Database: db, MessageQueue: mq},
-		TokenModule{Database: db},
-		BranchModule{Database: db},
-		ProviderModule{Database: db}}
+  
+	modules := []httpModule{
+		projectModule{Database: db, MessageQueue: mq, Config: &config},
+		buildModule{Database: db, MessageQueue: mq},
+		tokenModule{Database: db},
+		branchModule{Database: db},
+		providerModule{Database: db}}
 
 	api := r.Group("/api")
 	for _, module := range modules {

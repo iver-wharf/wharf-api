@@ -4,6 +4,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type HTTPModule interface {
+type httpModule interface {
 	Register(*gin.RouterGroup)
 }
