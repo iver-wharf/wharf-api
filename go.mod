@@ -3,6 +3,7 @@ module github.com/iver-wharf/wharf-api
 go 1.16
 
 require (
+	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/dustin/go-broadcast v0.0.0-20171205050544-f664265f5a66
 	github.com/ghodss/yaml v1.0.0
 	github.com/gin-contrib/cors v1.3.1

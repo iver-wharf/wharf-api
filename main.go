@@ -76,7 +76,7 @@ func main() {
 		log.Error().WithError(err).Message("Migration error")
 		os.Exit(3)
 	}
-  
+
 	mq, err := GetMQConnection(config.MQ)
 	if err != nil {
 		log.Error().WithError(err).Message("Message queue error.")
@@ -96,7 +96,7 @@ func main() {
 			os.Exit(6)
 		}()
 	}
-  
+
 	r := gin.New()
 	r.Use(
 		ginutil.LoggerWithConfig(ginutil.LoggerConfig{
@@ -120,7 +120,7 @@ func main() {
   healthModule{}.Register(r.Group("/api"))
 
 	setupBasicAuth(r, config)
-  
+
 	modules := []httpModule{
 		projectModule{Database: db, MessageQueue: mq, Config: &config},
 		buildModule{Database: db, MessageQueue: mq},
