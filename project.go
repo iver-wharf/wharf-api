@@ -29,7 +29,7 @@ type projectModule struct {
 	Config       *Config
 }
 
-// PaginatedBuilds is a list of builds as well as an explicit total cound field.
+// PaginatedBuilds is a list of builds as well as an explicit total count field.
 type PaginatedBuilds struct {
 	Builds     *[]Build `json:"builds"`
 	TotalCount int64    `json:"totalCount"`

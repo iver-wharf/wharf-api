@@ -142,7 +142,7 @@ type Log struct {
 	Timestamp time.Time `gorm:"not null" json:"timestamp" format:"date-time"`
 }
 
-// Param holds the definition of a input parameter for a project.
+// Param holds the definition of an input parameter for a project.
 type Param struct {
 	ParamID      int    `gorm:"primaryKey" json:"id"`
 	Name         string `gorm:"not null" json:"name"`
