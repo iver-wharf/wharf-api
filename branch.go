@@ -11,11 +11,11 @@ import (
 	"gorm.io/gorm"
 )
 
-type BranchModule struct {
+type branchModule struct {
 	Database *gorm.DB
 }
 
-func (m BranchModule) Register(g *gin.RouterGroup) {
+func (m branchModule) Register(g *gin.RouterGroup) {
 	branches := g.Group("/branches")
 	{
 		branches.GET("", m.GetBranchesHandler)
@@ -34,7 +34,7 @@ func (m BranchModule) Register(g *gin.RouterGroup) {
 // @tags branch
 // @success 501 "Not Implemented"
 // @router /branches [get]
-func (m BranchModule) GetBranchesHandler(c *gin.Context) {
+func (m branchModule) GetBranchesHandler(c *gin.Context) {
 	c.Status(http.StatusNotImplemented)
 }
 
@@ -44,7 +44,7 @@ func (m BranchModule) GetBranchesHandler(c *gin.Context) {
 // @param branchid path int true "branch ID"
 // @success 501 "Not Implemented"
 // @router /branch/{branchid} [get]
-func (m BranchModule) GetBranchHandler(c *gin.Context) {
+func (m branchModule) GetBranchHandler(c *gin.Context) {
 	c.Status(http.StatusNotImplemented)
 }
 
@@ -63,7 +63,7 @@ func (m BranchModule) GetBranchHandler(c *gin.Context) {
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /branch [post]
-func (m BranchModule) PostBranchHandler(c *gin.Context) {
+func (m branchModule) PostBranchHandler(c *gin.Context) {
 	var branch Branch
 	if err := c.ShouldBindJSON(&branch); err != nil {
 		ginutil.WriteInvalidBindError(c, err,
@@ -109,7 +109,7 @@ func (m BranchModule) PostBranchHandler(c *gin.Context) {
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /branches [put]
-func (m BranchModule) PutBranchesHandler(c *gin.Context) {
+func (m branchModule) PutBranchesHandler(c *gin.Context) {
 	var branches []Branch
 	if err := c.ShouldBindJSON(&branches); err != nil {
 		ginutil.WriteInvalidBindError(c, err,
@@ -123,7 +123,7 @@ func (m BranchModule) PutBranchesHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, branches)
 }
 
-func (m BranchModule) PutBranches(branches []Branch) error {
+func (m branchModule) PutBranches(branches []Branch) error {
 	return m.Database.Transaction(func(tx *gorm.DB) error {
 		var defaultBranch Branch
 		var oldDbBranches []Branch

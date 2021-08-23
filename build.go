@@ -17,13 +17,15 @@ import (
 	"github.com/iver-wharf/messagebus-go"
 )
 
+// BuildLog is a single log line, together with its timestamp of when it was
+// logged.
 type BuildLog struct {
 	Message   string      `json:"message"`
 	StatusID  BuildStatus `json:"-"`
 	Timestamp time.Time   `json:"timestamp"`
 }
 
-func (bl *BuildLog) UnmarshalJSON(data []byte) error {
+func (bl *BuildLog) unmarshalJSON(data []byte) error {
 	type Alias BuildLog
 	aux := &struct {
 		Status string `json:"status"`
@@ -37,19 +39,19 @@ func (bl *BuildLog) UnmarshalJSON(data []byte) error {
 	}
 
 	if aux.Status != "" {
-		bl.StatusID = ParseBuildStatus(aux.Status)
+		bl.StatusID = parseBuildStatus(aux.Status)
 	} else {
 		bl.StatusID = -1
 	}
 	return nil
 }
 
-type BuildModule struct {
+type buildModule struct {
 	Database     *gorm.DB
 	MessageQueue *messagebus.MQConnection
 }
 
-func (m BuildModule) Register(g *gin.RouterGroup) {
+func (m buildModule) Register(g *gin.RouterGroup) {
 	builds := g.Group("/builds")
 	{
 		builds.POST("/search", m.postBuildSearchHandler)
@@ -63,8 +65,8 @@ func (m BuildModule) Register(g *gin.RouterGroup) {
 		build.GET("/log", m.getLogHandler)
 		build.GET("/stream", m.streamBuildLogHandler)
 
-		artifactModule := ArtifactModule{m.Database}
-		artifactModule.Register(build)
+		artifacts := artifactModule{m.Database}
+		artifacts.Register(build)
 	}
 }
 
@@ -100,7 +102,7 @@ func build(buildID uint) broadcast.Broadcaster {
 // @failure 404 {object} problem.Response "Build not found"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid} [get]
-func (m BuildModule) getBuildHandler(c *gin.Context) {
+func (m buildModule) getBuildHandler(c *gin.Context) {
 	buildID, ok := ginutil.ParseParamUint(c, "buildid")
 	if !ok {
 		return
@@ -122,7 +124,7 @@ func (m BuildModule) getBuildHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, &build)
 }
 
-func (m BuildModule) getBuild(buildID uint) (Build, error) {
+func (m buildModule) getBuild(buildID uint) (Build, error) {
 	var build Build
 	if err := m.Database.
 		Where(&Build{BuildID: buildID}).
@@ -134,7 +136,7 @@ func (m BuildModule) getBuild(buildID uint) (Build, error) {
 	return build, nil
 }
 
-func (m BuildModule) getLogs(buildID uint) ([]Log, error) {
+func (m buildModule) getLogs(buildID uint) ([]Log, error) {
 	var logs []Log
 	if err := m.Database.
 		Where(&Build{BuildID: buildID}).
@@ -152,7 +154,7 @@ func (m BuildModule) getLogs(buildID uint) ([]Log, error) {
 // @produce json
 // @success 501 "Not Implemented"
 // @router /builds/search [post]
-func (m BuildModule) postBuildSearchHandler(c *gin.Context) {
+func (m buildModule) postBuildSearchHandler(c *gin.Context) {
 	c.Status(http.StatusNotImplemented)
 }
 
@@ -165,7 +167,7 @@ func (m BuildModule) postBuildSearchHandler(c *gin.Context) {
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/log [get]
-func (m BuildModule) getLogHandler(c *gin.Context) {
+func (m buildModule) getLogHandler(c *gin.Context) {
 	buildID, ok := ginutil.ParseParamUint(c, "buildid")
 	if !ok {
 		return
@@ -191,7 +193,7 @@ func (m BuildModule) getLogHandler(c *gin.Context) {
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @router /build/{buildid}/stream [get]
-func (m BuildModule) streamBuildLogHandler(c *gin.Context) {
+func (m buildModule) streamBuildLogHandler(c *gin.Context) {
 	buildID, ok := ginutil.ParseParamUint(c, "buildid")
 	if !ok {
 		return
@@ -223,7 +225,7 @@ func (m BuildModule) streamBuildLogHandler(c *gin.Context) {
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/log [post]
-func (m BuildModule) postBuildLogHandler(c *gin.Context) {
+func (m buildModule) postBuildLogHandler(c *gin.Context) {
 	buildID, ok := ginutil.ParseParamUint(c, "buildid")
 	if !ok {
 		return
@@ -268,7 +270,7 @@ func (m BuildModule) postBuildLogHandler(c *gin.Context) {
 // @failure 404 {object} problem.Response "Build not found"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid} [put]
-func (m BuildModule) putBuildStatus(c *gin.Context) {
+func (m buildModule) putBuildStatus(c *gin.Context) {
 	buildID, ok := ginutil.ParseParamUint(c, "buildid")
 	if !ok {
 		return
@@ -279,7 +281,7 @@ func (m BuildModule) putBuildStatus(c *gin.Context) {
 		return
 	}
 
-	build, err := m.updateBuildStatus(buildID, ParseBuildStatus(status))
+	build, err := m.updateBuildStatus(buildID, parseBuildStatus(status))
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		ginutil.WriteDBNotFound(c, fmt.Sprintf(
 			"Build with ID %d was not found when trying to update status to %q.",
@@ -295,7 +297,7 @@ func (m BuildModule) putBuildStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, build)
 }
 
-func (m BuildModule) updateBuildStatus(buildID uint, statusID BuildStatus) (Build, error) {
+func (m buildModule) updateBuildStatus(buildID uint, statusID BuildStatus) (Build, error) {
 	if statusID < BuildScheduling && statusID > BuildFailed {
 		return Build{}, fmt.Errorf("invalid status ID: %+v", statusID)
 	}
@@ -332,7 +334,7 @@ func (m BuildModule) updateBuildStatus(buildID uint, statusID BuildStatus) (Buil
 	return build, nil
 }
 
-func (m BuildModule) saveLog(buildID uint, message string, timestamp time.Time) error {
+func (m buildModule) saveLog(buildID uint, message string, timestamp time.Time) error {
 	return m.Database.Save(&Log{
 		BuildID:   buildID,
 		Message:   message,
