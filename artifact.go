@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"mime"
+	"mime/multipart"
 	"net/http"
 	"path/filepath"
 	"time"
@@ -18,6 +19,8 @@ import (
 const (
 	buildIDParamName    = "buildid"
 	artifactIDParamName = "artifactId"
+
+	estimatedTestDetailsPerFile = 20
 )
 
 type ArtifactModule struct {
@@ -38,7 +41,7 @@ func (m ArtifactModule) Register(g *gin.RouterGroup) {
 	g.GET("/artifacts", m.getBuildArtifactsHandler)
 	g.GET("/artifact/:artifactId", m.getBuildArtifactHandler)
 	g.POST("/artifact", m.postBuildArtifactHandler)
-	g.PUT("/test-result-data", m.putTestResultDataHandler)
+	g.PUT("/test-result-data", m.postTestResultDataHandler)
 	g.GET("/test-result-details", m.getBuildAllTestResultDetailsHandler)
 	g.GET("/test-result-details/:artifactId", m.getBuildTestResultDetailsHandler)
 	g.GET("/test-results-summary", m.getBuildTestResultsSummaryHandler)
@@ -56,7 +59,7 @@ func (m ArtifactModule) Register(g *gin.RouterGroup) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/artifacts [get]
 func (m ArtifactModule) getBuildArtifactsHandler(c *gin.Context) {
-	buildID, ok := parseBuildID(c)
+	buildID, ok := ginutil.ParseParamUint(c, buildIDParamName)
 	if !ok {
 		return
 	}
@@ -88,7 +91,11 @@ func (m ArtifactModule) getBuildArtifactsHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/artifact/{artifactId} [get]
 func (m ArtifactModule) getBuildArtifactHandler(c *gin.Context) {
-	buildID, artifactID, ok := parseBuildAndArtifactID(c)
+	buildID, ok := ginutil.ParseParamUint(c, buildIDParamName)
+	if !ok {
+		return
+	}
+	artifactID, ok := ginutil.ParseParamUint(c, artifactIDParamName)
 	if !ok {
 		return
 	}
@@ -132,7 +139,7 @@ func (m ArtifactModule) getBuildArtifactHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/tests-results [get]
 func (m ArtifactModule) getBuildTestsResultsHandler(c *gin.Context) {
-	buildID, ok := parseBuildID(c)
+	buildID, ok := ginutil.ParseParamUint(c, buildIDParamName)
 	if !ok {
 		return
 	}
@@ -184,36 +191,18 @@ func (m ArtifactModule) getBuildTestsResultsHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/artifact [post]
 func (m ArtifactModule) postBuildArtifactHandler(c *gin.Context) {
-	buildID, files, ok := parseBuildIDAndFiles(c)
+	buildID, ok := ginutil.ParseParamUint(c, buildIDParamName)
 	if !ok {
 		return
 	}
-
-	for _, f := range files {
-		artifact := Artifact{
-			Data:     f.data,
-			Name:     f.name,
-			FileName: f.fileName,
-			BuildID:  buildID,
-		}
-
-		err := m.Database.
-			Create(&artifact).
-			Error
-		if err != nil {
-			ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
-				"Failed saving artifact with name %q for build with ID %d in database.",
-				artifact.FileName, buildID))
-			return
-		}
-
-		log.Info().
-			WithString("filename", artifact.Name).
-			WithUint("build", buildID).
-			WithUint("artifact", artifact.ArtifactID).
-			Message("File saved as artifact")
+	files, ok := parseMultipartFormData(c)
+	if !ok {
+		return
 	}
-
+	_, ok = m.createArtifacts(c, files, buildID)
+	if !ok {
+		return
+	}
 	c.Status(http.StatusCreated)
 }
 
@@ -223,7 +212,7 @@ type file struct {
 	data     []byte
 }
 
-// putTestResultDataHandler godoc
+// postTestResultDataHandler godoc
 // @summary Post test result data
 // @tags artifact
 // @accept multipart/form-data
@@ -232,63 +221,39 @@ type file struct {
 // @success 201 {object} SummaryOfTestResultSummaries "Added new test result data and created summary"
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 502 {object} problem.Response "Database is unreachable"
-// @router /build/{buildid}/test-result-data [put]
-func (m ArtifactModule) putTestResultDataHandler(c *gin.Context) {
-	buildID, files, ok := parseBuildIDAndFiles(c)
+// @router /build/{buildid}/test-result-data [post]
+func (m ArtifactModule) postTestResultDataHandler(c *gin.Context) {
+	buildID, ok := ginutil.ParseParamUint(c, buildIDParamName)
 	if !ok {
 		return
 	}
 
-	artifacts := []*Artifact{}
-	for _, f := range files {
-		artifact := &Artifact{
-			Data:     f.data,
-			Name:     f.name,
-			FileName: f.fileName,
-			BuildID:  buildID,
-		}
-
-		err := m.Database.Create(artifact).Error
-		if err != nil {
-			ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
-				"Failed saving artifact with name %q for build with ID %d in database.",
-				artifact.FileName, buildID))
-			return
-		}
-
-		artifacts = append(artifacts, artifact)
-
-		log.Debug().
-			WithString("filename", artifact.Name).
-			WithUint("build", buildID).
-			WithUint("artifact", artifact.ArtifactID).
-			Message("File saved as artifact")
+	files, ok := parseMultipartFormData(c)
+	if !ok {
+		return
 	}
 
-	summaries := []*TestResultSummary{}
-	details := []*TestResultDetail{}
+	artifacts, ok := m.createArtifacts(c, files, buildID)
+	if !ok {
+		return
+	}
+
+	summaries := make([]TestResultSummary, 0, len(artifacts))
+	details := make([]TestResultDetail, 0, estimatedTestDetailsPerFile*len(artifacts))
 
 	for _, artifact := range artifacts {
-		detail, summary, err := parseAsTRX(artifact.Data)
+		detail, summary, err := getTestSummaryAndDetails(artifact.Data, artifact.ArtifactID, buildID)
 		if err != nil {
 			log.Warn().
 				WithError(err).
 				WithString("filename", artifact.Name).
 				WithUint("build", buildID).
 				WithUint("artifact", artifact.ArtifactID).
-				Message("Failed to unmarshal; invalid JSON format")
-			continue
+				Message("Failed to unmarshal; invalid XML format")
+			return
 		}
 
-		for _, d := range detail {
-			d.ArtifactID = artifact.ArtifactID
-			d.BuildID = buildID
-		}
-		summary.ArtifactID = artifact.ArtifactID
 		summary.FileName = artifact.FileName
-		summary.Artifact = artifact
-		summary.BuildID = buildID
-
 		summaries = append(summaries, summary)
 		details = append(details, detail...)
 	}
@@ -317,7 +282,7 @@ func (m ArtifactModule) putTestResultDataHandler(c *gin.Context) {
 		summaryOfSummaries.Skipped += summary.Skipped
 		summaryOfSummaries.Summaries = append(
 			summaryOfSummaries.Summaries,
-			*summary)
+			summary)
 	}
 
 	summaryOfSummaries.Total =
@@ -346,7 +311,7 @@ func (m ArtifactModule) putTestResultDataHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/test-result-details [get]
 func (m ArtifactModule) getBuildAllTestResultDetailsHandler(c *gin.Context) {
-	buildID, ok := parseBuildID(c)
+	buildID, ok := ginutil.ParseParamUint(c, buildIDParamName)
 	if !ok {
 		return
 	}
@@ -375,7 +340,12 @@ func (m ArtifactModule) getBuildAllTestResultDetailsHandler(c *gin.Context) {
 // @success 200 {object} []TestResultDetail
 // @router /build/{buildid}/test-result-details/{artifactId} [get]
 func (m ArtifactModule) getBuildTestResultDetailsHandler(c *gin.Context) {
-	buildID, artifactID, ok := parseBuildAndArtifactID(c)
+	buildID, ok := ginutil.ParseParamUint(c, buildIDParamName)
+	if !ok {
+		return
+	}
+
+	artifactID, ok := ginutil.ParseParamUint(c, artifactIDParamName)
 	if !ok {
 		return
 	}
@@ -405,7 +375,7 @@ func (m ArtifactModule) getBuildTestResultDetailsHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Bad Gateway"
 // @router /build/{buildid}/test-results-summary [get]
 func (m ArtifactModule) getBuildTestResultsSummaryHandler(c *gin.Context) {
-	buildID, ok := parseBuildID(c)
+	buildID, ok := ginutil.ParseParamUint(c, buildIDParamName)
 	if !ok {
 		return
 	}
@@ -439,44 +409,24 @@ func (m ArtifactModule) getBuildTestResultsSummaryHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, summary)
 }
 
-// parseMultipartFormData writes 400 "Bad request" problem.Response on failure.
-// Returns a slice of file pointers on success, or an empty slice if there were
-// none but parsing was successful.
-func parseMultipartFormData(c *gin.Context) ([]*file, bool) {
-	buildID, ok := parseBuildID(c)
-	if !ok {
-		return nil, false
-	}
-
-	files := []*file{}
+func parseMultipartFormData(c *gin.Context) ([]file, bool) {
+	files := make([]file, 0)
 
 	form, err := c.MultipartForm()
 	if err != nil {
-		ginutil.WriteMultipartFormReadError(c, err, fmt.Sprintf(
-			"Failed reading multipart-form content from request body when uploading new artifact for build with ID %d.",
-			buildID))
+		ginutil.WriteMultipartFormReadError(c, err,
+			"Failed reading multipart-form content from request body when uploading new artifact for build.")
 		return nil, false
 	}
 
 	for k := range form.File {
 		if fhs := form.File[k]; len(fhs) > 0 {
-			f, err := fhs[0].Open()
-			if err != nil {
-				ginutil.WriteMultipartFormReadError(c, err, fmt.Sprintf(
-					"Failed with starting to read file content from multipart form request body when uploading new artifact for build with ID %d.",
-					buildID))
-				return nil, false
+			data, ok := readMultipartFileData(c, fhs[0])
+			if !ok {
+				return files, false
 			}
 
-			data, err := ioutil.ReadAll(f)
-			if err != nil {
-				ginutil.WriteMultipartFormReadError(c, err, fmt.Sprintf(
-					"Failed reading file content from multipart form request body when uploading new artifact for build with ID %d.",
-					buildID))
-				return nil, false
-			}
-
-			files = append(files, &file{
+			files = append(files, file{
 				name:     k,
 				fileName: fhs[0].Filename,
 				data:     data,
@@ -485,6 +435,28 @@ func parseMultipartFormData(c *gin.Context) ([]*file, bool) {
 	}
 
 	return files, true
+}
+
+func readMultipartFileData(c *gin.Context, fh *multipart.FileHeader) ([]byte, bool) {
+	if fh == nil {
+		return nil, false
+	}
+
+	f, err := fh.Open()
+	if err != nil {
+		ginutil.WriteMultipartFormReadError(c, err,
+			"Failed with starting to read file content from multipart form request body when uploading new artifact for build.")
+		return nil, false
+	}
+	defer f.Close()
+
+	data, err := ioutil.ReadAll(f)
+	if err != nil {
+		ginutil.WriteMultipartFormReadError(c, err,
+			"Failed reading file content from multipart form request body when uploading new artifact for build.")
+		return nil, false
+	}
+	return data, true
 }
 
 type testStatus string
@@ -566,17 +538,19 @@ type counters struct {
 	Pending             uint     `xml:"pending,attr"`
 }
 
-func parseAsTRX(data []byte) ([]*TestResultDetail, *TestResultSummary, error) {
+// getTestSummaryAndDetails currently only supports the TRX format.
+func getTestSummaryAndDetails(data []byte, artifactID, buildID uint) ([]TestResultDetail, TestResultSummary, error) {
 	var myTestRun testRun
 	if err := xml.Unmarshal(data, &myTestRun); err != nil {
-		return []*TestResultDetail{}, &TestResultSummary{}, err
+		return []TestResultDetail{}, TestResultSummary{}, err
 	}
 
-	details := []*TestResultDetail{}
-	for _, utr := range myTestRun.Results.UnitTestResults {
-		detail := TestResultDetail{}
+	details := make([]TestResultDetail, len(myTestRun.Results.UnitTestResults))
+	for idx, utr := range myTestRun.Results.UnitTestResults {
+		detail := &details[idx]
+		detail.ArtifactID = artifactID
+		detail.BuildID = buildID
 		detail.Name = utr.TestName
-
 		if utr.Outcome == "Passed" {
 			detail.Status = testResultStatusSuccess
 		} else if utr.Outcome == "Failed" {
@@ -584,74 +558,56 @@ func parseAsTRX(data []byte) ([]*TestResultDetail, *TestResultSummary, error) {
 		} else if utr.Outcome == "NotExecuted" {
 			detail.Status = testResultStatusSkipped
 		}
-
 		if detail.Status != testResultStatusSuccess {
 			detail.Message.SetValid(fmt.Sprintf("%s\n%s",
 				utr.Output.ErrorInfo.Message.InnerXML,
 				utr.Output.ErrorInfo.StackTrace.InnerXML))
 		}
 
-		startTime, err := time.Parse(time.RFC3339, utr.StartTime)
-		if err == nil {
+		if startTime, err := time.Parse(time.RFC3339, utr.StartTime); err == nil {
 			detail.StartedOn = &startTime
 		}
 
-		endTime, err := time.Parse(time.RFC3339, utr.EndTime)
-		if err == nil {
+		if endTime, err := time.Parse(time.RFC3339, utr.EndTime); err == nil {
 			detail.CompletedOn = &endTime
 		}
-
-		details = append(details, &detail)
 	}
 
-	summary := TestResultSummary{}
-	summary.Failed = myTestRun.ResultSummary.Counters.Failed
-	summary.Passed = myTestRun.ResultSummary.Counters.Passed
-	summary.Skipped = myTestRun.ResultSummary.Counters.NotExecuted
-	summary.Total = myTestRun.ResultSummary.Counters.Total
+	counters := myTestRun.ResultSummary.Counters
+	summary := TestResultSummary{
+		ArtifactID: artifactID,
+		BuildID:    buildID,
+		Failed:     counters.Failed,
+		Passed:     counters.Passed,
+		Skipped:    counters.NotExecuted,
+		Total:      counters.Total,
+	}
 
-	return details, &summary, nil
+	return details, summary, nil
 }
 
-type uintParam struct {
-	name string
-	ptr  *uint
-}
+func (m ArtifactModule) createArtifacts(c *gin.Context, files []file, buildID uint) ([]Artifact, bool) {
+	artifacts := make([]Artifact, len(files))
+	for idx, f := range files {
+		artifact := &artifacts[idx]
+		artifact.Data = f.data
+		artifact.Name = f.name
+		artifact.FileName = f.fileName
+		artifact.BuildID = buildID
 
-func parseRequestData(c *gin.Context, files *[]*file, params ...uintParam) bool {
-	var ok bool
-	if files != nil {
-		*files, ok = parseMultipartFormData(c)
-		if !ok {
-			return false
+		err := m.Database.Create(artifact).Error
+		if err != nil {
+			ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
+				"Failed saving artifact with name %q for build with ID %d in database.",
+				artifact.FileName, buildID))
+			return artifacts, false
 		}
+
+		log.Debug().
+			WithString("filename", artifact.Name).
+			WithUint("build", buildID).
+			WithUint("artifact", artifact.ArtifactID).
+			Message("File saved as artifact")
 	}
-
-	for _, param := range params {
-		*param.ptr, ok = ginutil.ParseParamUint(c, param.name)
-		if !ok {
-			return false
-		}
-	}
-
-	return true
-}
-
-func parseBuildID(c *gin.Context) (buildID uint, ok bool) {
-	ok = parseRequestData(c, nil,
-		uintParam{buildIDParamName, &buildID})
-	return buildID, ok
-}
-
-func parseBuildIDAndFiles(c *gin.Context) (buildID uint, files []*file, ok bool) {
-	ok = parseRequestData(c, &files,
-		uintParam{buildIDParamName, &buildID})
-	return buildID, files, ok
-}
-
-func parseBuildAndArtifactID(c *gin.Context) (buildID, artifactID uint, ok bool) {
-	ok = parseRequestData(c, nil,
-		uintParam{buildIDParamName, &buildID},
-		uintParam{artifactIDParamName, &artifactID})
-	return buildID, artifactID, ok
+	return artifacts, true
 }
