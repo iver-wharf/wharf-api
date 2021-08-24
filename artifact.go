@@ -24,8 +24,8 @@ const (
 	estimatedTestDetailsPerFile = 20
 )
 
-// SummaryOfTestResultSummaries contains data about several test result files.
-type SummaryOfTestResultSummaries struct {
+// TestResultListSummary contains data about several test result files.
+type TestResultListSummary struct {
 	BuildID   uint                `json:"buildId"`
 	Total     uint                `json:"total"`
 	Failed    uint                `json:"failed"`
@@ -248,7 +248,7 @@ type file struct {
 // @accept multipart/form-data
 // @param buildid path int true "Build ID"
 // @param file formData file true "Test result artifact file"
-// @success 201 {object} SummaryOfTestResultSummaries "Added new test result data and created summary"
+// @success 201 {object} TestResultListSummary "Added new test result data and created summary"
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/test-result-data [post]
@@ -298,10 +298,10 @@ func (m artifactModule) postTestResultDataHandler(c *gin.Context) {
 		details = append(details, detail...)
 	}
 
-	summaryOfSummaries := SummaryOfTestResultSummaries{
+	summaryList := TestResultListSummary{
 		Summaries: summaries,
 		BuildID:   buildID}
-	for _, summary := range summaryOfSummaries.Summaries {
+	for _, summary := range summaryList.Summaries {
 		err := m.Database.
 			Create(summary).
 			Error
@@ -313,15 +313,15 @@ func (m artifactModule) postTestResultDataHandler(c *gin.Context) {
 			return
 		}
 
-		summaryOfSummaries.Failed += summary.Failed
-		summaryOfSummaries.Passed += summary.Passed
-		summaryOfSummaries.Skipped += summary.Skipped
+		summaryList.Failed += summary.Failed
+		summaryList.Passed += summary.Passed
+		summaryList.Skipped += summary.Skipped
 	}
 
-	summaryOfSummaries.Total =
-		summaryOfSummaries.Failed +
-			summaryOfSummaries.Passed +
-			summaryOfSummaries.Skipped
+	summaryList.Total =
+		summaryList.Failed +
+			summaryList.Passed +
+			summaryList.Skipped
 
 	err := m.Database.
 		CreateInBatches(details, 100).
@@ -332,7 +332,7 @@ func (m artifactModule) postTestResultDataHandler(c *gin.Context) {
 			buildID))
 	}
 
-	c.JSON(http.StatusOK, summaryOfSummaries)
+	c.JSON(http.StatusOK, summaryList)
 }
 
 // getBuildAllTestResultDetailsHandler godoc
@@ -403,7 +403,7 @@ func (m artifactModule) getBuildTestResultDetailsHandler(c *gin.Context) {
 // @summary Get test result summary of all tests for specified build
 // @tags artifact
 // @param buildid path int true "Build ID"
-// @success 200 {object} SummaryOfTestResultSummaries
+// @success 200 {object} TestResultListSummary
 // @failure 400 {object} problem.Response "Bad Request"
 // @failure 502 {object} problem.Response "Bad Gateway"
 // @router /build/{buildid}/test-results-summary [get]
@@ -427,19 +427,19 @@ func (m artifactModule) getBuildTestResultsSummaryHandler(c *gin.Context) {
 		return
 	}
 
-	summary := SummaryOfTestResultSummaries{
+	summaryList := TestResultListSummary{
 		BuildID:   buildID,
 		Summaries: summaries}
 
 	for _, v := range summaries {
-		summary.Failed += v.Failed
-		summary.Passed += v.Passed
-		summary.Skipped += v.Skipped
+		summaryList.Failed += v.Failed
+		summaryList.Passed += v.Passed
+		summaryList.Skipped += v.Skipped
 	}
 
-	summary.Total = summary.Failed + summary.Passed + summary.Skipped
+	summaryList.Total = summaryList.Failed + summaryList.Passed + summaryList.Skipped
 
-	c.JSON(http.StatusOK, summary)
+	c.JSON(http.StatusOK, summaryList)
 }
 
 func parseMultipartFormData(c *gin.Context, buildID uint) ([]file, bool) {
