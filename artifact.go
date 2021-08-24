@@ -299,13 +299,9 @@ func (m artifactModule) postTestResultDataHandler(c *gin.Context) {
 	}
 
 	summaryOfSummaries := SummaryOfTestResultSummaries{
-		Failed:    0,
-		Passed:    0,
-		Skipped:   0,
-		Total:     0,
-		Summaries: make([]TestResultSummary, 0, len(summaries)),
+		Summaries: summaries,
 		BuildID:   buildID}
-	for _, summary := range summaries {
+	for _, summary := range summaryOfSummaries.Summaries {
 		err := m.Database.
 			Create(summary).
 			Error
@@ -320,9 +316,6 @@ func (m artifactModule) postTestResultDataHandler(c *gin.Context) {
 		summaryOfSummaries.Failed += summary.Failed
 		summaryOfSummaries.Passed += summary.Passed
 		summaryOfSummaries.Skipped += summary.Skipped
-		summaryOfSummaries.Summaries = append(
-			summaryOfSummaries.Summaries,
-			summary)
 	}
 
 	summaryOfSummaries.Total =
