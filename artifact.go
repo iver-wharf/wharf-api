@@ -224,7 +224,7 @@ func (m artifactModule) postBuildArtifactHandler(c *gin.Context) {
 	if !ok {
 		return
 	}
-	files, ok := parseMultipartFormData(c)
+	files, ok := parseMultipartFormData(c, buildID)
 	if !ok {
 		return
 	}
@@ -257,7 +257,7 @@ func (m artifactModule) postTestResultDataHandler(c *gin.Context) {
 		return
 	}
 
-	files, ok := parseMultipartFormData(c)
+	files, ok := parseMultipartFormData(c, buildID)
 	if !ok {
 		return
 	}
@@ -438,19 +438,20 @@ func (m artifactModule) getBuildTestResultsSummaryHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, summary)
 }
 
-func parseMultipartFormData(c *gin.Context) ([]file, bool) {
+func parseMultipartFormData(c *gin.Context, buildID uint) ([]file, bool) {
 	files := make([]file, 0)
 
 	form, err := c.MultipartForm()
 	if err != nil {
 		ginutil.WriteMultipartFormReadError(c, err,
-			"Failed reading multipart-form content from request body when uploading new artifact for build.")
+			fmt.Sprintf("Failed reading multipart-form content from request body when uploading new"+
+									" artifact for build with ID %d.", buildID))
 		return nil, false
 	}
 
 	for k := range form.File {
 		if fhs := form.File[k]; len(fhs) > 0 {
-			data, ok := readMultipartFileData(c, fhs[0])
+			data, ok := readMultipartFileData(c, buildID, fhs[0])
 			if !ok {
 				return files, false
 			}
@@ -466,7 +467,7 @@ func parseMultipartFormData(c *gin.Context) ([]file, bool) {
 	return files, true
 }
 
-func readMultipartFileData(c *gin.Context, fh *multipart.FileHeader) ([]byte, bool) {
+func readMultipartFileData(c *gin.Context, buildID uint, fh *multipart.FileHeader) ([]byte, bool) {
 	if fh == nil {
 		return nil, false
 	}
@@ -474,7 +475,8 @@ func readMultipartFileData(c *gin.Context, fh *multipart.FileHeader) ([]byte, bo
 	f, err := fh.Open()
 	if err != nil {
 		ginutil.WriteMultipartFormReadError(c, err,
-			"Failed with starting to read file content from multipart form request body when uploading new artifact for build.")
+			fmt.Sprintf("Failed with starting to read file content from multipart form request body when"+
+									" uploading new artifact for build with ID %d.", buildID))
 		return nil, false
 	}
 	defer f.Close()
@@ -482,7 +484,8 @@ func readMultipartFileData(c *gin.Context, fh *multipart.FileHeader) ([]byte, bo
 	data, err := ioutil.ReadAll(f)
 	if err != nil {
 		ginutil.WriteMultipartFormReadError(c, err,
-			"Failed reading file content from multipart form request body when uploading new artifact for build.")
+			fmt.Sprintf("Failed reading file content from multipart form request body when uploading new"+
+									" artifact for build with ID %d.", buildID))
 		return nil, false
 	}
 	return data, true
