@@ -14,6 +14,9 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
 ## v4.2.0 (WIP)
 
+- Added support for the TZ environment variable (setting timezones ex.
+  `"Europe/Stockholm"`) through the tzdata package. (#40)
+
 - Added config loading from YAML files using
   `github.com/iver-wharf/wharf-core/pkg/config` together with new config models
   for configuring wharf-api. See `config.go` or the reference documentation on
@@ -23,7 +26,27 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   be removed in the next major release (v5.0.0). Please refer to the new config
   schema seen in `config.go` and `config_example_test.go`. (#38)
 
-- Added Makefile to simplify building and developing the project locally. (#41)
+- Added Makefile to simplify building and developing the project locally.
+  (#41, #42)
+
+- Added wharf-core logging for Gin debug and errors logging. (#45)
+
+- Added wharf-core logging for GORM debug logging. (#45)
+
+- Changed version of `github.com/iver-wharf/wharf-core` from v1.0.0 to v1.1.0.
+  (#45)
+
+- Added documentation to the remaining types in the project. No more linting
+  errors! (#46)
+
+- Added new endpoints `/api/ping` and `/api/health`. (#44)
+
+- Deprecated `/` and `/health` endpoints, soon to be moved to `/api/ping` and
+  `/api/health` respectively, so they are aligned with the current Swagger
+  documentation. (#44)
+
+- Changed version of `github.com/swaggo/swag/cmd/swag` from v1.7.0 to v1.7.1 in
+  Dockerfile and Makefile. (#48)
 
 - Reworked handling of test results. (#43)
 

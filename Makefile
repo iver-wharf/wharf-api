@@ -9,7 +9,7 @@ test: swag
 	go test -v ./...
 
 docker:
-	@echo docker build . \
+	docker build . \
 		-t "quay.io/iver-wharf/wharf-api:latest" \
 		-t "quay.io/iver-wharf/wharf-api:$(version)" \
 		--build-arg BUILD_VERSION="$(version)" \
@@ -32,5 +32,5 @@ swag:
 	swag init --parseDependency --parseDepth 1
 
 deps:
-	cd .. && go get -u github.com/swaggo/swag
+	cd .. && go get -u github.com/swaggo/swag/cmd/swag@v1.7.1
 	go mod download

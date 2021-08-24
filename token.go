@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 
 	"net/http"
@@ -11,11 +12,11 @@ import (
 	"gorm.io/gorm"
 )
 
-type TokenModule struct {
+type tokenModule struct {
 	Database *gorm.DB
 }
 
-func (m TokenModule) Register(g *gin.RouterGroup) {
+func (m tokenModule) Register(g *gin.RouterGroup) {
 	tokens := g.Group("/tokens")
 	{
 		tokens.GET("", m.getTokensHandler)
@@ -37,7 +38,7 @@ func (m TokenModule) Register(g *gin.RouterGroup) {
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /tokens [get]
-func (m TokenModule) getTokensHandler(c *gin.Context) {
+func (m tokenModule) getTokensHandler(c *gin.Context) {
 
 	var tokens []Token
 	err := m.Database.Limit(100).Find(&tokens).Error
@@ -58,7 +59,7 @@ func (m TokenModule) getTokensHandler(c *gin.Context) {
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /token/{tokenid} [get]
-func (m TokenModule) getTokenHandler(c *gin.Context) {
+func (m tokenModule) getTokenHandler(c *gin.Context) {
 	tokenID, ok := ginutil.ParseParamUint(c, "tokenid")
 	if !ok {
 		return
@@ -92,7 +93,7 @@ func (m TokenModule) getTokenHandler(c *gin.Context) {
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /tokens/search [post]
-func (m TokenModule) postSearchTokenHandler(c *gin.Context) {
+func (m tokenModule) postSearchTokenHandler(c *gin.Context) {
 	var token Token
 	if err := c.ShouldBindJSON(&token); err != nil {
 		ginutil.WriteInvalidBindError(c, err,
@@ -115,6 +116,8 @@ func (m TokenModule) postSearchTokenHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, tokens)
 }
 
+// TokenWithProviderID is an extended token model that also contains the ID of
+// an associated provider.
 type TokenWithProviderID struct {
 	Token
 	ProviderID uint `json:"providerId"`
@@ -133,7 +136,7 @@ type TokenWithProviderID struct {
 // @failure 404 {object} problem.Response "Referenced provider not found"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /token [post]
-func (m TokenModule) postTokenHandler(c *gin.Context) {
+func (m tokenModule) postTokenHandler(c *gin.Context) {
 	var (
 		tokenWithProviderID TokenWithProviderID
 		token               *Token
@@ -191,7 +194,7 @@ func (m TokenModule) postTokenHandler(c *gin.Context) {
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /token [put]
-func (m TokenModule) putTokenHandler(c *gin.Context) {
+func (m tokenModule) putTokenHandler(c *gin.Context) {
 	var inputToken Token
 	if err := c.ShouldBindJSON(&inputToken); err != nil {
 		ginutil.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading the request body.")
