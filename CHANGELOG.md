@@ -39,6 +39,12 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Added documentation to the remaining types in the project. No more linting
   errors! (#46)
 
+- Added new endpoints `/api/ping` and `/api/health`. (#44)
+
+- Deprecated `/` and `/health` endpoints, soon to be moved to `/api/ping` and
+  `/api/health` respectively, so they are aligned with the current Swagger
+  documentation. (#44)
+
 ## v4.1.1 (2021-07-12)
 
 - Changed version of Docker base images:

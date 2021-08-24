@@ -77,29 +77,6 @@ func main() {
 		os.Exit(3)
 	}
 
-	r := gin.New()
-	r.Use(
-		ginutil.LoggerWithConfig(ginutil.LoggerConfig{
-			//disable GIN logs for path "/health". Probes won't clog up logs now.
-			SkipPaths: []string{"/health"},
-		}),
-		ginutil.RecoverProblem,
-	)
-
-	gin.DefaultWriter = ginutil.DefaultLoggerWriter
-	gin.DefaultErrorWriter = ginutil.DefaultLoggerWriter
-
-	if config.HTTP.CORS.AllowAllOrigins {
-		log.Info().Message("Allowing all origins in CORS.")
-		corsConfig := cors.DefaultConfig()
-		corsConfig.AllowAllOrigins = true
-		r.Use(cors.New(corsConfig))
-	}
-
-	healthModule{}.Register(r)
-
-	setupBasicAuth(r, config)
-
 	mq, err := GetMQConnection(config.MQ)
 	if err != nil {
 		log.Error().WithError(err).Message("Message queue error.")
@@ -119,6 +96,30 @@ func main() {
 			os.Exit(6)
 		}()
 	}
+
+	r := gin.New()
+	r.Use(
+		ginutil.LoggerWithConfig(ginutil.LoggerConfig{
+			//disable GIN logs for path "/health". Probes won't clog up logs now.
+			SkipPaths: []string{"/health"},
+		}),
+		ginutil.RecoverProblem,
+	)
+
+	gin.DefaultWriter = ginutil.DefaultLoggerWriter
+	gin.DefaultErrorWriter = ginutil.DefaultLoggerWriter
+
+	if config.HTTP.CORS.AllowAllOrigins {
+		log.Info().Message("Allowing all origins in CORS.")
+		corsConfig := cors.DefaultConfig()
+		corsConfig.AllowAllOrigins = true
+		r.Use(cors.New(corsConfig))
+	}
+
+	healthModule{}.DeprecatedRegister(r)
+	healthModule{}.Register(r.Group("/api"))
+
+	setupBasicAuth(r, config)
 
 	modules := []httpModule{
 		projectModule{Database: db, MessageQueue: mq, Config: &config},

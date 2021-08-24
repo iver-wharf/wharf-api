@@ -6,7 +6,16 @@ import (
 
 type healthModule struct{}
 
-func (m healthModule) Register(e *gin.Engine) {
+func (m healthModule) Register(g *gin.RouterGroup) {
+	g.GET("/ping", m.ping)
+	g.GET("/health", m.health)
+}
+
+// DeprecatedRegister adds API health-related endpoints to a Gin-Gonic engine.
+//
+// Deprecated: Not part of the /api group for endpoints. Tentatively planned
+// for complete removal in v6.
+func (m healthModule) DeprecatedRegister(e *gin.Engine) {
 	e.GET("/", m.ping)
 	e.GET("/health", m.health)
 }
