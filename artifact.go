@@ -61,8 +61,8 @@ const (
 // any passing tests and no failed tests, and "No tests" if there are no failed
 // nor passing tests.
 type TestsResults struct {
-	Passed int        `json:"passed"`
-	Failed int        `json:"failed"`
+	Passed uint       `json:"passed"`
+	Failed uint       `json:"failed"`
 	Status TestStatus `json:"status" enums:"Success,Failed,No tests"`
 }
 
@@ -197,11 +197,11 @@ func (m artifactModule) getBuildTestsResultsHandler(c *gin.Context) {
 	}
 
 	if results.Failed == 0 && results.Passed == 0 {
-		results.Status = testStatusNoTests
+		results.Status = TestStatusNoTests
 	} else if results.Failed == 0 {
-		results.Status = testStatusSuccess
+		results.Status = TestStatusSuccess
 	} else {
-		results.Status = testStatusFailed
+		results.Status = TestStatusFailed
 	}
 
 	c.JSON(http.StatusOK, results)
@@ -488,20 +488,6 @@ func readMultipartFileData(c *gin.Context, fh *multipart.FileHeader) ([]byte, bo
 	return data, true
 }
 
-type testStatus string
-
-const (
-	testStatusSuccess testStatus = "Success"
-	testStatusFailed  testStatus = "Failed"
-	testStatusNoTests testStatus = "No tests"
-)
-
-type testsResults struct {
-	Passed uint       `json:"passed"`
-	Failed uint       `json:"failed"`
-	Status testStatus `json:"status" enums:"Success,Failed,No tests"`
-}
-
 type testRun struct {
 	XMLName       xml.Name      `xml:"TestRun"`
 	Results       results       `xml:"Results"`
@@ -581,13 +567,13 @@ func getTestSummaryAndDetails(data []byte, artifactID, buildID uint) ([]TestResu
 		detail.BuildID = buildID
 		detail.Name = utr.TestName
 		if utr.Outcome == "Passed" {
-			detail.Status = testResultStatusSuccess
+			detail.Status = TestResultStatusSuccess
 		} else if utr.Outcome == "Failed" {
-			detail.Status = testResultStatusFailed
+			detail.Status = TestResultStatusFailed
 		} else if utr.Outcome == "NotExecuted" {
-			detail.Status = testResultStatusSkipped
+			detail.Status = TestResultStatusSkipped
 		}
-		if detail.Status != testResultStatusSuccess {
+		if detail.Status != TestResultStatusSuccess {
 			detail.Message.SetValid(fmt.Sprintf("%s\n%s",
 				utr.Output.ErrorInfo.Message.InnerXML,
 				utr.Output.ErrorInfo.StackTrace.InnerXML))

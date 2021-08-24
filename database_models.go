@@ -182,6 +182,18 @@ type TestResultSummary struct {
 	Skipped             uint      `gorm:"not null" json:"skipped"`
 }
 
+// TestResultStatus is an enum of different states a test result can be in.
+type TestResultStatus string
+
+const (
+	// TestResultStatusSuccess means the test succeeded.
+	TestResultStatusSuccess TestResultStatus = "Success"
+	// TestResultStatusFailed means the test failed.
+	TestResultStatusFailed TestResultStatus = "Failed"
+	// TestResultStatusSkipped means the test was skipped.
+	TestResultStatusSkipped TestResultStatus = "Skipped"
+)
+
 // TestResultDetail contains data about a single test in a test result file.
 type TestResultDetail struct {
 	TestResultDetailID uint             `gorm:"primaryKey" json:"testResultDetailId"`
@@ -193,5 +205,5 @@ type TestResultDetail struct {
 	Message            null.String      `gorm:"nullable" json:"message" swaggertype:"string"`
 	StartedOn          *time.Time       `gorm:"nullable;default:NULL;" json:"startedOn" format:"date-time"`
 	CompletedOn        *time.Time       `gorm:"nullable;default:NULL;" json:"completedOn" format:"date-time"`
-	Status             testResultStatus `gorm:"not null" enums:"Failed,Passed,Skipped" json:"status"`
+	Status             TestResultStatus `gorm:"not null" enums:"Failed,Passed,Skipped" json:"status"`
 }
