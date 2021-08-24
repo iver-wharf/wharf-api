@@ -48,6 +48,9 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Changed version of `github.com/swaggo/swag/cmd/swag` from v1.7.0 to v1.7.1 in
   Dockerfile and Makefile. (#48)
 
+- Changed logging on "attempting to reach database" during initialization from
+  "ERROR" to "WARN", and rephrased it a little. (#50)
+
 ## v4.1.1 (2021-07-12)
 
 - Changed version of Docker base images:
