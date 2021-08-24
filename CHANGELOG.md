@@ -45,6 +45,9 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   `/api/health` respectively, so they are aligned with the current Swagger
   documentation. (#44)
 
+- Changed logging and moved the `httputils` package to stay consistent with the
+  provider API repos. (#47)
+
 ## v4.1.1 (2021-07-12)
 
 - Changed version of Docker base images:
