@@ -48,28 +48,28 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Changed version of `github.com/swaggo/swag/cmd/swag` from v1.7.0 to v1.7.1 in
   Dockerfile and Makefile. (#48)
 
-- Reworked handling of test results. (#43)
+- Added database tables: (#43)
 
-  New endpoints:
+  - test_result_detail
+
+  - test_result_summary
+
+- Added test-result specific endpoints: (#43)
 
   - `PUT /build/{buildid}/test-result-data`
 
-    - This should be used instead of `POST /build/{buildid}/artifact` when
-      uploading test result files.
+    This should be used instead of `POST /build/{buildid}/artifact`
+    when uploading test result files.
 
   - `GET /build/{buildid}/test-result-details`
-
   - `GET /build/{buildid}/test-result-details/{artifactid}`
-
   - `GET /build/{buildid}/test-results-summary`
 
-  Deprecated endpoints:
+- Deprecated endpoint `GET /build/{buildid}/tests-results`.
 
-  - `GET /build/{buildid}/tests-results`
-
-    - Use `GET /build/{buildid}/test-results-summary` instead. The response
-      data has changed slightly; it has additional properties, and does not
-      have a `status` property.
+  Use `GET /build/{buildid}/test-results-summary` instead. The response
+  data has changed slightly; it has additional properties, and does not
+  have a `status` property. (#43)
 
 ## v4.1.1 (2021-07-12)
 
