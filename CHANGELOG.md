@@ -62,7 +62,9 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
     when uploading test result files.
 
   - `GET /build/{buildid}/test-result-details`
+
   - `GET /build/{buildid}/test-result-details/{artifactid}`
+
   - `GET /build/{buildid}/test-results-summary`
 
 - Deprecated endpoint `GET /build/{buildid}/tests-results`.
