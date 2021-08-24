@@ -13,6 +13,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
+	"github.com/iver-wharf/wharf-core/pkg/problem"
 	"gorm.io/gorm"
 )
 
@@ -279,6 +280,16 @@ func (m artifactModule) postTestResultDataHandler(c *gin.Context) {
 				WithUint("build", buildID).
 				WithUint("artifact", artifact.ArtifactID).
 				Message("Failed to unmarshal; invalid XML format")
+
+			ginutil.WriteProblemError(c, err,
+				problem.Response{
+					Type:   "/prob/unexpected-response-format",
+					Status: 502,
+					Title:  "Unexpected response format.",
+					Detail: fmt.Sprintf(
+						"Failed saving test result summary from artifact with ID %d, for build"+
+							" with ID %d in database. Expected TRX/XML format.", summary.ArtifactID, buildID),
+				})
 			return
 		}
 
@@ -445,7 +456,7 @@ func parseMultipartFormData(c *gin.Context, buildID uint) ([]file, bool) {
 	if err != nil {
 		ginutil.WriteMultipartFormReadError(c, err,
 			fmt.Sprintf("Failed reading multipart-form content from request body when uploading new"+
-									" artifact for build with ID %d.", buildID))
+				" artifact for build with ID %d.", buildID))
 		return nil, false
 	}
 
@@ -476,7 +487,7 @@ func readMultipartFileData(c *gin.Context, buildID uint, fh *multipart.FileHeade
 	if err != nil {
 		ginutil.WriteMultipartFormReadError(c, err,
 			fmt.Sprintf("Failed with starting to read file content from multipart form request body when"+
-									" uploading new artifact for build with ID %d.", buildID))
+				" uploading new artifact for build with ID %d.", buildID))
 		return nil, false
 	}
 	defer f.Close()
@@ -485,7 +496,7 @@ func readMultipartFileData(c *gin.Context, buildID uint, fh *multipart.FileHeade
 	if err != nil {
 		ginutil.WriteMultipartFormReadError(c, err,
 			fmt.Sprintf("Failed reading file content from multipart form request body when uploading new"+
-									" artifact for build with ID %d.", buildID))
+				" artifact for build with ID %d.", buildID))
 		return nil, false
 	}
 	return data, true
