@@ -51,7 +51,6 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Added database tables: (#43)
 
   - test_result_detail
-
   - test_result_summary
 
 - Added test-result specific endpoints: (#43)
