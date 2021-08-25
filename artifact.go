@@ -579,11 +579,11 @@ func getTestSummaryAndDetails(data []byte, artifactID, buildID uint) (TestResult
 		}
 
 		if startTime, err := time.Parse(time.RFC3339, utr.StartTime); err == nil {
-			detail.StartedOn = &startTime
+			detail.StartedOn.SetValid(startTime)
 		}
 
 		if endTime, err := time.Parse(time.RFC3339, utr.EndTime); err == nil {
-			detail.CompletedOn = &endTime
+			detail.CompletedOn.SetValid(endTime)
 		}
 	}
 

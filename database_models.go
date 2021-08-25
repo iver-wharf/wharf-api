@@ -114,9 +114,9 @@ type Build struct {
 	StatusID            BuildStatus         `gorm:"not null" json:"statusId"`
 	ProjectID           uint                `gorm:"not null;index:build_idx_project_id" json:"projectId"`
 	Project             *Project            `gorm:"foreignKey:ProjectID;constraint:OnUpdate:RESTRICT,OnDelete:RESTRICT" json:"-"`
-	ScheduledOn         *time.Time          `gorm:"nullable;default:NULL" json:"scheduledOn" format:"date-time"`
-	StartedOn           *time.Time          `gorm:"nullable;default:NULL" json:"startedOn" format:"date-time"`
-	CompletedOn         *time.Time          `gorm:"nullable;default:NULL" json:"finishedOn" format:"date-time"`
+	ScheduledOn         null.Time          `gorm:"nullable;default:NULL" json:"scheduledOn" format:"date-time"`
+	StartedOn           null.Time          `gorm:"nullable;default:NULL" json:"startedOn" format:"date-time"`
+	CompletedOn         null.Time          `gorm:"nullable;default:NULL" json:"finishedOn" format:"date-time"`
 	GitBranch           string              `gorm:"size:300;default:'';not null" json:"gitBranch"`
 	Environment         null.String         `gorm:"nullable;size:40" json:"environment" swaggertype:"string"`
 	Stage               string              `gorm:"size:40;default:'';not null" json:"stage"`
@@ -203,7 +203,7 @@ type TestResultDetail struct {
 	Build              *Build           `gorm:"foreignKey:BuildID;constraint:OnUpdate:RESTRICT,OnDelete:RESTRICT" json:"-"`
 	Name               string           `gorm:"not null" json:"name"`
 	Message            null.String      `gorm:"nullable" json:"message" swaggertype:"string"`
-	StartedOn          *time.Time       `gorm:"nullable;default:NULL;" json:"startedOn" format:"date-time"`
-	CompletedOn        *time.Time       `gorm:"nullable;default:NULL;" json:"completedOn" format:"date-time"`
+	StartedOn          null.Time       `gorm:"nullable;default:NULL;" json:"startedOn" format:"date-time"`
+	CompletedOn        null.Time       `gorm:"nullable;default:NULL;" json:"completedOn" format:"date-time"`
 	Status             TestResultStatus `gorm:"not null" enums:"Failed,Passed,Skipped" json:"status"`
 }
