@@ -436,8 +436,6 @@ func (m artifactModule) getBuildTestResultsSummaryHandler(c *gin.Context) {
 }
 
 func parseMultipartFormData(c *gin.Context, buildID uint) ([]file, bool) {
-	files := make([]file, 0)
-
 	form, err := c.MultipartForm()
 	if err != nil {
 		ginutil.WriteMultipartFormReadError(c, err,
@@ -446,6 +444,7 @@ func parseMultipartFormData(c *gin.Context, buildID uint) ([]file, bool) {
 		return nil, false
 	}
 
+	var files []file
 	for k := range form.File {
 		if fhs := form.File[k]; len(fhs) > 0 {
 			data, ok := readMultipartFileData(c, buildID, fhs[0])
