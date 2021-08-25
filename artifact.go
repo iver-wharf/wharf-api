@@ -9,6 +9,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -267,24 +268,37 @@ func (m artifactModule) postTestResultDataHandler(c *gin.Context) {
 	for _, artifact := range artifacts {
 		summary, details, err := getTestSummaryAndDetails(artifact.Data, artifact.ArtifactID, buildID)
 		if err != nil {
-			log.Warn().
+			logEvent := log.Warn().
 				WithError(err).
 				WithString("filename", artifact.Name).
 				WithUint("build", buildID).
-				WithUint("artifact", artifact.ArtifactID).
-				Message("Failed to unmarshal; invalid TRX/XML format, or the structure" +
-					" receiving the data is malformed.")
+				WithUint("artifact", artifact.ArtifactID)
+			if syntaxErr := err.(*xml.SyntaxError); syntaxErr != nil || strings.HasPrefix(err.Error(), "xml:") {
+				logEvent.Message("Failed to unmarshal; invalid/unsupported TRX/XML format.")
 
-			ginutil.WriteProblemError(c, err,
-				problem.Response{
-					Type:   "/prob/unexpected-response-format",
-					Status: 502,
-					Title:  "Unexpected response format.",
-					Detail: fmt.Sprintf(
-						"Failed parsing test result ID %d, for build with ID %d in"+
-							" database. Expected TRX/XML format. Could also be due to an"+
-							" internal bug.", summary.ArtifactID, buildID),
-				})
+				ginutil.WriteProblemError(c, syntaxErr,
+					problem.Response{
+						Type:   "/prob/unexpected-response-format",
+						Status: http.StatusBadGateway,
+						Title:  "Unexpected response format.",
+						Detail: fmt.Sprintf(
+							"Failed parsing test result ID %d, for build with ID %d in"+
+								" database. Invalid/unsupported TRX/XML format.", summary.ArtifactID, buildID),
+					})
+			} else {
+				logEvent.Message("Failed to unmarshal; the structure used to unmarshall might be malformed.")
+
+				ginutil.WriteProblemError(c, syntaxErr,
+					problem.Response{
+						Type:   "/prob/bad-code",
+						Status: http.StatusInternalServerError,
+						Title:  "Bad code.",
+						Detail: fmt.Sprintf(
+							"Failed parsing test result ID %d, for build with ID %d in database. The structure"+
+								" used to unmarshall the data in the wharf-api might be malformed. This really shouldn't happen.",
+							summary.ArtifactID, buildID),
+					})
+			}
 			return
 		}
 
