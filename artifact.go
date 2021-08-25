@@ -279,7 +279,7 @@ func (m artifactModule) postTestResultDataHandler(c *gin.Context) {
 				WithString("filename", artifact.Name).
 				WithUint("build", buildID).
 				WithUint("artifact", artifact.ArtifactID).
-				Message("Failed to unmarshal; invalid XML format")
+				Message("Failed to unmarshal; invalid TRX/XML format")
 
 			ginutil.WriteProblemError(c, err,
 				problem.Response{
@@ -287,8 +287,8 @@ func (m artifactModule) postTestResultDataHandler(c *gin.Context) {
 					Status: 502,
 					Title:  "Unexpected response format.",
 					Detail: fmt.Sprintf(
-						"Failed saving test result summary from artifact with ID %d, for build"+
-							" with ID %d in database. Expected TRX/XML format.", summary.ArtifactID, buildID),
+						"Failed parsing test result ID %d, for build with ID %d in"+
+						" database. Expected TRX/XML format.", summary.ArtifactID, buildID),
 				})
 			return
 		}
