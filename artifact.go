@@ -493,7 +493,6 @@ func readMultipartFileData(c *gin.Context, buildID uint, fh *multipart.FileHeade
 				" uploading new artifact for build with ID %d.", buildID))
 		return nil, false
 	}
-	defer f.Close()
 
 	data, err := ioutil.ReadAll(f)
 	if err != nil {
