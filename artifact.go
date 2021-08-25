@@ -269,10 +269,10 @@ func (m artifactModule) postTestResultDataHandler(c *gin.Context) {
 	}
 
 	summaries := make([]TestResultSummary, 0, len(artifacts))
-	details := make([]TestResultDetail, 0, estimatedTestDetailsPerFile*len(artifacts))
+	lotsOfDetails := make([]TestResultDetail, 0, estimatedTestDetailsPerFile*len(artifacts))
 
 	for _, artifact := range artifacts {
-		detail, summary, err := getTestSummaryAndDetails(artifact.Data, artifact.ArtifactID, buildID)
+		details, summary, err := getTestSummaryAndDetails(artifact.Data, artifact.ArtifactID, buildID)
 		if err != nil {
 			log.Warn().
 				WithError(err).
@@ -295,7 +295,7 @@ func (m artifactModule) postTestResultDataHandler(c *gin.Context) {
 
 		summary.FileName = artifact.FileName
 		summaries = append(summaries, summary)
-		details = append(details, detail...)
+		lotsOfDetails = append(lotsOfDetails, details...)
 	}
 
 	summaryList := TestResultListSummary{
@@ -324,7 +324,7 @@ func (m artifactModule) postTestResultDataHandler(c *gin.Context) {
 			summaryList.Skipped
 
 	err := m.Database.
-		CreateInBatches(details, 100).
+		CreateInBatches(lotsOfDetails, 100).
 		Error
 	if err != nil {
 		ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
