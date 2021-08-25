@@ -17,13 +17,6 @@ import (
 	"gorm.io/gorm"
 )
 
-const (
-	buildIDParamName    = "buildid"
-	artifactIDParamName = "artifactId"
-
-	estimatedTestDetailsPerFile = 20
-)
-
 // TestResultListSummary contains data about several test result files.
 type TestResultListSummary struct {
 	BuildID   uint                `json:"buildId"`
@@ -89,7 +82,7 @@ func (m artifactModule) Register(g *gin.RouterGroup) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/artifacts [get]
 func (m artifactModule) getBuildArtifactsHandler(c *gin.Context) {
-	buildID, ok := ginutil.ParseParamUint(c, buildIDParamName)
+	buildID, ok := ginutil.ParseParamUint(c, "buildid")
 	if !ok {
 		return
 	}
@@ -121,11 +114,11 @@ func (m artifactModule) getBuildArtifactsHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/artifact/{artifactId} [get]
 func (m artifactModule) getBuildArtifactHandler(c *gin.Context) {
-	buildID, ok := ginutil.ParseParamUint(c, buildIDParamName)
+	buildID, ok := ginutil.ParseParamUint(c, "buildid")
 	if !ok {
 		return
 	}
-	artifactID, ok := ginutil.ParseParamUint(c, artifactIDParamName)
+	artifactID, ok := ginutil.ParseParamUint(c, "artifactId")
 	if !ok {
 		return
 	}
@@ -169,7 +162,7 @@ func (m artifactModule) getBuildArtifactHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/tests-results [get]
 func (m artifactModule) getBuildTestsResultsHandler(c *gin.Context) {
-	buildID, ok := ginutil.ParseParamUint(c, buildIDParamName)
+	buildID, ok := ginutil.ParseParamUint(c, "buildid")
 	if !ok {
 		return
 	}
@@ -221,7 +214,7 @@ func (m artifactModule) getBuildTestsResultsHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/artifact [post]
 func (m artifactModule) postBuildArtifactHandler(c *gin.Context) {
-	buildID, ok := ginutil.ParseParamUint(c, buildIDParamName)
+	buildID, ok := ginutil.ParseParamUint(c, "buildid")
 	if !ok {
 		return
 	}
@@ -253,7 +246,7 @@ type file struct {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/test-result-data [post]
 func (m artifactModule) postTestResultDataHandler(c *gin.Context) {
-	buildID, ok := ginutil.ParseParamUint(c, buildIDParamName)
+	buildID, ok := ginutil.ParseParamUint(c, "buildid")
 	if !ok {
 		return
 	}
@@ -269,7 +262,7 @@ func (m artifactModule) postTestResultDataHandler(c *gin.Context) {
 	}
 
 	summaries := make([]TestResultSummary, 0, len(artifacts))
-	lotsOfDetails := make([]TestResultDetail, 0, estimatedTestDetailsPerFile*len(artifacts))
+	lotsOfDetails := make([]TestResultDetail, 0)
 
 	for _, artifact := range artifacts {
 		details, summary, err := getTestSummaryAndDetails(artifact.Data, artifact.ArtifactID, buildID)
@@ -344,7 +337,7 @@ func (m artifactModule) postTestResultDataHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/test-result-details [get]
 func (m artifactModule) getBuildAllTestResultDetailsHandler(c *gin.Context) {
-	buildID, ok := ginutil.ParseParamUint(c, buildIDParamName)
+	buildID, ok := ginutil.ParseParamUint(c, "buildid")
 	if !ok {
 		return
 	}
@@ -373,12 +366,12 @@ func (m artifactModule) getBuildAllTestResultDetailsHandler(c *gin.Context) {
 // @success 200 {object} []TestResultDetail
 // @router /build/{buildid}/test-result-details/{artifactId} [get]
 func (m artifactModule) getBuildTestResultDetailsHandler(c *gin.Context) {
-	buildID, ok := ginutil.ParseParamUint(c, buildIDParamName)
+	buildID, ok := ginutil.ParseParamUint(c, "buildid")
 	if !ok {
 		return
 	}
 
-	artifactID, ok := ginutil.ParseParamUint(c, artifactIDParamName)
+	artifactID, ok := ginutil.ParseParamUint(c, "artifactId")
 	if !ok {
 		return
 	}
@@ -408,7 +401,7 @@ func (m artifactModule) getBuildTestResultDetailsHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Bad Gateway"
 // @router /build/{buildid}/test-results-summary [get]
 func (m artifactModule) getBuildTestResultsSummaryHandler(c *gin.Context) {
-	buildID, ok := ginutil.ParseParamUint(c, buildIDParamName)
+	buildID, ok := ginutil.ParseParamUint(c, "buildid")
 	if !ok {
 		return
 	}
