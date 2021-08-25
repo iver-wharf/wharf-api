@@ -449,7 +449,7 @@ func parseMultipartFormData(c *gin.Context, buildID uint) ([]file, bool) {
 		if fhs := form.File[k]; len(fhs) > 0 {
 			data, ok := readMultipartFileData(c, buildID, fhs[0])
 			if !ok {
-				return files, false
+				return nil, false
 			}
 
 			files = append(files, file{
