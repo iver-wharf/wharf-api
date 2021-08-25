@@ -182,7 +182,7 @@ func (m artifactModule) getBuildTestsResultsHandler(c *gin.Context) {
 	}
 
 	var results TestsResults
-	var run testRun
+	var run trxTestRun
 
 	for _, testRunFile := range testRunFiles {
 		xml.Unmarshal(testRunFile.Data, &run)
@@ -486,80 +486,66 @@ func readMultipartFileData(c *gin.Context, buildID uint, fh *multipart.FileHeade
 	return data, true
 }
 
-type testRun struct {
-	XMLName       xml.Name      `xml:"TestRun"`
-	Results       results       `xml:"Results"`
-	ResultSummary resultSummary `xml:"ResultSummary"`
-}
+type trxTestRun struct {
+	XMLName xml.Name `xml:"TestRun"`
 
-type results struct {
-	XMLName         xml.Name         `xml:"Results"`
-	UnitTestResults []unitTestResult `xml:"UnitTestResult"`
-}
+	Results struct {
+		XMLName         xml.Name `xml:"Results"`
+		UnitTestResults []struct {
+			XMLName   xml.Name `xml:"UnitTestResult"`
+			TestName  string   `xml:"testName,attr"`
+			Duration  string   `xml:"duration,attr"`
+			StartTime string   `xml:"startTime,attr"`
+			EndTime   string   `xml:"endTime,attr"`
+			Outcome   string   `xml:"outcome,attr"`
+			Output    struct {
+				XMLName   xml.Name `xml:"Output"`
+				ErrorInfo struct {
+					XMLName xml.Name `xml:"ErrorInfo"`
+					Message struct {
+						InnerXML string `xml:",innerxml"`
+					} `xml:"Message"`
+					StackTrace struct {
+						InnerXML string `xml:",innerxml"`
+					} `xml:"StackTrace"`
+				} `xml:"ErrorInfo"`
+			} `xml:"Output"`
+		} `xml:"UnitTestResult"`
+	} `xml:"Results"`
 
-type unitTestResult struct {
-	XMLName   xml.Name `xml:"UnitTestResult"`
-	TestName  string   `xml:"testName,attr"`
-	Duration  string   `xml:"duration,attr"`
-	StartTime string   `xml:"startTime,attr"`
-	EndTime   string   `xml:"endTime,attr"`
-	Outcome   string   `xml:"outcome,attr"`
-	Output    output   `xml:"Output"`
-}
-
-type output struct {
-	XMLName   xml.Name  `xml:"Output"`
-	ErrorInfo errorInfo `xml:"ErrorInfo"`
-}
-
-type errorInfo struct {
-	XMLName    xml.Name   `xml:"ErrorInfo"`
-	Message    message    `xml:"Message"`
-	StackTrace stackTrace `xml:"StackTrace"`
-}
-
-type message struct {
-	InnerXML string `xml:",innerxml"`
-}
-
-type stackTrace struct {
-	InnerXML string `xml:",innerxml"`
-}
-
-type resultSummary struct {
-	XMLName  xml.Name `xml:"ResultSummary"`
-	Counters counters `xml:"Counters"`
-}
-
-type counters struct {
-	XMLName             xml.Name `xml:"Counters"`
-	Total               uint     `xml:"total,attr"`
-	Executed            uint     `xml:"executed,attr"`
-	Passed              uint     `xml:"passed,attr"`
-	Failed              uint     `xml:"failed,attr"`
-	Error               uint     `xml:"error,attr"`
-	Timeout             uint     `xml:"timeout,attr"`
-	Aborted             uint     `xml:"aborted,attr"`
-	Inconclusive        uint     `xml:"inconclusive,attr"`
-	PassedButRunAborted uint     `xml:"passedButRunAborted,attr"`
-	NotRunnable         uint     `xml:"notRunnable,attr"`
-	NotExecuted         uint     `xml:"notExecuted,attr"`
-	Disconnected        uint     `xml:"disconnected,attr"`
-	Warning             uint     `xml:"warning,attr"`
-	Completed           uint     `xml:"completed,attr"`
-	InProgress          uint     `xml:"inProgress,attr"`
-	Pending             uint     `xml:"pending,attr"`
+	ResultSummary struct {
+		XMLName  xml.Name `xml:"ResultSummary"`
+		Counters struct {
+			XMLName             xml.Name `xml:"Counters"`
+			Total               uint     `xml:"total,attr"`
+			Executed            uint     `xml:"executed,attr"`
+			Passed              uint     `xml:"passed,attr"`
+			Failed              uint     `xml:"failed,attr"`
+			Error               uint     `xml:"error,attr"`
+			Timeout             uint     `xml:"timeout,attr"`
+			Aborted             uint     `xml:"aborted,attr"`
+			Inconclusive        uint     `xml:"inconclusive,attr"`
+			PassedButRunAborted uint     `xml:"passedButRunAborted,attr"`
+			NotRunnable         uint     `xml:"notRunnable,attr"`
+			NotExecuted         uint     `xml:"notExecuted,attr"`
+			Disconnected        uint     `xml:"disconnected,attr"`
+			Warning             uint     `xml:"warning,attr"`
+			Completed           uint     `xml:"completed,attr"`
+			InProgress          uint     `xml:"inProgress,attr"`
+			Pending             uint     `xml:"pending,attr"`
+		} `xml:"Counters"`
+	} `xml:"ResultSummary"`
 }
 
 // getTestSummaryAndDetails currently only supports the TRX/XML format.
 func getTestSummaryAndDetails(data []byte, artifactID, buildID uint) (TestResultSummary, []TestResultDetail, error) {
-	var myTestRun testRun
-	if err := xml.Unmarshal(data, &myTestRun); err != nil {
+	var testRun trxTestRun
+	if err := xml.Unmarshal(data, &testRun); err != nil {
 		return TestResultSummary{}, []TestResultDetail{}, err
 	}
 
-	details := make([]TestResultDetail, len(myTestRun.Results.UnitTestResults))
-	for idx, utr := range myTestRun.Results.UnitTestResults {
+	details := make([]TestResultDetail, len(testRun.Results.UnitTestResults))
+	for idx, utr := range testRun.Results.UnitTestResults {
 		detail := &details[idx]
 		detail.ArtifactID = artifactID
 		detail.BuildID = buildID
@@ -586,7 +572,7 @@ func getTestSummaryAndDetails(data []byte, artifactID, buildID uint) (TestResult
 		}
 	}
 
-	counters := myTestRun.ResultSummary.Counters
+	counters := testRun.ResultSummary.Counters
 	summary := TestResultSummary{
 		ArtifactID: artifactID,
 		BuildID:    buildID,
