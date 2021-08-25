@@ -207,7 +207,7 @@ func (m artifactModule) getBuildTestsResultsHandler(c *gin.Context) {
 // @accept multipart/form-data
 // @param buildid path int true "Build ID"
 // @param file formData file true "Build artifact file"
-// @success 201 {object} string "Added new artifacts"
+// @success 201 "Added new artifacts"
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 404 {object} problem.Response "Artifact not found"
