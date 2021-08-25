@@ -90,7 +90,7 @@ func (m artifactModule) getBuildArtifactsHandler(c *gin.Context) {
 
 	artifacts := []Artifact{}
 	err := m.Database.
-		Where(&Artifact{BuildID: uint(buildID)}).
+		Where(&Artifact{BuildID: buildID}).
 		Find(&artifacts).
 		Error
 	if err != nil {
@@ -171,7 +171,7 @@ func (m artifactModule) getBuildTestsResultsHandler(c *gin.Context) {
 	testRunFiles := []Artifact{}
 
 	err := m.Database.
-		Where(&Artifact{BuildID: uint(buildID)}).
+		Where(&Artifact{BuildID: buildID}).
 		Where(artifactColumnFileName+" LIKE ?", "%.trx").
 		Find(&testRunFiles).
 		Error
@@ -360,7 +360,7 @@ func (m artifactModule) getBuildAllTestResultDetailsHandler(c *gin.Context) {
 
 	details := []TestResultDetail{}
 	err := m.Database.
-		Where(&TestResultDetail{BuildID: uint(buildID)}).
+		Where(&TestResultDetail{BuildID: buildID}).
 		Find(&details).
 		Error
 
@@ -394,7 +394,7 @@ func (m artifactModule) getBuildTestResultDetailsHandler(c *gin.Context) {
 
 	details := []TestResultDetail{}
 	err := m.Database.
-		Where(&TestResultDetail{BuildID: uint(buildID), ArtifactID: artifactID}).
+		Where(&TestResultDetail{BuildID: buildID, ArtifactID: artifactID}).
 		Find(&details).
 		Error
 
@@ -425,7 +425,7 @@ func (m artifactModule) getBuildTestResultsSummaryHandler(c *gin.Context) {
 	summaries := []TestResultSummary{}
 	err := m.Database.
 		Preload("Artifact").
-		Where(&TestResultSummary{BuildID: uint(buildID)}).
+		Where(&TestResultSummary{BuildID: buildID}).
 		Find(&summaries).
 		Error
 
