@@ -173,9 +173,9 @@ type TestResultSummary struct {
 	TestResultSummaryID uint      `gorm:"primaryKey" json:"testResultSummaryId"`
 	FileName            string    `gorm:"nullable" json:"fileName"`
 	ArtifactID          uint      `gorm:"not null;index:testresultsummary_idx_artifact_id" json:"artifactId"`
-	Artifact            *Artifact `gorm:"foreignKey:ArtifactID;constraint:OnUpdate:RESTRICT,OnDelete:RESTRICT" json:"-"`
+	Artifact            *Artifact `gorm:"foreignKey:ArtifactID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL" json:"-"`
 	BuildID             uint      `gorm:"not null;index:testresultsummary_idx_build_id" json:"buildId"`
-	Build               *Build    `gorm:"foreignKey:BuildID;constraint:OnUpdate:RESTRICT,OnDelete:RESTRICT" json:"-"`
+	Build               *Build    `gorm:"foreignKey:BuildID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"-"`
 	Total               uint      `gorm:"not null" json:"total"`
 	Failed              uint      `gorm:"not null" json:"failed"`
 	Passed              uint      `gorm:"not null" json:"passed"`
@@ -198,9 +198,9 @@ const (
 type TestResultDetail struct {
 	TestResultDetailID uint             `gorm:"primaryKey" json:"testResultDetailId"`
 	ArtifactID         uint             `gorm:"not null;index:testresultdetail_idx_artifact_id" json:"artifactId"`
-	Artifact           *Artifact        `gorm:"foreignKey:ArtifactID;constraint:OnUpdate:RESTRICT,OnDelete:RESTRICT" json:"-"`
+	Artifact           *Artifact        `gorm:"foreignKey:ArtifactID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL" json:"-"`
 	BuildID            uint             `gorm:"not null;index:testresultdetail_idx_build_id" json:"buildId"`
-	Build              *Build           `gorm:"foreignKey:BuildID;constraint:OnUpdate:RESTRICT,OnDelete:RESTRICT" json:"-"`
+	Build              *Build           `gorm:"foreignKey:BuildID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"-"`
 	Name               string           `gorm:"not null" json:"name"`
 	Message            null.String      `gorm:"nullable" json:"message" swaggertype:"string"`
 	StartedOn          null.Time        `gorm:"nullable;default:NULL;" json:"startedOn" format:"date-time"`
