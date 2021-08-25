@@ -65,7 +65,7 @@ func (m artifactModule) Register(g *gin.RouterGroup) {
 	g.GET("/artifacts", m.getBuildArtifactsHandler)
 	g.GET("/artifact/:artifactId", m.getBuildArtifactHandler)
 	g.POST("/artifact", m.postBuildArtifactHandler)
-	g.PUT("/test-result-data", m.postTestResultDataHandler)
+	g.POST("/test-result-data", m.postTestResultDataHandler)
 	g.GET("/test-result-details", m.getBuildAllTestResultDetailsHandler)
 	g.GET("/test-result-details/:artifactId", m.getBuildTestResultDetailsHandler)
 	g.GET("/test-results-summary", m.getBuildTestResultsSummaryHandler)
@@ -157,7 +157,7 @@ func (m artifactModule) getBuildArtifactHandler(c *gin.Context) {
 // @summary Get build tests results from .trx files. Deprecated, /build/{buildid}/test-results-summary should be used instead.
 // @tags artifact
 // @param buildid path int true "Build ID"
-// @success 200 {object} testsResults
+// @success 200 {object} TestsResults
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
@@ -273,7 +273,8 @@ func (m artifactModule) postTestResultDataHandler(c *gin.Context) {
 				WithString("filename", artifact.Name).
 				WithUint("build", buildID).
 				WithUint("artifact", artifact.ArtifactID)
-			if syntaxErr := err.(*xml.SyntaxError); syntaxErr != nil || strings.HasPrefix(err.Error(), "xml:") {
+			var syntaxErr *xml.SyntaxError
+			if errors.As(err, &syntaxErr) || strings.HasPrefix(err.Error(), "xml:") {
 				logEvent.Message("Failed to unmarshal; invalid/unsupported TRX/XML format.")
 
 				ginutil.WriteProblemError(c, syntaxErr,
@@ -312,7 +313,7 @@ func (m artifactModule) postTestResultDataHandler(c *gin.Context) {
 		BuildID:   buildID}
 	for _, summary := range summaryList.Summaries {
 		err := m.Database.
-			Create(summary).
+			Create(&summary).
 			Error
 		if err != nil {
 			ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
