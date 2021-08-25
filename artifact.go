@@ -265,14 +265,15 @@ func (m artifactModule) postTestResultDataHandler(c *gin.Context) {
 	lotsOfDetails := make([]TestResultDetail, 0)
 
 	for _, artifact := range artifacts {
-		details, summary, err := getTestSummaryAndDetails(artifact.Data, artifact.ArtifactID, buildID)
+		summary, details, err := getTestSummaryAndDetails(artifact.Data, artifact.ArtifactID, buildID)
 		if err != nil {
 			log.Warn().
 				WithError(err).
 				WithString("filename", artifact.Name).
 				WithUint("build", buildID).
 				WithUint("artifact", artifact.ArtifactID).
-				Message("Failed to unmarshal; invalid TRX/XML format")
+				Message("Failed to unmarshal; invalid TRX/XML format, or the structure" +
+					" receiving the data is malformed.")
 
 			ginutil.WriteProblemError(c, err,
 				problem.Response{
@@ -281,7 +282,8 @@ func (m artifactModule) postTestResultDataHandler(c *gin.Context) {
 					Title:  "Unexpected response format.",
 					Detail: fmt.Sprintf(
 						"Failed parsing test result ID %d, for build with ID %d in"+
-						" database. Expected TRX/XML format.", summary.ArtifactID, buildID),
+							" database. Expected TRX/XML format. Could also be due to an"+
+							" internal bug.", summary.ArtifactID, buildID),
 				})
 			return
 		}
@@ -553,11 +555,11 @@ type counters struct {
 	Pending             uint     `xml:"pending,attr"`
 }
 
-// getTestSummaryAndDetails currently only supports the TRX format.
-func getTestSummaryAndDetails(data []byte, artifactID, buildID uint) ([]TestResultDetail, TestResultSummary, error) {
+// getTestSummaryAndDetails currently only supports the TRX/XML format.
+func getTestSummaryAndDetails(data []byte, artifactID, buildID uint) (TestResultSummary, []TestResultDetail, error) {
 	var myTestRun testRun
 	if err := xml.Unmarshal(data, &myTestRun); err != nil {
-		return []TestResultDetail{}, TestResultSummary{}, err
+		return TestResultSummary{}, []TestResultDetail{}, err
 	}
 
 	details := make([]TestResultDetail, len(myTestRun.Results.UnitTestResults))
@@ -598,7 +600,7 @@ func getTestSummaryAndDetails(data []byte, artifactID, buildID uint) ([]TestResu
 		Total:      counters.Total,
 	}
 
-	return details, summary, nil
+	return summary, details, nil
 }
 
 func (m artifactModule) createArtifacts(c *gin.Context, files []file, buildID uint) ([]Artifact, bool) {
