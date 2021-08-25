@@ -286,7 +286,7 @@ func (m artifactModule) postTestResultDataHandler(c *gin.Context) {
 								" database. Invalid/unsupported TRX/XML format.", summary.ArtifactID, buildID),
 					})
 			} else {
-				logEvent.Message("Failed to unmarshal; the structure used to unmarshall might be malformed.")
+				logEvent.Message("Failed to unmarshal; the structure used to unmarshal might be malformed.")
 
 				ginutil.WriteProblemError(c, syntaxErr,
 					problem.Response{
@@ -295,7 +295,7 @@ func (m artifactModule) postTestResultDataHandler(c *gin.Context) {
 						Title:  "Bad code.",
 						Detail: fmt.Sprintf(
 							"Failed parsing test result ID %d, for build with ID %d in database. The structure"+
-								" used to unmarshall the data in the wharf-api might be malformed. This really shouldn't happen.",
+								" used to unmarshal the data in the wharf-api might be malformed. This really shouldn't happen.",
 							summary.ArtifactID, buildID),
 					})
 			}
