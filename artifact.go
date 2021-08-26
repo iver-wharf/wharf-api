@@ -19,12 +19,11 @@ import (
 
 // TestResultListSummary contains data about several test result files.
 type TestResultListSummary struct {
-	BuildID   uint                `json:"buildId"`
-	Total     uint                `json:"total"`
-	Failed    uint                `json:"failed"`
-	Passed    uint                `json:"passed"`
-	Skipped   uint                `json:"skipped"`
-	Summaries []TestResultSummary `json:"summaries"`
+	BuildID uint `json:"buildId"`
+	Total   uint `json:"total"`
+	Failed  uint `json:"failed"`
+	Passed  uint `json:"passed"`
+	Skipped uint `json:"skipped"`
 }
 
 type artifactModule struct {
@@ -264,6 +263,8 @@ func (m artifactModule) postTestResultDataHandler(c *gin.Context) {
 	summaries := make([]TestResultSummary, 0, len(artifacts))
 	lotsOfDetails := make([]TestResultDetail, 0)
 
+	listSummary := TestResultListSummary{
+		BuildID: buildID}
 	for _, artifact := range artifacts {
 		summary, details, err := getTestSummaryAndDetails(artifact.Data, artifact.ArtifactID, buildID)
 		if err != nil {
@@ -286,35 +287,23 @@ func (m artifactModule) postTestResultDataHandler(c *gin.Context) {
 			return
 		}
 
+		listSummary.Failed += summary.Failed
+		listSummary.Passed += summary.Passed
+		listSummary.Skipped += summary.Skipped
+
 		summary.FileName = artifact.FileName
 		summaries = append(summaries, summary)
 		lotsOfDetails = append(lotsOfDetails, details...)
 	}
 
-	summaryList := TestResultListSummary{
-		Summaries: summaries,
-		BuildID:   buildID}
-	for _, summary := range summaryList.Summaries {
-		err := m.Database.
-			Create(&summary).
-			Error
-		if err != nil {
-			ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
-				"Failed saving test result summary from artifact with ID %d, for build"+
-					" with ID %d in database.",
-				summary.ArtifactID, buildID))
-			return
-		}
+	listSummary.Total = listSummary.Failed + listSummary.Passed + listSummary.Skipped
 
-		summaryList.Failed += summary.Failed
-		summaryList.Passed += summary.Passed
-		summaryList.Skipped += summary.Skipped
+	if err := m.Database.CreateInBatches(summaries, 10).Error; err != nil {
+		ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
+			"Failed saving test result summaries for build with ID %d in database.",
+			buildID))
+		return
 	}
-
-	summaryList.Total =
-		summaryList.Failed +
-			summaryList.Passed +
-			summaryList.Skipped
 
 	err := m.Database.
 		CreateInBatches(lotsOfDetails, 100).
@@ -325,7 +314,7 @@ func (m artifactModule) postTestResultDataHandler(c *gin.Context) {
 			buildID))
 	}
 
-	c.JSON(http.StatusOK, summaryList)
+	c.JSON(http.StatusOK, listSummary)
 }
 
 // getBuildAllTestResultDetailsHandler godoc
@@ -420,19 +409,18 @@ func (m artifactModule) getBuildTestResultsSummaryHandler(c *gin.Context) {
 		return
 	}
 
-	summaryList := TestResultListSummary{
-		BuildID:   buildID,
-		Summaries: summaries}
+	listSummary := TestResultListSummary{
+		BuildID: buildID}
 
 	for _, v := range summaries {
-		summaryList.Failed += v.Failed
-		summaryList.Passed += v.Passed
-		summaryList.Skipped += v.Skipped
+		listSummary.Failed += v.Failed
+		listSummary.Passed += v.Passed
+		listSummary.Skipped += v.Skipped
 	}
 
-	summaryList.Total = summaryList.Failed + summaryList.Passed + summaryList.Skipped
+	listSummary.Total = listSummary.Failed + listSummary.Passed + listSummary.Skipped
 
-	c.JSON(http.StatusOK, summaryList)
+	c.JSON(http.StatusOK, listSummary)
 }
 
 func parseMultipartFormData(c *gin.Context, buildID uint) ([]file, bool) {
