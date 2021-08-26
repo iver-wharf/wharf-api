@@ -17,7 +17,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/iver-wharf/wharf-api/docs"
-	"github.com/iver-wharf/wharf-api/pkg/httputils"
+	"github.com/iver-wharf/wharf-api/internal/httputils"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/swaggo/gin-swagger/swaggerFiles"
 )

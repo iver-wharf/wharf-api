@@ -45,6 +45,9 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   `/api/health` respectively, so they are aligned with the current Swagger
   documentation. (#44)
 
+- Changed logging and moved the `httputils` package to stay consistent with the
+  provider API repos. (#47)
+
 - Changed version of `github.com/swaggo/swag/cmd/swag` from v1.7.0 to v1.7.1 in
   Dockerfile and Makefile. (#48)
 
