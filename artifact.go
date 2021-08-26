@@ -448,6 +448,14 @@ func readMultipartFileData(c *gin.Context, buildID uint, fh *multipart.FileHeade
 		return nil, false
 	}
 
+	defer func() {
+		if err := f.Close(); err != nil {
+			log.Error().
+				WithError(err).
+				Message("Failed to close multipart form request body file handle.")
+		}
+	}()
+
 	data, err := ioutil.ReadAll(f)
 	if err != nil {
 		ginutil.WriteMultipartFormReadError(c, err,
@@ -455,6 +463,7 @@ func readMultipartFileData(c *gin.Context, buildID uint, fh *multipart.FileHeade
 				" artifact for build with ID %d.", buildID))
 		return nil, false
 	}
+
 	return data, true
 }
 
