@@ -584,21 +584,15 @@ func (m artifactModule) createArtifacts(c *gin.Context, files []file, buildID ui
 }
 
 func parseParamArtifactAndBuildID(c *gin.Context) (artifactID, buildID uint, ok bool) {
-	if artifactID, ok = ginutil.ParseParamUint(c, "artifactId"); !ok {
-		return
-	}
-	if buildID, ok = ginutil.ParseParamUint(c, "buildid"); !ok {
-		return
+	if artifactID, ok = ginutil.ParseParamUint(c, "artifactId"); ok {
+		buildID, ok = ginutil.ParseParamUint(c, "buildid")
 	}
 	return
 }
 
 func parseBuildIDAndFiles(c *gin.Context) (buildID uint, files []file, ok bool) {
-	if buildID, ok = ginutil.ParseParamUint(c, "buildid"); !ok {
-		return
-	}
-	if files, ok = parseMultipartFormData(c, buildID); !ok {
-		return
+	if buildID, ok = ginutil.ParseParamUint(c, "buildid"); ok {
+		files, ok = parseMultipartFormData(c, buildID)
 	}
 	return
 }
