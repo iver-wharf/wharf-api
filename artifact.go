@@ -113,11 +113,7 @@ func (m artifactModule) getBuildArtifactsHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/artifact/{artifactId} [get]
 func (m artifactModule) getBuildArtifactHandler(c *gin.Context) {
-	buildID, ok := ginutil.ParseParamUint(c, "buildid")
-	if !ok {
-		return
-	}
-	artifactID, ok := ginutil.ParseParamUint(c, "artifactId")
+	artifactID, buildID, ok := parseParamArtifactAndBuildID(c)
 	if !ok {
 		return
 	}
@@ -213,18 +209,16 @@ func (m artifactModule) getBuildTestsResultsHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/artifact [post]
 func (m artifactModule) postBuildArtifactHandler(c *gin.Context) {
-	buildID, ok := ginutil.ParseParamUint(c, "buildid")
+	buildID, files, ok := parseBuildIDAndFiles(c)
 	if !ok {
 		return
 	}
-	files, ok := parseMultipartFormData(c, buildID)
-	if !ok {
-		return
-	}
+
 	_, ok = m.createArtifacts(c, files, buildID)
 	if !ok {
 		return
 	}
+
 	c.Status(http.StatusCreated)
 }
 
@@ -245,12 +239,7 @@ type file struct {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/test-result-data [post]
 func (m artifactModule) postTestResultDataHandler(c *gin.Context) {
-	buildID, ok := ginutil.ParseParamUint(c, "buildid")
-	if !ok {
-		return
-	}
-
-	files, ok := parseMultipartFormData(c, buildID)
+	buildID, files, ok := parseBuildIDAndFiles(c)
 	if !ok {
 		return
 	}
@@ -355,12 +344,7 @@ func (m artifactModule) getBuildAllTestResultDetailsHandler(c *gin.Context) {
 // @success 200 {object} []TestResultDetail
 // @router /build/{buildid}/test-result-details/{artifactId} [get]
 func (m artifactModule) getBuildTestResultDetailsHandler(c *gin.Context) {
-	buildID, ok := ginutil.ParseParamUint(c, "buildid")
-	if !ok {
-		return
-	}
-
-	artifactID, ok := ginutil.ParseParamUint(c, "artifactId")
+	artifactID, buildID, ok := parseParamArtifactAndBuildID(c)
 	if !ok {
 		return
 	}
@@ -597,4 +581,24 @@ func (m artifactModule) createArtifacts(c *gin.Context, files []file, buildID ui
 			Message("File saved as artifact")
 	}
 	return artifacts, true
+}
+
+func parseParamArtifactAndBuildID(c *gin.Context) (artifactID, buildID uint, ok bool) {
+	if artifactID, ok = ginutil.ParseParamUint(c, "artifactId"); !ok {
+		return
+	}
+	if buildID, ok = ginutil.ParseParamUint(c, "buildid"); !ok {
+		return
+	}
+	return
+}
+
+func parseBuildIDAndFiles(c *gin.Context) (buildID uint, files []file, ok bool) {
+	if buildID, ok = ginutil.ParseParamUint(c, "buildid"); !ok {
+		return
+	}
+	if files, ok = parseMultipartFormData(c, buildID); !ok {
+		return
+	}
+	return
 }
