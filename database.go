@@ -76,13 +76,20 @@ func openDatabase(config DBConfig) (*gorm.DB, error) {
 		if err == nil {
 			break
 		}
-		log.Error().
-			WithError(err).
-			WithInt("attempt", attempt).
-			WithInt("maxAttempts", maxAttempts).
-			WithDuration("retryAfter", retryDelay).
-			Message("Error connecting to database.")
-		time.Sleep(retryDelay)
+		if attempt < maxAttempts {
+			log.Warn().
+				WithError(err).
+				WithInt("attempt", attempt).
+				WithInt("maxAttempts", maxAttempts).
+				WithDuration("retryAfter", retryDelay).
+				Message("Failed attempt to reach database.")
+			time.Sleep(retryDelay)
+		} else {
+			log.Warn().
+				WithError(err).
+				WithInt("maxAttempts", maxAttempts).
+				Message("Failed all attempts to reach database.")
+		}
 	}
 	if err != nil {
 		return db, err
