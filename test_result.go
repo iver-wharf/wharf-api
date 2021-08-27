@@ -24,6 +24,7 @@ func (m testResultModule) Register(g *gin.RouterGroup) {
 
 		testResult.GET("/detail", m.getBuildAllTestResultDetailsHandler)
 
+		testResult.GET("/summary/", m.getBuildAllTestResultSummariesHandler)
 		testResult.GET("/summary/:testResultSummaryId", m.getBuildTestResultSummaryHandler)
 		testResult.GET("/summary/:testResultSummaryId/detail", m.getBuildTestResultDetailsHandler)
 
@@ -139,6 +140,37 @@ func (m testResultModule) getBuildAllTestResultDetailsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, details)
 }
 
+// getBuildAllTestResultSummariesHandler godoc
+// @summary Get all test result summaries for specified build
+// @tags test-result
+// @param buildid path int true "Build ID"
+// @param artifactId path int true "Artifact ID"
+// @success 200 {object} []TestResultSummary
+// @failure 400 {object} problem.Response "Bad Request"
+// @failure 502 {object} problem.Response "Database is unreachable"
+// @router /build/{buildid}/test-result/summary [get]
+func (m testResultModule) getBuildAllTestResultSummariesHandler(c *gin.Context) {
+	buildID, ok := ginutil.ParseParamUint(c, "buildid")
+	if !ok {
+		return
+	}
+
+	summaries := []TestResultSummary{}
+	err := m.Database.
+		Where(&TestResultSummary{BuildID: buildID}).
+		Find(&summaries).
+		Error
+
+	if err != nil {
+		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
+			"Failed fetching test result summaries from build with ID %d from database.",
+			buildID))
+		return
+	}
+
+	c.JSON(http.StatusOK, summaries)
+}
+
 // getBuildTestResultSummaryHandler godoc
 // @summary Get test result summary for specified test
 // @tags test-result
@@ -154,20 +186,20 @@ func (m testResultModule) getBuildTestResultSummaryHandler(c *gin.Context) {
 		return
 	}
 
-	details := []TestResultDetail{}
+	summary := TestResultSummary{}
 	err := m.Database.
-		Where(&TestResultDetail{BuildID: buildID, ArtifactID: artifactID}).
-		Find(&details).
+		Where(&TestResultSummary{BuildID: buildID, ArtifactID: artifactID}).
+		Find(&summary).
 		Error
 
 	if err != nil {
 		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
-			"Failed fetching test result details from test with ID %d for build with ID %d from database.",
+			"Failed fetching test result summary from test with ID %d for build with ID %d from database.",
 			artifactID, buildID))
 		return
 	}
 
-	c.JSON(http.StatusOK, details)
+	c.JSON(http.StatusOK, summary)
 }
 
 // getBuildTestResultDetailsHandler godoc
