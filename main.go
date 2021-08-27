@@ -17,7 +17,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/iver-wharf/wharf-api/docs"
-	"github.com/iver-wharf/wharf-api/internal/httputils"
+	"github.com/iver-wharf/wharf-core/pkg/cacertutil"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/swaggo/gin-swagger/swaggerFiles"
 )
@@ -55,7 +55,7 @@ func main() {
 	docs.SwaggerInfo.Version = AppVersion.Version
 
 	if config.CA.CertsFile != "" {
-		client, err := httputils.NewClientWithCerts(config.CA.CertsFile)
+		client, err := cacertutil.NewHttpClientWithCerts(config.CA.CertsFile)
 		if err != nil {
 			log.Error().WithError(err).Message("Failed to get net/http.Client with certs")
 			os.Exit(1)
