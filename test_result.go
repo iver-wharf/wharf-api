@@ -23,6 +23,8 @@ func (m testResultModule) Register(g *gin.RouterGroup) {
 		testResult.POST("/data", m.postTestResultDataHandler)
 
 		testResult.GET("/detail", m.getBuildAllTestResultDetailsHandler)
+
+		testResult.GET("/summary/:testResultSummaryId", m.getBuildTestResultSummaryHandler)
 		testResult.GET("/summary/:testResultSummaryId/detail", m.getBuildTestResultDetailsHandler)
 
 		testResult.GET("/list-summary", m.getBuildTestResultListSummaryHandler)
@@ -131,6 +133,37 @@ func (m testResultModule) getBuildAllTestResultDetailsHandler(c *gin.Context) {
 		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
 			"Failed fetching test result details for build with ID %d from database.",
 			buildID))
+		return
+	}
+
+	c.JSON(http.StatusOK, details)
+}
+
+// getBuildTestResultSummaryHandler godoc
+// @summary Get test result summary for specified test
+// @tags test-result
+// @param buildid path int true "Build ID"
+// @param artifactId path int true "Artifact ID"
+// @success 200 {object} TestResultSummary
+// @failure 400 {object} problem.Response "Bad Request"
+// @failure 502 {object} problem.Response "Database is unreachable"
+// @router /build/{buildid}/test-result/summary/{artifactId} [get]
+func (m testResultModule) getBuildTestResultSummaryHandler(c *gin.Context) {
+	artifactID, buildID, ok := ctxparser.ParamArtifactAndBuildID(c)
+	if !ok {
+		return
+	}
+
+	details := []TestResultDetail{}
+	err := m.Database.
+		Where(&TestResultDetail{BuildID: buildID, ArtifactID: artifactID}).
+		Find(&details).
+		Error
+
+	if err != nil {
+		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
+			"Failed fetching test result details from test with ID %d for build with ID %d from database.",
+			artifactID, buildID))
 		return
 	}
 
