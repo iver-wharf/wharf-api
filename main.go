@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/iver-wharf/wharf-core/pkg/cacertutil"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"github.com/iver-wharf/wharf-core/pkg/logger"
 	"github.com/iver-wharf/wharf-core/pkg/logger/consolepretty"
@@ -17,7 +18,6 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/iver-wharf/wharf-api/docs"
-	"github.com/iver-wharf/wharf-core/pkg/cacertutil"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/swaggo/gin-swagger/swaggerFiles"
 )
