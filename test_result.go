@@ -144,7 +144,6 @@ func (m testResultModule) getBuildAllTestResultDetailsHandler(c *gin.Context) {
 // @summary Get all test result summaries for specified build
 // @tags test-result
 // @param buildid path int true "Build ID"
-// @param artifactId path int true "Artifact ID"
 // @success 200 {object} []TestResultSummary
 // @failure 400 {object} problem.Response "Bad Request"
 // @failure 502 {object} problem.Response "Database is unreachable"
