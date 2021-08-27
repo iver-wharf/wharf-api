@@ -18,22 +18,27 @@ type testResultModule struct {
 }
 
 func (m testResultModule) Register(g *gin.RouterGroup) {
-	g.POST("/test-result-data", m.postTestResultDataHandler)
-	g.GET("/test-result-details", m.getBuildAllTestResultDetailsHandler)
-	g.GET("/test-result-details/:testResultDetailId", m.getBuildTestResultDetailsHandler)
-	g.GET("/test-results-summary", m.getBuildTestResultsSummaryHandler)
+	testResult := g.Group("/test-result")
+	{
+		testResult.POST("/data", m.postTestResultDataHandler)
+
+		testResult.GET("/detail", m.getBuildAllTestResultDetailsHandler)
+		testResult.GET("/summary/:testResultSummaryId/detail", m.getBuildTestResultDetailsHandler)
+
+		testResult.GET("/list-summary", m.getBuildTestResultListSummaryHandler)
+	}
 }
 
 // postTestResultDataHandler godoc
 // @summary Post test result data
-// @tags artifact
+// @tags test-result
 // @accept multipart/form-data
 // @param buildid path int true "Build ID"
 // @param file formData file true "Test result file"
 // @success 201 {object} TestResultListSummary "Added new test result data and created summary"
 // @failure 400 {object} problem.Response "Bad request"
-// @failure 502 {object} problem.Response "Database is unreachable"
-// @router /build/{buildid}/test-result-data [post]
+// @failure 502 {object} problem.Response "Database unreachable or bad gateway"
+// @router /build/{buildid}/test-result/data [post]
 func (m testResultModule) postTestResultDataHandler(c *gin.Context) {
 	buildID, files, ok := ctxparser.ParamBuildIDAndFiles(c)
 	if !ok {
@@ -104,12 +109,12 @@ func (m testResultModule) postTestResultDataHandler(c *gin.Context) {
 
 // getBuildAllTestResultDetailsHandler godoc
 // @summary Get all test result details for specified build
-// @tags artifact
+// @tags test-result
 // @param buildid path int true "Build ID"
 // @success 200 {object} []TestResultDetail
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 502 {object} problem.Response "Database is unreachable"
-// @router /build/{buildid}/test-result-details [get]
+// @router /build/{buildid}/test-result/detail [get]
 func (m testResultModule) getBuildAllTestResultDetailsHandler(c *gin.Context) {
 	buildID, ok := ginutil.ParseParamUint(c, "buildid")
 	if !ok {
@@ -133,12 +138,14 @@ func (m testResultModule) getBuildAllTestResultDetailsHandler(c *gin.Context) {
 }
 
 // getBuildTestResultDetailsHandler godoc
-// @summary Get test result details for specified test
-// @tags artifact
+// @summary Get all test result details for specified test
+// @tags test-result
 // @param buildid path int true "Build ID"
 // @param artifactId path int true "Artifact ID"
 // @success 200 {object} []TestResultDetail
-// @router /build/{buildid}/test-result-details/{artifactId} [get]
+// @failure 400 {object} problem.Response "Bad Request"
+// @failure 502 {object} problem.Response "Database is unreachable"
+// @router /build/{buildid}/test-result/summary/{artifactId}/detail [get]
 func (m testResultModule) getBuildTestResultDetailsHandler(c *gin.Context) {
 	artifactID, buildID, ok := ctxparser.ParamArtifactAndBuildID(c)
 	if !ok {
@@ -161,15 +168,15 @@ func (m testResultModule) getBuildTestResultDetailsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, details)
 }
 
-// getBuildTestResultsSummaryHandler godoc
-// @summary Get test result summary of all tests for specified build
-// @tags artifact
+// getBuildTestResultListSummaryHandler godoc
+// @summary Get test result list summary of all tests for specified build
+// @tags test-result
 // @param buildid path int true "Build ID"
 // @success 200 {object} TestResultListSummary
 // @failure 400 {object} problem.Response "Bad Request"
-// @failure 502 {object} problem.Response "Bad Gateway"
-// @router /build/{buildid}/test-results-summary [get]
-func (m testResultModule) getBuildTestResultsSummaryHandler(c *gin.Context) {
+// @failure 502 {object} problem.Response "Database is unreachable"
+// @router /build/{buildid}/test-result/list-summary [get]
+func (m testResultModule) getBuildTestResultListSummaryHandler(c *gin.Context) {
 	buildID, ok := ginutil.ParseParamUint(c, "buildid")
 	if !ok {
 		return
@@ -254,7 +261,6 @@ type trxTestRun struct {
 	} `xml:"ResultSummary"`
 }
 
-// getTestSummaryAndDetails currently only supports the TRX/XML format.
 func getTestSummaryAndDetails(data []byte, artifactID, buildID uint) (TestResultSummary, []TestResultDetail, error) {
 	var testRun trxTestRun
 	if err := xml.Unmarshal(data, &testRun); err != nil {
