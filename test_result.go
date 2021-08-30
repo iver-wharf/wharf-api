@@ -25,8 +25,8 @@ func (m testResultModule) Register(g *gin.RouterGroup) {
 		testResult.GET("/detail", m.getBuildAllTestResultDetailsHandler)
 
 		testResult.GET("/summary", m.getBuildAllTestResultSummariesHandler)
-		testResult.GET("/summary/:testResultSummaryId", m.getBuildTestResultSummaryHandler)
-		testResult.GET("/summary/:testResultSummaryId/detail", m.getBuildTestResultDetailsHandler)
+		testResult.GET("/summary/:artifactId", m.getBuildTestResultSummaryHandler)
+		testResult.GET("/summary/:artifactId/detail", m.getBuildTestResultDetailsHandler)
 
 		testResult.GET("/list-summary", m.getBuildTestResultListSummaryHandler)
 	}
