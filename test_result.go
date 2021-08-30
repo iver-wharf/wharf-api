@@ -365,11 +365,26 @@ func getTestSummaryAndDetails(data []byte, artifactID, buildID uint) (TestResult
 				utr.Output.ErrorInfo.StackTrace.InnerXML))
 		}
 
-		if startTime, err := time.Parse(time.RFC3339, utr.StartTime); err == nil {
+		parseTimeFailedEvent := log.Warn().
+			WithUint("build", buildID).
+			WithUint("artifact", artifactID).
+			WithString("test", detail.Name)
+
+		startTime, err := time.Parse(time.RFC3339, utr.StartTime)
+		if err != nil {
+			parseTimeFailedEvent.
+				WithError(err).
+				Message("Failed to parse StartTime for test.")
+		} else {
 			detail.StartedOn.SetValid(startTime)
 		}
 
-		if endTime, err := time.Parse(time.RFC3339, utr.EndTime); err == nil {
+		endTime, err := time.Parse(time.RFC3339, utr.EndTime)
+		if err != nil {
+			parseTimeFailedEvent.
+				WithError(err).
+				Message("Failed to parse CompletedOn for test.")
+		} else {
 			detail.CompletedOn.SetValid(endTime)
 		}
 	}
