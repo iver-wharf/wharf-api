@@ -20,7 +20,7 @@ type buildTestResultModule struct {
 func (m buildTestResultModule) Register(g *gin.RouterGroup) {
 	testResult := g.Group("/test-result")
 	{
-		testResult.POST("/data", m.postTestResultDataHandler)
+		testResult.POST("/data", m.postBuildTestResultDataHandler)
 
 		testResult.GET("/detail", m.getBuildAllTestResultDetailsHandler)
 
@@ -32,7 +32,7 @@ func (m buildTestResultModule) Register(g *gin.RouterGroup) {
 	}
 }
 
-// postTestResultDataHandler godoc
+// postBuildTestResultDataHandler godoc
 // @summary Post test result data
 // @tags test-result
 // @accept multipart/form-data
@@ -42,7 +42,7 @@ func (m buildTestResultModule) Register(g *gin.RouterGroup) {
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 502 {object} problem.Response "Database unreachable or bad gateway"
 // @router /build/{buildid}/test-result/data [post]
-func (m buildTestResultModule) postTestResultDataHandler(c *gin.Context) {
+func (m buildTestResultModule) postBuildTestResultDataHandler(c *gin.Context) {
 	buildID, files, ok := ctxparser.ParamBuildIDAndFiles(c)
 	if !ok {
 		return
