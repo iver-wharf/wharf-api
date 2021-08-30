@@ -26,12 +26,14 @@ type TestResultListSummary struct {
 	Skipped uint `json:"skipped"`
 }
 
+type ArtifactListEntry struct {
+	FileName   string `json:"fileName"`
+	ArtifactID uint   `json:"artifactId"`
+}
+
 type ArtifactList struct {
-	Entries []struct {
-		FileName   string `json:"fileName"`
-		ArtifactID uint   `json:"artifactId"`
-	} `json:"entries"`
-	Count uint `json:"count"`
+	Entries []ArtifactListEntry `json:"entries"`
+	Count   uint                `json:"count"`
 }
 
 func (m buildTestResultModule) Register(r gin.IRouter) {
@@ -70,11 +72,6 @@ func (m buildTestResultModule) postBuildTestResultDataHandler(c *gin.Context) {
 		return
 	}
 
-	type artifactEntry struct {
-		FileName   string
-		ArtifactID uint
-	}
-
 	artifactList := ArtifactList{}
 
 	summaries := make([]TestResultSummary, 0, len(artifacts))
@@ -106,9 +103,9 @@ func (m buildTestResultModule) postBuildTestResultDataHandler(c *gin.Context) {
 		summaries = append(summaries, summary)
 		lotsOfDetails = append(lotsOfDetails, details...)
 
-		artifactList.Entries = append(artifactList.Entries, artifactEntry{
-			artifact.FileName,
-			artifact.ArtifactID,
+		artifactList.Entries = append(artifactList.Entries, ArtifactListEntry{
+			FileName:   artifact.FileName,
+			ArtifactID: artifact.ArtifactID,
 		})
 	}
 
