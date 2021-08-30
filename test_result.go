@@ -13,11 +13,11 @@ import (
 	"gorm.io/gorm"
 )
 
-type testResultModule struct {
+type buildTestResultModule struct {
 	Database *gorm.DB
 }
 
-func (m testResultModule) Register(g *gin.RouterGroup) {
+func (m buildTestResultModule) Register(g *gin.RouterGroup) {
 	testResult := g.Group("/test-result")
 	{
 		testResult.POST("/data", m.postTestResultDataHandler)
@@ -42,7 +42,7 @@ func (m testResultModule) Register(g *gin.RouterGroup) {
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 502 {object} problem.Response "Database unreachable or bad gateway"
 // @router /build/{buildid}/test-result/data [post]
-func (m testResultModule) postTestResultDataHandler(c *gin.Context) {
+func (m buildTestResultModule) postTestResultDataHandler(c *gin.Context) {
 	buildID, files, ok := ctxparser.ParamBuildIDAndFiles(c)
 	if !ok {
 		return
@@ -118,7 +118,7 @@ func (m testResultModule) postTestResultDataHandler(c *gin.Context) {
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/test-result/detail [get]
-func (m testResultModule) getBuildAllTestResultDetailsHandler(c *gin.Context) {
+func (m buildTestResultModule) getBuildAllTestResultDetailsHandler(c *gin.Context) {
 	buildID, ok := ginutil.ParseParamUint(c, "buildid")
 	if !ok {
 		return
@@ -148,7 +148,7 @@ func (m testResultModule) getBuildAllTestResultDetailsHandler(c *gin.Context) {
 // @failure 400 {object} problem.Response "Bad Request"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/test-result/summary [get]
-func (m testResultModule) getBuildAllTestResultSummariesHandler(c *gin.Context) {
+func (m buildTestResultModule) getBuildAllTestResultSummariesHandler(c *gin.Context) {
 	buildID, ok := ginutil.ParseParamUint(c, "buildid")
 	if !ok {
 		return
@@ -179,7 +179,7 @@ func (m testResultModule) getBuildAllTestResultSummariesHandler(c *gin.Context) 
 // @failure 400 {object} problem.Response "Bad Request"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/test-result/summary/{artifactId} [get]
-func (m testResultModule) getBuildTestResultSummaryHandler(c *gin.Context) {
+func (m buildTestResultModule) getBuildTestResultSummaryHandler(c *gin.Context) {
 	artifactID, buildID, ok := ctxparser.ParamArtifactAndBuildID(c)
 	if !ok {
 		return
@@ -210,7 +210,7 @@ func (m testResultModule) getBuildTestResultSummaryHandler(c *gin.Context) {
 // @failure 400 {object} problem.Response "Bad Request"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/test-result/summary/{artifactId}/detail [get]
-func (m testResultModule) getBuildTestResultDetailsHandler(c *gin.Context) {
+func (m buildTestResultModule) getBuildTestResultDetailsHandler(c *gin.Context) {
 	artifactID, buildID, ok := ctxparser.ParamArtifactAndBuildID(c)
 	if !ok {
 		return
@@ -240,7 +240,7 @@ func (m testResultModule) getBuildTestResultDetailsHandler(c *gin.Context) {
 // @failure 400 {object} problem.Response "Bad Request"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/test-result/list-summary [get]
-func (m testResultModule) getBuildTestResultListSummaryHandler(c *gin.Context) {
+func (m buildTestResultModule) getBuildTestResultListSummaryHandler(c *gin.Context) {
 	buildID, ok := ginutil.ParseParamUint(c, "buildid")
 	if !ok {
 		return

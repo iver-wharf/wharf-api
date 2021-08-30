@@ -68,8 +68,8 @@ func (m buildModule) Register(g *gin.RouterGroup) {
 		artifacts := artifactModule{m.Database}
 		artifacts.Register(build)
 
-		testResults := testResultModule{m.Database}
-		testResults.Register(build)
+		buildTestResults := buildTestResultModule{m.Database}
+		buildTestResults.Register(build)
 	}
 }
 
