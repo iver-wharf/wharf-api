@@ -14,15 +14,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// TestResultListSummary contains data about several test result files.
-type TestResultListSummary struct {
-	BuildID uint `json:"buildId"`
-	Total   uint `json:"total"`
-	Failed  uint `json:"failed"`
-	Passed  uint `json:"passed"`
-	Skipped uint `json:"skipped"`
-}
-
 type artifactModule struct {
 	Database *gorm.DB
 }

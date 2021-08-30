@@ -17,6 +17,23 @@ type buildTestResultModule struct {
 	Database *gorm.DB
 }
 
+// TestResultListSummary contains data about several test result files.
+type TestResultListSummary struct {
+	BuildID uint `json:"buildId"`
+	Total   uint `json:"total"`
+	Failed  uint `json:"failed"`
+	Passed  uint `json:"passed"`
+	Skipped uint `json:"skipped"`
+}
+
+type ArtifactList struct {
+	Entries []struct {
+		FileName   string
+		ArtifactID uint
+	}
+	Count uint
+}
+
 func (m buildTestResultModule) Register(r gin.IRouter) {
 	testResult := r.Group("/test-result")
 	{
@@ -38,7 +55,7 @@ func (m buildTestResultModule) Register(r gin.IRouter) {
 // @accept multipart/form-data
 // @param buildid path int true "Build ID"
 // @param file formData file true "Test result file"
-// @success 201 {object} TestResultListSummary "Added new test result data and created summary"
+// @success 201 {object} ArtifactList "Added new test result data and created summaries"
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 502 {object} problem.Response "Database unreachable or bad gateway"
 // @router /build/{buildid}/test-result/data [post]
@@ -53,11 +70,16 @@ func (m buildTestResultModule) postBuildTestResultDataHandler(c *gin.Context) {
 		return
 	}
 
+	type artifactEntry struct {
+		FileName   string
+		ArtifactID uint
+	}
+
+	artifactList := ArtifactList{}
+
 	summaries := make([]TestResultSummary, 0, len(artifacts))
 	lotsOfDetails := make([]TestResultDetail, 0)
 
-	listSummary := TestResultListSummary{
-		BuildID: buildID}
 	for _, artifact := range artifacts {
 		summary, details, err := getTestSummaryAndDetails(artifact.Data, artifact.ArtifactID, buildID)
 		if err != nil {
@@ -80,16 +102,15 @@ func (m buildTestResultModule) postBuildTestResultDataHandler(c *gin.Context) {
 			return
 		}
 
-		listSummary.Failed += summary.Failed
-		listSummary.Passed += summary.Passed
-		listSummary.Skipped += summary.Skipped
-
 		summary.FileName = artifact.FileName
 		summaries = append(summaries, summary)
 		lotsOfDetails = append(lotsOfDetails, details...)
-	}
 
-	listSummary.Total = listSummary.Failed + listSummary.Passed + listSummary.Skipped
+		artifactList.Entries = append(artifactList.Entries, artifactEntry{
+			artifact.FileName,
+			artifact.ArtifactID,
+		})
+	}
 
 	if err := m.Database.CreateInBatches(summaries, 10).Error; err != nil {
 		ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
@@ -107,7 +128,9 @@ func (m buildTestResultModule) postBuildTestResultDataHandler(c *gin.Context) {
 			buildID))
 	}
 
-	c.JSON(http.StatusOK, listSummary)
+	artifactList.Count = uint(len(artifactList.Entries))
+
+	c.JSON(http.StatusOK, artifactList)
 }
 
 // getBuildAllTestResultDetailsHandler godoc
