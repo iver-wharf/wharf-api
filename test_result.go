@@ -26,14 +26,17 @@ type TestResultListSummary struct {
 	Skipped uint `json:"skipped"`
 }
 
-type ArtifactListEntry struct {
-	FileName   string `json:"fileName"`
-	ArtifactID uint   `json:"artifactId"`
+// ArtifactList contains a slice of artifact file names and a field for how many
+// entries there are. Used as response model when uploading test result data
+// been uploaded.
+type ArtifactList struct {
+	Entries []artifactListItem `json:"entries"`
+	Count   uint               `json:"count"`
 }
 
-type ArtifactList struct {
-	Entries []ArtifactListEntry `json:"entries"`
-	Count   uint                `json:"count"`
+type artifactListItem struct {
+	FileName   string `json:"fileName"`
+	ArtifactID uint   `json:"artifactId"`
 }
 
 func (m buildTestResultModule) Register(r gin.IRouter) {
@@ -103,7 +106,7 @@ func (m buildTestResultModule) postBuildTestResultDataHandler(c *gin.Context) {
 		summaries = append(summaries, summary)
 		lotsOfDetails = append(lotsOfDetails, details...)
 
-		artifactList.Entries = append(artifactList.Entries, ArtifactListEntry{
+		artifactList.Entries = append(artifactList.Entries, artifactListItem{
 			FileName:   artifact.FileName,
 			ArtifactID: artifact.ArtifactID,
 		})
