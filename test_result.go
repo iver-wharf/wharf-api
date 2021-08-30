@@ -28,10 +28,10 @@ type TestResultListSummary struct {
 
 type ArtifactList struct {
 	Entries []struct {
-		FileName   string
-		ArtifactID uint
-	}
-	Count uint
+		FileName   string `json:"fileName"`
+		ArtifactID uint   `json:"artifactId"`
+	} `json:"entries"`
+	Count uint `json:"count"`
 }
 
 func (m buildTestResultModule) Register(r gin.IRouter) {
