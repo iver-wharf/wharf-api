@@ -17,8 +17,8 @@ type buildTestResultModule struct {
 	Database *gorm.DB
 }
 
-func (m buildTestResultModule) Register(g *gin.RouterGroup) {
-	testResult := g.Group("/test-result")
+func (m buildTestResultModule) Register(r gin.IRouter) {
+	testResult := r.Group("/test-result")
 	{
 		testResult.POST("/data", m.postBuildTestResultDataHandler)
 
