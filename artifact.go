@@ -97,7 +97,7 @@ func (m artifactModule) getBuildArtifactsHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/artifact/{artifactId} [get]
 func (m artifactModule) getBuildArtifactHandler(c *gin.Context) {
-	artifactID, buildID, ok := ctxparser.ParamArtifactAndBuildID(c)
+	artifactID, buildID, ok := parseParamArtifactAndBuildID(c)
 	if !ok {
 		return
 	}
@@ -143,7 +143,7 @@ func (m artifactModule) getBuildArtifactHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/artifact [post]
 func (m artifactModule) postBuildArtifactHandler(c *gin.Context) {
-	buildID, files, ok := ctxparser.ParamBuildIDAndFiles(c)
+	buildID, files, ok := parseParamBuildIDAndFiles(c)
 	if !ok {
 		return
 	}

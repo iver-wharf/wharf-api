@@ -23,25 +23,8 @@ type File struct {
 	Data []byte
 }
 
-// ParamArtifactAndBuildID is a helper function that parses the params
-// artifactId and buildid from the gin.Context.
-func ParamArtifactAndBuildID(c *gin.Context) (artifactID, buildID uint, ok bool) {
-	if artifactID, ok = ginutil.ParseParamUint(c, "artifactId"); ok {
-		buildID, ok = ginutil.ParseParamUint(c, "buildid")
-	}
-	return
-}
-
-// ParamBuildIDAndFiles is a helper function that parses the param
-// buildid and multipart form data files from the gin.Context.
-func ParamBuildIDAndFiles(c *gin.Context) (buildID uint, files []File, ok bool) {
-	if buildID, ok = ginutil.ParseParamUint(c, "buildid"); ok {
-		files, ok = parseMultipartFormData(c, buildID)
-	}
-	return
-}
-
-func parseMultipartFormData(c *gin.Context, buildID uint) ([]File, bool) {
+// ParseMultipartFormData parses multipart form data files from a gin.Context.
+func ParseMultipartFormData(c *gin.Context, buildID uint) ([]File, bool) {
 	form, err := c.MultipartForm()
 	if err != nil {
 		ginutil.WriteMultipartFormReadError(c, err,
