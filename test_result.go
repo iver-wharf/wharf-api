@@ -39,7 +39,7 @@ type ArtifactList struct {
 func (m buildTestResultModule) Register(r gin.IRouter) {
 	testResult := r.Group("/test-result")
 	{
-		testResult.POST("/data", m.postBuildTestResultDataHandler)
+		testResult.POST("/", m.postBuildTestResultDataHandler)
 
 		testResult.GET("/detail", m.getBuildAllTestResultDetailsHandler)
 
@@ -60,7 +60,7 @@ func (m buildTestResultModule) Register(r gin.IRouter) {
 // @success 201 {object} ArtifactList "Added new test result data and created summaries"
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 502 {object} problem.Response "Database unreachable or bad gateway"
-// @router /build/{buildid}/test-result/data [post]
+// @router /build/{buildid}/test-result [post]
 func (m buildTestResultModule) postBuildTestResultDataHandler(c *gin.Context) {
 	buildID, files, ok := parseParamBuildIDAndFiles(c)
 	if !ok {
