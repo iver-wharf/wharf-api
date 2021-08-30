@@ -246,11 +246,13 @@ func (m testResultModule) getBuildTestResultListSummaryHandler(c *gin.Context) {
 		return
 	}
 
-	summaries := []TestResultSummary{}
+	listSummary := TestResultListSummary{BuildID: buildID}
+
 	err := m.Database.
-		Preload("Artifact").
-		Where(&TestResultSummary{BuildID: buildID}).
-		Find(&summaries).
+		Model(&TestResultSummary{}).
+		Select("sum(failed) as Failed, sum(passed) as Passed, sum(skipped) as Skipped").
+		Where(&listSummary).
+		Scan(&listSummary).
 		Error
 
 	if err != nil {
@@ -260,23 +262,17 @@ func (m testResultModule) getBuildTestResultListSummaryHandler(c *gin.Context) {
 		return
 	}
 
-	listSummary := TestResultListSummary{
-		BuildID: buildID}
-
-	for _, v := range summaries {
-		listSummary.Failed += v.Failed
-		listSummary.Passed += v.Passed
-		listSummary.Skipped += v.Skipped
-	}
-
 	listSummary.Total = listSummary.Failed + listSummary.Passed + listSummary.Skipped
 
 	c.JSON(http.StatusOK, listSummary)
 }
 
+type xmlInnerString struct {
+	InnerXML string `xml:",innerxml"`
+}
+
 type trxTestRun struct {
 	XMLName xml.Name `xml:"TestRun"`
-
 	Results struct {
 		XMLName         xml.Name `xml:"Results"`
 		UnitTestResults []struct {
@@ -289,17 +285,13 @@ type trxTestRun struct {
 			Output    struct {
 				XMLName   xml.Name `xml:"Output"`
 				ErrorInfo struct {
-					XMLName xml.Name `xml:"ErrorInfo"`
-					Message struct {
-						InnerXML string `xml:",innerxml"`
-					} `xml:"Message"`
-					StackTrace struct {
-						InnerXML string `xml:",innerxml"`
-					} `xml:"StackTrace"`
-				} `xml:"ErrorInfo"`
-			} `xml:"Output"`
-		} `xml:"UnitTestResult"`
-	} `xml:"Results"`
+					XMLName    xml.Name       `xml:"ErrorInfo"`
+					Message    xmlInnerString `xml:"Message"`
+					StackTrace xmlInnerString `xml:"StackTrace"`
+				}
+			}
+		}
+	}
 
 	ResultSummary struct {
 		XMLName  xml.Name `xml:"ResultSummary"`
@@ -321,8 +313,8 @@ type trxTestRun struct {
 			Completed           uint     `xml:"completed,attr"`
 			InProgress          uint     `xml:"inProgress,attr"`
 			Pending             uint     `xml:"pending,attr"`
-		} `xml:"Counters"`
-	} `xml:"ResultSummary"`
+		}
+	}
 }
 
 func getTestSummaryAndDetails(data []byte, artifactID, buildID uint) (TestResultSummary, []TestResultDetail, error) {
