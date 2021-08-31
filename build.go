@@ -33,10 +33,14 @@ func (bl *BuildLog) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, (*antiInfiniteLoop)(bl)); err != nil {
 		return err
 	}
-	if bl.Status != "" {
-		bl.StatusID = parseBuildStatus(bl.Status)
-	} else {
+	if bl.Status == "" {
 		bl.StatusID = -1
+	} else {
+		if statusID, ok := parseBuildStatus(bl.Status); ok {
+			bl.StatusID = statusID
+		} else {
+			return fmt.Errorf("invalid build status: %s", bl.Status)
+		}
 	}
 	return nil
 }
@@ -276,7 +280,14 @@ func (m buildModule) putBuildStatus(c *gin.Context) {
 		return
 	}
 
-	build, err := m.updateBuildStatus(buildID, parseBuildStatus(status))
+	statusID, ok := parseBuildStatus(status)
+	if !ok {
+		ginutil.WriteInvalidParamError(c, nil, "status", fmt.Sprintf(
+			"Unable to parse build status from %q", status))
+		return
+	}
+
+	build, err := m.updateBuildStatus(buildID, statusID)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		ginutil.WriteDBNotFound(c, fmt.Sprintf(
 			"Build with ID %d was not found when trying to update status to %q.",
