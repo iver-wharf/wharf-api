@@ -305,47 +305,41 @@ type xmlInnerString struct {
 type trxTestRun struct {
 	XMLName xml.Name `xml:"TestRun"`
 	Results struct {
-		XMLName         xml.Name `xml:"Results"`
 		UnitTestResults []struct {
-			XMLName   xml.Name `xml:"UnitTestResult"`
-			TestName  string   `xml:"testName,attr"`
-			Duration  string   `xml:"duration,attr"`
-			StartTime string   `xml:"startTime,attr"`
-			EndTime   string   `xml:"endTime,attr"`
-			Outcome   string   `xml:"outcome,attr"`
+			TestName  string `xml:"testName,attr"`
+			Duration  string `xml:"duration,attr"`
+			StartTime string `xml:"startTime,attr"`
+			EndTime   string `xml:"endTime,attr"`
+			Outcome   string `xml:"outcome,attr"`
 			Output    struct {
-				XMLName   xml.Name `xml:"Output"`
 				ErrorInfo struct {
-					XMLName    xml.Name       `xml:"ErrorInfo"`
 					Message    xmlInnerString `xml:"Message"`
 					StackTrace xmlInnerString `xml:"StackTrace"`
-				}
-			}
-		}
-	}
+				} `xml:"ErrorInfo"`
+			} `xml:"Output"`
+		} `xml:"UnitTestResult"`
+	} `xml:"Results"`
 
 	ResultSummary struct {
-		XMLName  xml.Name `xml:"ResultSummary"`
 		Counters struct {
-			XMLName             xml.Name `xml:"Counters"`
-			Total               uint     `xml:"total,attr"`
-			Executed            uint     `xml:"executed,attr"`
-			Passed              uint     `xml:"passed,attr"`
-			Failed              uint     `xml:"failed,attr"`
-			Error               uint     `xml:"error,attr"`
-			Timeout             uint     `xml:"timeout,attr"`
-			Aborted             uint     `xml:"aborted,attr"`
-			Inconclusive        uint     `xml:"inconclusive,attr"`
-			PassedButRunAborted uint     `xml:"passedButRunAborted,attr"`
-			NotRunnable         uint     `xml:"notRunnable,attr"`
-			NotExecuted         uint     `xml:"notExecuted,attr"`
-			Disconnected        uint     `xml:"disconnected,attr"`
-			Warning             uint     `xml:"warning,attr"`
-			Completed           uint     `xml:"completed,attr"`
-			InProgress          uint     `xml:"inProgress,attr"`
-			Pending             uint     `xml:"pending,attr"`
-		}
-	}
+			Total               uint `xml:"total,attr"`
+			Executed            uint `xml:"executed,attr"`
+			Passed              uint `xml:"passed,attr"`
+			Failed              uint `xml:"failed,attr"`
+			Error               uint `xml:"error,attr"`
+			Timeout             uint `xml:"timeout,attr"`
+			Aborted             uint `xml:"aborted,attr"`
+			Inconclusive        uint `xml:"inconclusive,attr"`
+			PassedButRunAborted uint `xml:"passedButRunAborted,attr"`
+			NotRunnable         uint `xml:"notRunnable,attr"`
+			NotExecuted         uint `xml:"notExecuted,attr"`
+			Disconnected        uint `xml:"disconnected,attr"`
+			Warning             uint `xml:"warning,attr"`
+			Completed           uint `xml:"completed,attr"`
+			InProgress          uint `xml:"inProgress,attr"`
+			Pending             uint `xml:"pending,attr"`
+		} `xml:"Counters"`
+	} `xml:"ResultSummary"`
 }
 
 func getTestSummaryAndDetails(data []byte, artifactID, buildID uint) (TestResultSummary, []TestResultDetail, error) {
