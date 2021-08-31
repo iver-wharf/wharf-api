@@ -54,6 +54,10 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Changed logging on "attempting to reach database" during initialization from
   "ERROR" to "WARN", and rephrased it a little. (#50)
 
+- Fixed so failed parsing of build status in the `PUT /build/{buildid}` and
+  `POST /build/{buildid}/log` endpoints not silently ignore it and fallback to
+  "Scheduling", but instead respond with appropriate problem responses. (#54)
+
 ## v4.1.1 (2021-07-12)
 
 - Changed version of Docker base images:
