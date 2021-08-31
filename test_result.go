@@ -65,8 +65,16 @@ func (m buildTestResultModule) Register(r gin.IRouter) {
 // @failure 502 {object} problem.Response "Database unreachable or bad gateway"
 // @router /build/{buildid}/test-result [post]
 func (m buildTestResultModule) postBuildTestResultDataHandler(c *gin.Context) {
-	buildID, files, ok := parseParamBuildIDAndFiles(c)
+	buildID, ok := ginutil.ParseParamUint(c, "buildid")
 	if !ok {
+		return
+	}
+
+	files, err := ctxparser.ParseMultipartFormData(c)
+	if err != nil {
+		ginutil.WriteMultipartFormReadError(c, err,
+			fmt.Sprintf("Failed reading multipart-form's file data from request body when uploading"+
+				" new artifact for build with ID %d.", buildID))
 		return
 	}
 
@@ -119,7 +127,7 @@ func (m buildTestResultModule) postBuildTestResultDataHandler(c *gin.Context) {
 		return
 	}
 
-	err := m.Database.
+	err = m.Database.
 		CreateInBatches(lotsOfDetails, 100).
 		Error
 	if err != nil {
@@ -203,7 +211,12 @@ func (m buildTestResultModule) getBuildAllTestResultSummariesHandler(c *gin.Cont
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/test-result/summary/{artifactId} [get]
 func (m buildTestResultModule) getBuildTestResultSummaryHandler(c *gin.Context) {
-	artifactID, buildID, ok := parseParamArtifactAndBuildID(c)
+	buildID, ok := ginutil.ParseParamUint(c, "buildid")
+	if !ok {
+		return
+	}
+
+	artifactID, ok := ginutil.ParseParamUint(c, "artifactId")
 	if !ok {
 		return
 	}
@@ -234,7 +247,12 @@ func (m buildTestResultModule) getBuildTestResultSummaryHandler(c *gin.Context) 
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/test-result/summary/{artifactId}/detail [get]
 func (m buildTestResultModule) getBuildTestResultDetailsHandler(c *gin.Context) {
-	artifactID, buildID, ok := parseParamArtifactAndBuildID(c)
+	buildID, ok := ginutil.ParseParamUint(c, "buildid")
+	if !ok {
+		return
+	}
+
+	artifactID, ok := ginutil.ParseParamUint(c, "artifactId")
 	if !ok {
 		return
 	}
@@ -400,18 +418,4 @@ func getTestSummaryAndDetails(data []byte, artifactID, buildID uint) (TestResult
 	}
 
 	return summary, details, nil
-}
-
-func parseParamArtifactAndBuildID(c *gin.Context) (artifactID, buildID uint, ok bool) {
-	if artifactID, ok = ginutil.ParseParamUint(c, "artifactId"); ok {
-		buildID, ok = ginutil.ParseParamUint(c, "buildid")
-	}
-	return
-}
-
-func parseParamBuildIDAndFiles(c *gin.Context) (buildID uint, files []ctxparser.File, ok bool) {
-	if buildID, ok = ginutil.ParseParamUint(c, "buildid"); ok {
-		files, ok = ctxparser.ParseMultipartFormData(c, buildID)
-	}
-	return
 }

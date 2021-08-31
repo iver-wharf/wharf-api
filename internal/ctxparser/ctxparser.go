@@ -2,12 +2,10 @@ package ctxparser
 
 import (
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"mime/multipart"
 
 	"github.com/gin-gonic/gin"
-	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"github.com/iver-wharf/wharf-core/pkg/logger"
 )
 
@@ -24,13 +22,10 @@ type File struct {
 }
 
 // ParseMultipartFormData parses multipart form data files from a gin.Context.
-func ParseMultipartFormData(c *gin.Context, buildID uint) ([]File, bool) {
+func ParseMultipartFormData(c *gin.Context) ([]File, error) {
 	form, err := c.MultipartForm()
 	if err != nil {
-		ginutil.WriteMultipartFormReadError(c, err,
-			fmt.Sprintf("Failed reading multipart-form content from request body when uploading new"+
-				" artifact for build with ID %d.", buildID))
-		return nil, false
+		return nil, err
 	}
 
 	var files []File
@@ -38,10 +33,7 @@ func ParseMultipartFormData(c *gin.Context, buildID uint) ([]File, bool) {
 		if fhs := form.File[k]; len(fhs) > 0 {
 			data, err := readMultipartFileData(fhs[0])
 			if err != nil {
-				ginutil.WriteMultipartFormReadError(c, err,
-					fmt.Sprintf("Failed reading multipart-form's file data from request body when uploading"+
-						" new artifact for build with ID %d.", buildID))
-				return nil, false
+				return nil, err
 			}
 
 			files = append(files, File{
@@ -52,7 +44,7 @@ func ParseMultipartFormData(c *gin.Context, buildID uint) ([]File, bool) {
 		}
 	}
 
-	return files, true
+	return files, nil
 }
 
 func readMultipartFileData(fh *multipart.FileHeader) ([]byte, error) {

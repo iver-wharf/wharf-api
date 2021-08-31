@@ -97,7 +97,12 @@ func (m artifactModule) getBuildArtifactsHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/artifact/{artifactId} [get]
 func (m artifactModule) getBuildArtifactHandler(c *gin.Context) {
-	artifactID, buildID, ok := parseParamArtifactAndBuildID(c)
+	buildID, ok := ginutil.ParseParamUint(c, "buildid")
+	if !ok {
+		return
+	}
+
+	artifactID, ok := ginutil.ParseParamUint(c, "artifactId")
 	if !ok {
 		return
 	}
@@ -143,8 +148,16 @@ func (m artifactModule) getBuildArtifactHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/artifact [post]
 func (m artifactModule) postBuildArtifactHandler(c *gin.Context) {
-	buildID, files, ok := parseParamBuildIDAndFiles(c)
+	buildID, ok := ginutil.ParseParamUint(c, "buildid")
 	if !ok {
+		return
+	}
+
+	files, err := ctxparser.ParseMultipartFormData(c)
+	if err != nil {
+		ginutil.WriteMultipartFormReadError(c, err,
+			fmt.Sprintf("Failed reading multipart-form's file data from request body when uploading"+
+				" new artifact for build with ID %d.", buildID))
 		return
 	}
 
