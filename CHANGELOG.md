@@ -37,7 +37,7 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   (#45)
 
 - Added documentation to the remaining types in the project. No more linting
-  errors! (#46)
+  errors! (#46, #54)
 
 - Added new endpoints `/api/ping` and `/api/health`. (#44)
 
