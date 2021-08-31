@@ -61,16 +61,20 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
 - Added test-result specific endpoints: (#43)
 
-  - `PUT /build/{buildid}/test-result-data`
+  - `POST /build/{buildid}/test-result/`
 
     This should be used instead of `POST /build/{buildid}/artifact`
     when uploading test result files.
 
-  - `GET /build/{buildid}/test-result-details`
+  - `GET /build/{buildid}/test-result/detail`
 
-  - `GET /build/{buildid}/test-result-details/{artifactid}`
+  - `GET /build/{buildid}/test-result/summary`
 
-  - `GET /build/{buildid}/test-results-summary`
+  - `GET /build/{buildid}/test-result/summary/{artifactId}`
+
+  - `GET /build/{buildid}/test-result/summary/{artifactId}/detail`
+
+  - `GET /build/{buildid}/test-result/list-summary`
 
 - Deprecated endpoint `GET /build/{buildid}/tests-results`.
 
