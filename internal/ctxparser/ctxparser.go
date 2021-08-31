@@ -9,7 +9,7 @@ import (
 	"github.com/iver-wharf/wharf-core/pkg/logger"
 )
 
-var log = logger.NewScoped("REQUEST")
+var log = logger.NewScoped("CTX-PARSER")
 
 // File represents a file parsed from multipart form data.
 type File struct {
