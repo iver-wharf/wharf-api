@@ -11,6 +11,7 @@ import (
 
 	"github.com/dustin/go-broadcast"
 	"github.com/gin-gonic/gin"
+	"github.com/iver-wharf/wharf-api/internal/ctxparser"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"gorm.io/gorm"
 
@@ -57,7 +58,7 @@ func (m buildModule) Register(g *gin.RouterGroup) {
 		builds.POST("/search", m.postBuildSearchHandler)
 	}
 
-	build := g.Group("/build/:buildid")
+	build := g.Group(fmt.Sprintf("/build/:%s", ctxparser.BuildIDParamName))
 	{
 		build.GET("", m.getBuildHandler)
 		build.PUT("", m.putBuildStatus)

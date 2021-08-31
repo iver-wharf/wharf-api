@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"mime/multipart"
+	"reflect"
 
 	"github.com/gin-gonic/gin"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
@@ -21,6 +22,19 @@ type File struct {
 	FileName string
 	// Data is the binary data of the file.
 	Data []byte
+}
+
+func ShouldBindUri(c *gin.Context, paramSet interface{}) bool {
+	if reflect.ValueOf(paramSet).Kind() != reflect.Ptr {
+		panic("argument paramSet must be a pointer")
+	}
+
+	if err := c.ShouldBindUri(paramSet); err != nil {
+		ginutil.WriteInvalidBindError(c, err, "Failed to bind param(s).")
+		return false
+	}
+
+	return true
 }
 
 // ParseMultipartFormData parses multipart form data files from a gin.Context.

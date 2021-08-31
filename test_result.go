@@ -47,8 +47,13 @@ func (m buildTestResultModule) Register(r gin.IRouter) {
 		testResult.GET("/detail", m.getBuildAllTestResultDetailsHandler)
 
 		testResult.GET("/summary", m.getBuildAllTestResultSummariesHandler)
-		testResult.GET("/summary/:artifactId", m.getBuildTestResultSummaryHandler)
-		testResult.GET("/summary/:artifactId/detail", m.getBuildTestResultDetailsHandler)
+		testResult.GET(
+			fmt.Sprintf("/summary/:%s", ctxparser.ArtifactIDParamName),
+			m.getBuildTestResultSummaryHandler)
+
+		testResult.GET(
+			fmt.Sprintf("/summary/:%s/detail", ctxparser.ArtifactIDParamName),
+			m.getBuildTestResultDetailsHandler)
 
 		testResult.GET("/list-summary", m.getBuildTestResultListSummaryHandler)
 	}
@@ -65,12 +70,17 @@ func (m buildTestResultModule) Register(r gin.IRouter) {
 // @failure 502 {object} problem.Response "Database unreachable or bad gateway"
 // @router /build/{buildid}/test-result [post]
 func (m buildTestResultModule) postBuildTestResultDataHandler(c *gin.Context) {
-	buildID, files, ok := parseParamBuildIDAndFiles(c)
+	p := ctxparser.ParamSetBuildID{}
+	if ok := ctxparser.ShouldBindUri(c, &p); !ok {
+		return
+	}
+
+	files, ok := ctxparser.ParseMultipartFormData(c, p.BuildID)
 	if !ok {
 		return
 	}
 
-	artifacts, ok := createArtifacts(c, m.Database, files, buildID)
+	artifacts, ok := createArtifacts(c, m.Database, files, p.BuildID)
 	if !ok {
 		return
 	}
@@ -81,12 +91,12 @@ func (m buildTestResultModule) postBuildTestResultDataHandler(c *gin.Context) {
 	lotsOfDetails := make([]TestResultDetail, 0)
 
 	for _, artifact := range artifacts {
-		summary, details, err := getTestSummaryAndDetails(artifact.Data, artifact.ArtifactID, buildID)
+		summary, details, err := getTestSummaryAndDetails(artifact.Data, artifact.ArtifactID, p.BuildID)
 		if err != nil {
 			log.Warn().
 				WithError(err).
 				WithString("filename", artifact.FileName).
-				WithUint("build", buildID).
+				WithUint("build", p.BuildID).
 				WithUint("artifact", artifact.ArtifactID).
 				Message("Failed to unmarshal; invalid/unsupported TRX/XML format.")
 
@@ -97,7 +107,7 @@ func (m buildTestResultModule) postBuildTestResultDataHandler(c *gin.Context) {
 					Title:  "Unexpected response format.",
 					Detail: fmt.Sprintf(
 						"Failed parsing test result ID %d, for build with ID %d in"+
-							" database. Invalid/unsupported TRX/XML format.", summary.ArtifactID, buildID),
+							" database. Invalid/unsupported TRX/XML format.", summary.ArtifactID, p.BuildID),
 				})
 			return
 		}
@@ -115,17 +125,15 @@ func (m buildTestResultModule) postBuildTestResultDataHandler(c *gin.Context) {
 	if err := m.Database.CreateInBatches(summaries, 10).Error; err != nil {
 		ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
 			"Failed saving test result summaries for build with ID %d in database.",
-			buildID))
+			p.BuildID))
 		return
 	}
 
-	err := m.Database.
-		CreateInBatches(lotsOfDetails, 100).
-		Error
-	if err != nil {
+	if err := m.Database.CreateInBatches(lotsOfDetails, 100).Error; err != nil {
 		ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
 			"Failed saving test result details for build with ID %d in database.",
-			buildID))
+			p.BuildID))
+		return
 	}
 
 	artifactList.Count = uint(len(artifactList.Entries))
@@ -142,21 +150,21 @@ func (m buildTestResultModule) postBuildTestResultDataHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/test-result/detail [get]
 func (m buildTestResultModule) getBuildAllTestResultDetailsHandler(c *gin.Context) {
-	buildID, ok := ginutil.ParseParamUint(c, "buildid")
-	if !ok {
+	p := ctxparser.ParamSetBuildID{}
+	if ok := ctxparser.ShouldBindUri(c, &p); !ok {
 		return
 	}
 
 	details := []TestResultDetail{}
 	err := m.Database.
-		Where(&TestResultDetail{BuildID: buildID}).
+		Where(&TestResultDetail{BuildID: p.BuildID}).
 		Find(&details).
 		Error
 
 	if err != nil {
 		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
 			"Failed fetching test result details for build with ID %d from database.",
-			buildID))
+			p.BuildID))
 		return
 	}
 
@@ -172,21 +180,21 @@ func (m buildTestResultModule) getBuildAllTestResultDetailsHandler(c *gin.Contex
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/test-result/summary [get]
 func (m buildTestResultModule) getBuildAllTestResultSummariesHandler(c *gin.Context) {
-	buildID, ok := ginutil.ParseParamUint(c, "buildid")
-	if !ok {
+	p := ctxparser.ParamSetBuildID{}
+	if ok := ctxparser.ShouldBindUri(c, &p); !ok {
 		return
 	}
 
 	summaries := []TestResultSummary{}
 	err := m.Database.
-		Where(&TestResultSummary{BuildID: buildID}).
+		Where(&TestResultSummary{BuildID: p.BuildID}).
 		Find(&summaries).
 		Error
 
 	if err != nil {
 		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
 			"Failed fetching test result summaries from build with ID %d from database.",
-			buildID))
+			p.BuildID))
 		return
 	}
 
@@ -203,21 +211,24 @@ func (m buildTestResultModule) getBuildAllTestResultSummariesHandler(c *gin.Cont
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/test-result/summary/{artifactId} [get]
 func (m buildTestResultModule) getBuildTestResultSummaryHandler(c *gin.Context) {
-	artifactID, buildID, ok := parseParamArtifactAndBuildID(c)
-	if !ok {
+	p := struct {
+		ctxparser.ParamSetArtifactID
+		ctxparser.ParamSetBuildID
+	}{}
+	if ok := ctxparser.ShouldBindUri(c, &p); !ok {
 		return
 	}
 
 	summary := TestResultSummary{}
 	err := m.Database.
-		Where(&TestResultSummary{BuildID: buildID, ArtifactID: artifactID}).
+		Where(&TestResultSummary{BuildID: p.BuildID, ArtifactID: p.ArtifactID}).
 		Find(&summary).
 		Error
 
 	if err != nil {
 		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
 			"Failed fetching test result summary from test with ID %d for build with ID %d from database.",
-			artifactID, buildID))
+			p.ArtifactID, p.BuildID))
 		return
 	}
 
@@ -234,21 +245,24 @@ func (m buildTestResultModule) getBuildTestResultSummaryHandler(c *gin.Context) 
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/test-result/summary/{artifactId}/detail [get]
 func (m buildTestResultModule) getBuildTestResultDetailsHandler(c *gin.Context) {
-	artifactID, buildID, ok := parseParamArtifactAndBuildID(c)
-	if !ok {
+	p := struct {
+		ctxparser.ParamSetArtifactID
+		ctxparser.ParamSetBuildID
+	}{}
+	if ok := ctxparser.ShouldBindUri(c, &p); !ok {
 		return
 	}
 
 	details := []TestResultDetail{}
 	err := m.Database.
-		Where(&TestResultDetail{BuildID: buildID, ArtifactID: artifactID}).
+		Where(&TestResultDetail{BuildID: p.BuildID, ArtifactID: p.ArtifactID}).
 		Find(&details).
 		Error
 
 	if err != nil {
 		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
 			"Failed fetching test result details from test with ID %d for build with ID %d from database.",
-			artifactID, buildID))
+			p.ArtifactID, p.BuildID))
 		return
 	}
 
@@ -264,12 +278,12 @@ func (m buildTestResultModule) getBuildTestResultDetailsHandler(c *gin.Context) 
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/test-result/list-summary [get]
 func (m buildTestResultModule) getBuildTestResultListSummaryHandler(c *gin.Context) {
-	buildID, ok := ginutil.ParseParamUint(c, "buildid")
-	if !ok {
+	p := ctxparser.ParamSetBuildID{}
+	if ok := ctxparser.ShouldBindUri(c, &p); !ok {
 		return
 	}
 
-	listSummary := TestResultListSummary{BuildID: buildID}
+	listSummary := TestResultListSummary{BuildID: p.BuildID}
 
 	err := m.Database.
 		Model(&TestResultSummary{}).
@@ -281,7 +295,7 @@ func (m buildTestResultModule) getBuildTestResultListSummaryHandler(c *gin.Conte
 	if err != nil {
 		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
 			"Failed fetching test result summaries for build with ID %d from database.",
-			buildID))
+			p.BuildID))
 		return
 	}
 
@@ -400,18 +414,4 @@ func getTestSummaryAndDetails(data []byte, artifactID, buildID uint) (TestResult
 	}
 
 	return summary, details, nil
-}
-
-func parseParamArtifactAndBuildID(c *gin.Context) (artifactID, buildID uint, ok bool) {
-	if artifactID, ok = ginutil.ParseParamUint(c, "artifactId"); ok {
-		buildID, ok = ginutil.ParseParamUint(c, "buildid")
-	}
-	return
-}
-
-func parseParamBuildIDAndFiles(c *gin.Context) (buildID uint, files []ctxparser.File, ok bool) {
-	if buildID, ok = ginutil.ParseParamUint(c, "buildid"); ok {
-		files, ok = ctxparser.ParseMultipartFormData(c, buildID)
-	}
-	return
 }

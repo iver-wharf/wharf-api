@@ -49,7 +49,7 @@ type TestsResults struct {
 
 func (m artifactModule) Register(g *gin.RouterGroup) {
 	g.GET("/artifacts", m.getBuildArtifactsHandler)
-	g.GET("/artifact/:artifactId", m.getBuildArtifactHandler)
+	g.GET("/artifact/:"+ctxparser.ArtifactIDParamName, m.getBuildArtifactHandler)
 	g.POST("/artifact", m.postBuildArtifactHandler)
 	// deprecated
 	g.GET("/tests-results", m.getBuildTestsResultsHandler)
@@ -65,20 +65,20 @@ func (m artifactModule) Register(g *gin.RouterGroup) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/artifacts [get]
 func (m artifactModule) getBuildArtifactsHandler(c *gin.Context) {
-	buildID, ok := ginutil.ParseParamUint(c, "buildid")
-	if !ok {
+	p := ctxparser.ParamSetBuildID{}
+	if ok := ctxparser.ShouldBindUri(c, &p); !ok {
 		return
 	}
 
 	artifacts := []Artifact{}
 	err := m.Database.
-		Where(&Artifact{BuildID: buildID}).
+		Where(&Artifact{BuildID: p.BuildID}).
 		Find(&artifacts).
 		Error
 	if err != nil {
 		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
 			"Failed fetching artifacts for build with ID %d from database.",
-			buildID))
+			p.BuildID))
 		return
 	}
 
@@ -97,28 +97,31 @@ func (m artifactModule) getBuildArtifactsHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/artifact/{artifactId} [get]
 func (m artifactModule) getBuildArtifactHandler(c *gin.Context) {
-	artifactID, buildID, ok := parseParamArtifactAndBuildID(c)
-	if !ok {
+	p := struct {
+		ctxparser.ParamSetArtifactID
+		ctxparser.ParamSetBuildID
+	}{}
+	if ok := ctxparser.ShouldBindUri(c, &p); !ok {
 		return
 	}
 
 	var artifact Artifact
 	err := m.Database.
 		Where(&Artifact{
-			BuildID:    buildID,
-			ArtifactID: artifactID}).
+			BuildID:    p.BuildID,
+			ArtifactID: p.ArtifactID}).
 		Order(artifactColumnArtifactID + " DESC").
 		First(&artifact).
 		Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		ginutil.WriteDBNotFound(c, fmt.Sprintf(
 			"Artifact with ID %d was not found on build with ID %d.",
-			artifactID, buildID))
+			p.ArtifactID, p.BuildID))
 		return
 	} else if err != nil {
 		ginutil.WriteBodyReadError(c, err, fmt.Sprintf(
 			"Failed fetching artifact with ID %d on build with ID %d.",
-			artifactID, buildID))
+			p.ArtifactID, p.BuildID))
 		return
 	}
 
@@ -143,12 +146,17 @@ func (m artifactModule) getBuildArtifactHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/artifact [post]
 func (m artifactModule) postBuildArtifactHandler(c *gin.Context) {
-	buildID, files, ok := parseParamBuildIDAndFiles(c)
+	p := ctxparser.ParamSetBuildID{}
+	if ok := ctxparser.ShouldBindUri(c, &p); !ok {
+		return
+	}
+
+	files, ok := ctxparser.ParseMultipartFormData(c, p.BuildID)
 	if !ok {
 		return
 	}
 
-	_, ok = createArtifacts(c, m.Database, files, buildID)
+	_, ok = createArtifacts(c, m.Database, files, p.BuildID)
 	if !ok {
 		return
 	}
@@ -167,22 +175,22 @@ func (m artifactModule) postBuildArtifactHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildid}/tests-results [get]
 func (m artifactModule) getBuildTestsResultsHandler(c *gin.Context) {
-	buildID, ok := ginutil.ParseParamUint(c, "buildid")
-	if !ok {
+	p := ctxparser.ParamSetBuildID{}
+	if ok := ctxparser.ShouldBindUri(c, &p); !ok {
 		return
 	}
 
 	testRunFiles := []Artifact{}
 
 	err := m.Database.
-		Where(&Artifact{BuildID: buildID}).
+		Where(&Artifact{BuildID: p.BuildID}).
 		Where(artifactColumnFileName+" LIKE ?", "%.trx").
 		Find(&testRunFiles).
 		Error
 	if err != nil {
 		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
 			"Failed fetching test result artifacts for build with ID %d from database.",
-			buildID))
+			p.BuildID))
 		return
 	}
 
