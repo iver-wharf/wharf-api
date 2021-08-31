@@ -237,7 +237,7 @@ func createArtifacts(c *gin.Context, db *gorm.DB, files []ctxparser.File, buildI
 		}
 
 		log.Debug().
-			WithString("filename", artifact.Name).
+			WithString("filename", artifact.FileName).
 			WithUint("build", buildID).
 			WithUint("artifact", artifact.ArtifactID).
 			Message("File saved as artifact")
