@@ -20,26 +20,21 @@ import (
 // BuildLog is a single log line, together with its timestamp of when it was
 // logged.
 type BuildLog struct {
-	Message   string      `json:"message"`
-	StatusID  BuildStatus `json:"-"`
-	Timestamp time.Time   `json:"timestamp"`
+	Message   string    `json:"message"`
+	Timestamp time.Time `json:"timestamp"`
+	Status    string    `json:"status"`
+	// StatusID is populated when unmarshalled via UnmarshalJSON
+	StatusID BuildStatus `json:"-"`
 }
 
-func (bl *BuildLog) unmarshalJSON(data []byte) error {
-	type Alias BuildLog
-	aux := &struct {
-		Status string `json:"status"`
-		*Alias
-	}{
-		Alias: (*Alias)(bl),
-	}
-
-	if err := json.Unmarshal(data, &aux); err != nil {
+// UnmarshalJSON implements Unmarshaler interface from encoding/json.
+func (bl *BuildLog) UnmarshalJSON(data []byte) error {
+	type antiInfiniteLoop BuildLog
+	if err := json.Unmarshal(data, (*antiInfiniteLoop)(bl)); err != nil {
 		return err
 	}
-
-	if aux.Status != "" {
-		bl.StatusID = parseBuildStatus(aux.Status)
+	if bl.Status != "" {
+		bl.StatusID = parseBuildStatus(bl.Status)
 	} else {
 		bl.StatusID = -1
 	}

@@ -40,7 +40,7 @@ func TestConvert(t *testing.T) {
 			require.Nil(t, err)
 			assert.Equal(t, tc.wantYML, fmt.Sprint(ymlInterface))
 
-			ymlToObj := convert(ymlInterface)
+			ymlToObj := unmarshalledYAMLToMarshallableJSON(ymlInterface)
 
 			b, err := json.Marshal(ymlToObj)
 			require.Nil(t, err)

@@ -69,6 +69,8 @@ type Project struct {
 	BuildDefinition string    `sql:"type:text" json:"buildDefinition"`
 	Branches        []Branch  `gorm:"foreignKey:ProjectID" json:"branches"`
 	GitURL          string    `gorm:"nullable;default:NULL" json:"gitUrl"`
+	// ParsedBuildDefinition is populated when marshalled via MarshalJSON
+	ParsedBuildDefinition interface{} `gorm:"-" json:"build"`
 }
 
 const (
@@ -122,6 +124,8 @@ type Build struct {
 	Stage       string       `gorm:"size:40;default:'';not null" json:"stage"`
 	Params      []BuildParam `gorm:"foreignKey:BuildID" json:"params"`
 	IsInvalid   bool         `gorm:"not null;default:false" json:"isInvalid"`
+	// Status is populated when marshalled via MarshalJSON
+	Status string `gorm:"-" json:"status"`
 }
 
 // BuildParam holds the name and value of an input parameter fed into a build.

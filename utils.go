@@ -14,17 +14,17 @@ func contains(items []string, value string) bool {
 	return false
 }
 
-func convert(i interface{}) interface{} {
+func unmarshalledYAMLToMarshallableJSON(i interface{}) interface{} {
 	switch x := i.(type) {
 	case map[interface{}]interface{}:
 		m2 := map[string]interface{}{}
 		for k, v := range x {
-			m2[k.(string)] = convert(v)
+			m2[k.(string)] = unmarshalledYAMLToMarshallableJSON(v)
 		}
 		return m2
 	case []interface{}:
 		for i, v := range x {
-			x[i] = convert(v)
+			x[i] = unmarshalledYAMLToMarshallableJSON(v)
 		}
 	}
 	return i
