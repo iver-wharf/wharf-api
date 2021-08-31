@@ -74,7 +74,7 @@ func (m buildTestResultModule) postBuildTestResultDataHandler(c *gin.Context) {
 	if err != nil {
 		ginutil.WriteMultipartFormReadError(c, err,
 			fmt.Sprintf("Failed reading multipart-form's file data from request body when uploading"+
-				" new artifact for build with ID %d.", buildID))
+				" new test result for build with ID %d.", buildID))
 		return
 	}
 
@@ -101,7 +101,7 @@ func (m buildTestResultModule) postBuildTestResultDataHandler(c *gin.Context) {
 			ginutil.WriteProblemError(c, err,
 				problem.Response{
 					Type:   "/prob/api/test-results-parse",
-					Status: http.StatusBadGateway,
+					Status: http.StatusBadRequest,
 					Title:  "Unexpected response format.",
 					Detail: fmt.Sprintf(
 						"Failed parsing test result ID %d, for build with ID %d in"+
