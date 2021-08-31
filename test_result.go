@@ -17,6 +17,11 @@ type buildTestResultModule struct {
 	Database *gorm.DB
 }
 
+type artifactListItem struct {
+	FileName   string `json:"fileName"`
+	ArtifactID uint   `json:"artifactId"`
+}
+
 // TestResultListSummary contains data about several test result files.
 type TestResultListSummary struct {
 	BuildID uint `json:"buildId"`
@@ -24,19 +29,6 @@ type TestResultListSummary struct {
 	Failed  uint `json:"failed"`
 	Passed  uint `json:"passed"`
 	Skipped uint `json:"skipped"`
-}
-
-// ArtifactList contains a slice of artifact file names and a field for how many
-// entries there are. Used as response model when uploading test result data
-// been uploaded.
-type ArtifactList struct {
-	Entries []artifactListItem `json:"entries"`
-	Count   uint               `json:"count"`
-}
-
-type artifactListItem struct {
-	FileName   string `json:"fileName"`
-	ArtifactID uint   `json:"artifactId"`
 }
 
 func (m buildTestResultModule) Register(r gin.IRouter) {
@@ -60,7 +52,7 @@ func (m buildTestResultModule) Register(r gin.IRouter) {
 // @accept multipart/form-data
 // @param buildid path int true "Build ID"
 // @param file formData file true "Test result file"
-// @success 201 {object} ArtifactList "Added new test result data and created summaries"
+// @success 201 {object} []artifactListItem "Added new test result data and created summaries"
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 502 {object} problem.Response "Database unreachable or bad gateway"
 // @router /build/{buildid}/test-result [post]
@@ -83,7 +75,7 @@ func (m buildTestResultModule) postBuildTestResultDataHandler(c *gin.Context) {
 		return
 	}
 
-	artifactList := ArtifactList{}
+	artifactList := []artifactListItem{}
 
 	summaries := make([]TestResultSummary, 0, len(artifacts))
 	lotsOfDetails := make([]TestResultDetail, 0)
@@ -114,7 +106,7 @@ func (m buildTestResultModule) postBuildTestResultDataHandler(c *gin.Context) {
 		summaries = append(summaries, summary)
 		lotsOfDetails = append(lotsOfDetails, details...)
 
-		artifactList.Entries = append(artifactList.Entries, artifactListItem{
+		artifactList = append(artifactList, artifactListItem{
 			FileName:   artifact.FileName,
 			ArtifactID: artifact.ArtifactID,
 		})
@@ -135,8 +127,6 @@ func (m buildTestResultModule) postBuildTestResultDataHandler(c *gin.Context) {
 			"Failed saving test result details for build with ID %d in database.",
 			buildID))
 	}
-
-	artifactList.Count = uint(len(artifactList.Entries))
 
 	c.JSON(http.StatusOK, artifactList)
 }
