@@ -43,10 +43,26 @@ func runDatabaseMigrations(db *gorm.DB) error {
 
 	// since v3.1.0, the token.provider_id column was removed as it induced a
 	// circular dependency between the token and provider tables
-	return dropOldColumn(db, &Token{}, "provider_id")
+	if err := dropOldColumn(db, &Token{}, "provider_id"); err != nil {
+		return err
+	}
+
+	// In v4.2.0 the index param_idx_build_id for artifact was
+	// changed to artifact_idx_build_id to match the name of the
+	// table.
+	oldIndices := []indexToDrop{
+		{"artifact", "param_idx_build_id"},
+	}
+
+	return dropOldIndices(db, oldIndices)
 }
 
 type constraintToDrop struct {
+	table string
+	name  string
+}
+
+type indexToDrop struct {
 	table string
 	name  string
 }
@@ -93,6 +109,34 @@ func dropOldColumn(db *gorm.DB, model interface{}, columnName string) error {
 			WithString("column", columnName).
 			WithString("model", fmt.Sprintf("%T", model)).
 			Message("No old column to remove.")
+	}
+	return nil
+}
+
+func dropOldIndices(db *gorm.DB, indices []indexToDrop) error {
+	log.Debug().WithInt("indices", len(indices)).Message("Dropping old indices.")
+	for _, dbIndex := range indices {
+		if err := dropOldIndex(db, dbIndex.table, dbIndex.name); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func dropOldIndex(db *gorm.DB, table string, indexName string) error {
+	if db.Migrator().HasIndex(table, indexName) {
+		log.Info().
+			WithString("table", table).
+			WithString("index", indexName).
+			Message("Dropping old index.")
+		if err := db.Migrator().DropIndex(table, indexName); err != nil {
+			return fmt.Errorf("drop old index: %w", err)
+		}
+	} else {
+		log.Debug().
+			WithString("table", table).
+			WithString("index", indexName).
+			Message("No old index to remove.")
 	}
 	return nil
 }
