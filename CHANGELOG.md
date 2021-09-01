@@ -54,6 +54,10 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Changed logging on "attempting to reach database" during initialization from
   "ERROR" to "WARN", and rephrased it a little. (#50)
 
+- Removed constraint that project groups cannot be changed in the
+  `PUT /project` endpoint. This deprecates the problem
+  `/prob/api/project/cannot-change-group`. (#55)
+
 ## v4.1.1 (2021-07-12)
 
 - Changed version of Docker base images:
