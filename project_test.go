@@ -10,15 +10,15 @@ import (
 
 const wharfInstanceID = "test"
 
-func TestParseBuildParams(t *testing.T) {
-	type testCase struct {
-		name     string
-		buildID  uint
-		buildDef []byte
-		params   []byte
-		want     []BuildParam
-	}
+type parseBuildParamsTestCase struct {
+	name     string
+	buildID  uint
+	buildDef []byte
+	params   []byte
+	want     []BuildParam
+}
 
+func TestParseBuildParams(t *testing.T) {
 	defaultBuildDef := []byte(`
 inputs:
 - name: message
@@ -27,7 +27,7 @@ inputs:
 `)
 	buildID := uint(1)
 
-	tests := []testCase{
+	tests := []parseBuildParamsTestCase{
 		{
 			name:     "Parse message from input",
 			buildID:  buildID,
@@ -63,6 +63,49 @@ inputs:
 			for i, param := range tc.want {
 				assert.Equal(t, param.Value, got[i].Value)
 			}
+		})
+	}
+}
+
+func TestParseBuildParamsErrorsWhenInvalidInput(t *testing.T) {
+	invalidBuildDef := []byte(`
+inputs:
+- name: tabs instead of spaces are invalid
+	type: string
+	,invalid
+`)
+	validBuildDef := []byte(`
+inputs:
+- name: message
+  type: string
+  default: default message string
+`)
+	invalidParams := []byte(`{ var_name_without_quotes: "value" }`)
+	validParams := []byte(`{ "var_name_with_quotes": "value" }`)
+	buildID := uint(1)
+
+	tests := []parseBuildParamsTestCase{
+		{
+			name:     "Error when invalid build definition",
+			buildID:  buildID,
+			buildDef: invalidBuildDef,
+			params:   validParams,
+			want:     []BuildParam{},
+		},
+		{
+			name:     "Error when invalid params",
+			buildID:  buildID,
+			buildDef: validBuildDef,
+			params:   invalidParams,
+			want:     []BuildParam{},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := parseBuildParams(tc.buildID, tc.buildDef, tc.params)
+			require.NotNil(t, err)
+			assert.Equal(t, len(tc.want), len(got))
 		})
 	}
 }
