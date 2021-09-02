@@ -109,7 +109,7 @@ func TestGetBuildArtifactsHandler(t *testing.T) {
 	}
 }
 
-func TestGetBuildArtifactHandlerSuccess(t *testing.T) {
+func TestGetBuildArtifactHandler(t *testing.T) {
 	testCases := []struct {
 		m               artifactModule
 		name            string
