@@ -65,7 +65,7 @@ func (m buildModule) Register(g *gin.RouterGroup) {
 		build.GET("/log", m.getLogHandler)
 		build.GET("/stream", m.streamBuildLogHandler)
 
-		artifacts := artifactModule{m.Database}
+		artifacts := artifactModule{ArtifactModuleDatabase{m.Database}}
 		artifacts.Register(build)
 	}
 }

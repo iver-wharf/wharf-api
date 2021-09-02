@@ -14,8 +14,54 @@ import (
 	"gorm.io/gorm"
 )
 
+type ArtifactDB interface {
+	GetArtifacts(buildID uint) ([]Artifact, error)
+	GetArtifact(buildID, artifactID uint) (Artifact, error)
+	GetTRXFilesFromArtifacts(buildID uint) ([]Artifact, error)
+	CreateArtifact(artifact *Artifact) error
+}
+
+type ArtifactModuleDatabase struct {
+	db *gorm.DB
+}
+
+func (a ArtifactModuleDatabase) GetArtifacts(buildID uint) ([]Artifact, error) {
+	var artifacts []Artifact
+	err := a.db.
+		Where(&Artifact{BuildID: buildID}).
+		Find(&artifacts).
+		Error
+	return artifacts, err
+}
+
+func (a ArtifactModuleDatabase) GetArtifact(buildID uint, artifactID uint) (Artifact, error) {
+	var artifact Artifact
+	err := a.db.
+		Where(&Artifact{
+			BuildID:    buildID,
+			ArtifactID: artifactID}).
+		Order(artifactColumnArtifactID + " DESC").
+		First(&artifact).
+		Error
+	return artifact, err
+}
+
+func (a ArtifactModuleDatabase) GetTRXFilesFromArtifacts(buildID uint) ([]Artifact, error) {
+	var testRunFiles []Artifact
+	err := a.db.
+		Where(&Artifact{BuildID: buildID}).
+		Where(artifactColumnFileName+" LIKE ?", "%.trx").
+		Find(&testRunFiles).
+		Error
+	return testRunFiles, err
+}
+
+func (a ArtifactModuleDatabase) CreateArtifact(artifact *Artifact) error {
+	return a.db.Create(artifact).Error
+}
+
 type artifactModule struct {
-	Database *gorm.DB
+	Database ArtifactDB
 }
 
 type testRun struct {
@@ -85,11 +131,7 @@ func (m artifactModule) getBuildArtifactsHandler(c *gin.Context) {
 		return
 	}
 
-	var artifacts []Artifact
-	err := m.Database.
-		Where(&Artifact{BuildID: uint(buildID)}).
-		Find(&artifacts).
-		Error
+	artifacts, err := m.Database.GetArtifacts(buildID)
 	if err != nil {
 		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
 			"Failed fetching artifacts for build with ID %d from database.",
@@ -121,14 +163,7 @@ func (m artifactModule) getBuildArtifactHandler(c *gin.Context) {
 		return
 	}
 
-	var artifact Artifact
-	err := m.Database.
-		Where(&Artifact{
-			BuildID:    buildID,
-			ArtifactID: artifactID}).
-		Order(artifactColumnArtifactID + " DESC").
-		First(&artifact).
-		Error
+	artifact, err := m.Database.GetArtifact(buildID, artifactID)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		ginutil.WriteDBNotFound(c, fmt.Sprintf(
 			"Artifact with ID %d was not found on build with ID %d.",
@@ -164,13 +199,7 @@ func (m artifactModule) getBuildTestsResultsHandler(c *gin.Context) {
 		return
 	}
 
-	var testRunFiles []Artifact
-
-	err := m.Database.
-		Where(&Artifact{BuildID: uint(buildID)}).
-		Where(artifactColumnFileName+" LIKE ?", "%.trx").
-		Find(&testRunFiles).
-		Error
+	testRunFiles, err := m.Database.GetTRXFilesFromArtifacts(buildID)
 	if err != nil {
 		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
 			"Failed fetching test result artifacts for build with ID %d from database.",
@@ -249,7 +278,7 @@ func (m artifactModule) postBuildArtifactHandler(c *gin.Context) {
 				BuildID:  buildID,
 			}
 
-			err = m.Database.Create(&artifact).Error
+			err = m.Database.CreateArtifact(&artifact)
 			if err != nil {
 				ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
 					"Failed saving artifact with name %q for build with ID %d in database.",
