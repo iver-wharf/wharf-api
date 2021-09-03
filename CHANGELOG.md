@@ -54,6 +54,11 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Changed logging on "attempting to reach database" during initialization from
   "ERROR" to "WARN", and rephrased it a little. (#50)
 
+- Removed `internal/httputils`, which was moved to `wharf-core/pkg/cacertutil`.
+  (#52)
+
+- Added dependency on `wharf-core/pkg/cacertutil`. (#52)
+
 ## v4.1.1 (2021-07-12)
 
 - Changed version of Docker base images:
