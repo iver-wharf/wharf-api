@@ -7,13 +7,13 @@ import (
 )
 
 // MarshalJSON implements Marshaler interface from encoding/json.
-func (p *Project) MarshalJSON() ([]byte, error) {
+func (p Project) MarshalJSON() ([]byte, error) {
 	p.ParsedBuildDefinition = p.parseBuildDefinition()
 	type antiInfiniteLoop Project
-	return json.Marshal((*antiInfiniteLoop)(p))
+	return json.Marshal((antiInfiniteLoop)(p))
 }
 
-func (p *Project) parseBuildDefinition() interface{} {
+func (p Project) parseBuildDefinition() interface{} {
 	if p.BuildDefinition != "" {
 		var t interface{}
 		err := yaml.Unmarshal([]byte(p.BuildDefinition), &t)
@@ -24,14 +24,14 @@ func (p *Project) parseBuildDefinition() interface{} {
 				Message("Failed to parse build-definition.")
 			return nil
 		}
-		return unmarshalledYAMLToMarshallableJSON(t)
+		return t
 	}
 	return nil
 }
 
 // MarshalJSON implements Marshaler interface from encoding/json.
-func (b *Build) MarshalJSON() ([]byte, error) {
+func (b Build) MarshalJSON() ([]byte, error) {
 	b.Status = b.StatusID.String()
 	type antiInfiniteLoop Build
-	return json.Marshal((*antiInfiniteLoop)(b))
+	return json.Marshal((antiInfiniteLoop)(b))
 }
