@@ -54,6 +54,9 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Changed logging on "attempting to reach database" during initialization from
   "ERROR" to "WARN", and rephrased it a little. (#50)
 
+- Changed version of `github.com/iver-wharf/wharf-core`
+  from v1.1.0 -> v1.2.0. (#52)
+
 - Removed `internal/httputils`, which was moved to `wharf-core/pkg/cacertutil`.
   (#52)
 
