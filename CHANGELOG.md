@@ -54,6 +54,10 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Changed logging on "attempting to reach database" during initialization from
   "ERROR" to "WARN", and rephrased it a little. (#50)
 
+- Removed constraint that project groups cannot be changed in the
+  `PUT /project` endpoint. This deprecates the problem
+  `/prob/api/project/cannot-change-group`. (#55)
+
 - Changed version of `github.com/iver-wharf/wharf-core`
   from v1.1.0 -> v1.2.0. (#52)
 
