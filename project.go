@@ -320,7 +320,7 @@ func (m projectModule) deleteProjectHandler(c *gin.Context) {
 // @produce json
 // @param project body Project _ "project object"
 // @success 200 {object} Project
-// @failure 400 {object} problem.Response "Bad request, such as invalid body JSON or when altering group"
+// @failure 400 {object} problem.Response "Bad request, such as invalid body JSON"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 404 {object} problem.Response "Project to update was not found"
 // @failure 502 {object} problem.Response "Database is unreachable"
@@ -360,18 +360,6 @@ func (m projectModule) putProjectHandler(c *gin.Context) {
 				project.Name, project.GroupName))
 			return
 		}
-	}
-
-	if existingProject.GroupName != project.GroupName {
-		ginutil.WriteProblem(c, problem.Response{
-			Type:  "/prob/api/project/cannot-change-group",
-			Title: "Project group cannot be changed.",
-			Detail: fmt.Sprintf(
-				"Changing the group of a project is prohibited. The client tried to change group on project %d from %q to %q.",
-				project.ProjectID, existingProject.GroupName, project.GroupName),
-			Status: http.StatusBadRequest,
-		})
-		return
 	}
 
 	project.ProjectID = existingProject.ProjectID
