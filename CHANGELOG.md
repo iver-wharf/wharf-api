@@ -58,6 +58,10 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   `POST /build/{buildid}/log` endpoints not silently ignore it and fallback to
   "Scheduling", but instead respond with appropriate problem responses. (#54)
 
+- Removed constraint that project groups cannot be changed in the
+  `PUT /project` endpoint. This deprecates the problem
+  `/prob/api/project/cannot-change-group`. (#55)
+
 ## v4.1.1 (2021-07-12)
 
 - Changed version of Docker base images:
