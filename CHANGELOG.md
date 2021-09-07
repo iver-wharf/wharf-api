@@ -60,8 +60,6 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Removed `internal/httputils`, which was moved to `wharf-core/pkg/cacertutil`.
   (#52)
 
-- Added dependency on `wharf-core/pkg/cacertutil`. (#52)
-
 ## v4.1.1 (2021-07-12)
 
 - Changed version of Docker base images:
