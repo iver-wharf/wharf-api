@@ -12,7 +12,6 @@ import (
 	"github.com/iver-wharf/wharf-core/pkg/logger"
 	"github.com/iver-wharf/wharf-core/pkg/logger/consolepretty"
 
-	"github.com/dustin/go-broadcast"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 
@@ -21,8 +20,6 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/swaggo/gin-swagger/swaggerFiles"
 )
-
-var logBroadcaster broadcast.Broadcaster
 
 var log = logger.NewScoped("WHARF")
 
