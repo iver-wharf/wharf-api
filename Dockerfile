@@ -1,4 +1,4 @@
-FROM golang:1.16.5 AS build
+FROM golang:1.16 AS build
 WORKDIR /src
 RUN go get -u github.com/swaggo/swag/cmd/swag@v1.7.1
 COPY go.mod go.sum ./
@@ -14,7 +14,7 @@ RUN deploy/update-version.sh version.yaml \
 		&& CGO_ENABLED=0 go build -o main \
 		&& make test
 
-FROM alpine:3.14.0 AS final
+FROM alpine:3.14 AS final
 RUN apk add --no-cache ca-certificates tzdata
 WORKDIR /app
 COPY --from=build /src/main ./
