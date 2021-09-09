@@ -62,6 +62,11 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   `PUT /project` endpoint. This deprecates the problem
   `/prob/api/project/cannot-change-group`. (#55)
 
+- Changed version of Docker base images, relying on "latest" patch version:
+
+  - Alpine: 3.14.0 -> 3.14 (#59)
+  - Golang: 1.16.5 -> 1.16 (#59)
+
 ## v4.1.1 (2021-07-12)
 
 - Changed version of Docker base images:
