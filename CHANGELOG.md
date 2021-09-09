@@ -37,7 +37,7 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   (#45)
 
 - Added documentation to the remaining types in the project. No more linting
-  errors! (#46)
+  errors! (#46, #54)
 
 - Added new endpoints `/api/ping` and `/api/health`. (#44)
 
@@ -53,6 +53,10 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
 - Changed logging on "attempting to reach database" during initialization from
   "ERROR" to "WARN", and rephrased it a little. (#50)
+
+- Fixed so failed parsing of build status in the `PUT /build/{buildid}` and
+  `POST /build/{buildid}/log` endpoints not silently ignore it and fallback to
+  "Scheduling", but instead respond with appropriate problem responses. (#54)
 
 - Removed constraint that project groups cannot be changed in the
   `PUT /project` endpoint. This deprecates the problem

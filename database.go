@@ -1,57 +1,15 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 
-	"github.com/ghodss/yaml"
 	"github.com/iver-wharf/wharf-core/pkg/gormutil"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
 )
-
-func (p *Project) marshalJSON() ([]byte, error) {
-	type Alias Project
-	return json.Marshal(&struct {
-		ParsedBuildDefinition interface{} `json:"build"`
-		*Alias
-	}{
-		ParsedBuildDefinition: parseBuildDefinition(p),
-		Alias:                 (*Alias)(p),
-	})
-}
-
-func parseBuildDefinition(project *Project) interface{} {
-	if project.BuildDefinition != "" {
-		var t interface{}
-		err := yaml.Unmarshal([]byte(project.BuildDefinition), &t)
-		if err != nil {
-			log.Error().
-				WithError(err).
-				WithUint("project", project.ProjectID).
-				Message("Failed to parse build-definition.")
-			return nil
-		}
-
-		return convert(t)
-	}
-
-	return nil
-}
-
-func (b *Build) marshalJSON() ([]byte, error) {
-	type Alias Build
-	return json.Marshal(&struct {
-		Status string `json:"status"`
-		*Alias
-	}{
-		Status: b.StatusID.String(),
-		Alias:  (*Alias)(b),
-	})
-}
 
 func openDatabase(config DBConfig) (*gorm.DB, error) {
 	const retryDelay = 2 * time.Second
