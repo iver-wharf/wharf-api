@@ -1,10 +1,5 @@
 package main
 
-import (
-	"regexp"
-	"strings"
-)
-
 func contains(items []string, value string) bool {
 	for _, item := range items {
 		if item == value {
@@ -12,20 +7,6 @@ func contains(items []string, value string) bool {
 		}
 	}
 	return false
-}
-
-func getProjectGroupFromGitURL(gitURL string, projectName string) string {
-	pattern := regexp.MustCompile(`((git@[\w\.]+)):(?P<projectPath>[\w\.@\:/\-~]+)(\.git)(/)?`)
-	if !pattern.MatchString(gitURL) {
-		return ""
-	}
-
-	template := "$projectPath"
-	projectPath := pattern.ReplaceAllString(gitURL, template)
-	projectGroup := strings.TrimSuffix(strings.ToLower(projectPath), strings.ToLower(projectName))
-	projectGroup = strings.TrimSuffix(projectGroup, "/")
-
-	return projectGroup
 }
 
 func findDefaultBranch(branches []Branch) (Branch, bool) {
