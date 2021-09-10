@@ -37,7 +37,7 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   (#45, #52)
 
 - Added documentation to the remaining types in the project. No more linting
-  errors! (#46)
+  errors! (#46, #54)
 
 - Added new endpoints `/api/ping` and `/api/health`. (#44)
 
@@ -54,12 +54,21 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Changed logging on "attempting to reach database" during initialization from
   "ERROR" to "WARN", and rephrased it a little. (#50)
 
+- Fixed so failed parsing of build status in the `PUT /build/{buildid}` and
+  `POST /build/{buildid}/log` endpoints not silently ignore it and fallback to
+  "Scheduling", but instead respond with appropriate problem responses. (#54)
+
 - Removed constraint that project groups cannot be changed in the
   `PUT /project` endpoint. This deprecates the problem
   `/prob/api/project/cannot-change-group`. (#55)
 
 - Removed `internal/httputils`, which was moved to
   `github.com/iver-wharf/wharf-core/pkg/cacertutil`. (#52)
+
+- Changed version of Docker base images, relying on "latest" patch version:
+
+  - Alpine: 3.14.0 -> 3.14 (#59)
+  - Golang: 1.16.5 -> 1.16 (#59)
 
 ## v4.1.1 (2021-07-12)
 
