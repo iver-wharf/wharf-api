@@ -33,8 +33,8 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
 - Added wharf-core logging for GORM debug logging. (#45)
 
-- Changed version of `github.com/iver-wharf/wharf-core` from v1.0.0 to v1.1.0.
-  (#45)
+- Changed version of `github.com/iver-wharf/wharf-core` from v1.0.0 to v1.2.0.
+  (#45, #52)
 
 - Added documentation to the remaining types in the project. No more linting
   errors! (#46, #54)
@@ -61,6 +61,9 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Removed constraint that project groups cannot be changed in the
   `PUT /project` endpoint. This deprecates the problem
   `/prob/api/project/cannot-change-group`. (#55)
+
+- Removed `internal/httputils`, which was moved to
+  `github.com/iver-wharf/wharf-core/pkg/cacertutil`. (#52)
 
 - Changed version of Docker base images, relying on "latest" patch version:
 
