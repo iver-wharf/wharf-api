@@ -62,6 +62,9 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   `PUT /project` endpoint. This deprecates the problem
   `/prob/api/project/cannot-change-group`. (#55)
 
+- Removed dead/unused function `getProjectGroupFromGitURL` and type
+  `logBroadcaster`. (#57)
+
 - Removed `internal/httputils`, which was moved to
   `github.com/iver-wharf/wharf-core/pkg/cacertutil`. (#52)
 

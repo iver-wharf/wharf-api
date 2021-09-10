@@ -6,67 +6,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetProjectGroupFromGitURL(t *testing.T) {
-	type testCase struct {
-		gitURL      string
-		projectName string
-	}
-	tests := []struct {
-		args testCase
-		want string
-	}{
-		{
-			args: testCase{
-				gitURL:      "git@gitlab.somedomain:default/marek-test-proj.git",
-				projectName: "marek-test-proj",
-			},
-			want: "default",
-		},
-		{
-			args: testCase{
-				gitURL:      "git@gitlab.somedomain:default/nestedgroup/projname.git",
-				projectName: "projname",
-			},
-			want: "default/nestedgroup",
-		},
-		{
-			args: testCase{
-				gitURL:      "git@gitlab.somedomain:default/nestedgroup/projname.git",
-				projectName: "Projname",
-			},
-			want: "default/nestedgroup",
-		},
-		{
-			args: testCase{
-				gitURL:      "git@gitlab.somedomain:default/other/nestedgroup/name.with.dots.git",
-				projectName: "name.with.dots",
-			},
-			want: "default/other/nestedgroup",
-		},
-		{
-			args: testCase{
-				gitURL:      "git@gitlab.somedomain:default/Project.git",
-				projectName: "Project",
-			},
-			want: "default",
-		},
-		{
-			args: testCase{
-				gitURL:      "git@gitlab.somedomain:default/group/project-with-dash.git",
-				projectName: "project-with-dash",
-			},
-			want: "default/group",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.args.gitURL, func(t *testing.T) {
-			got := getProjectGroupFromGitURL(tt.args.gitURL, tt.args.projectName)
-			assert.Equal(t, tt.want, got)
-		})
-	}
-}
-
 func TestFindDefaultGroupSuccess(t *testing.T) {
 	var (
 		main = Branch{Name: "main", Default: true}
@@ -108,10 +47,10 @@ func TestFindDefaultGroupSuccess(t *testing.T) {
 
 func TestFindDefaultGroupFail(t *testing.T) {
 	branches := []Branch{
-		Branch{Name: "b1"},
-		Branch{Name: "b2"},
-		Branch{Name: "b3"},
-		Branch{Name: "b4"},
+		{Name: "b1"},
+		{Name: "b2"},
+		{Name: "b3"},
+		{Name: "b4"},
 	}
 
 	_, ok := findDefaultBranch(branches)
