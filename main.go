@@ -8,21 +8,18 @@ import (
 	"strings"
 	"time"
 
+	"github.com/iver-wharf/wharf-core/pkg/cacertutil"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"github.com/iver-wharf/wharf-core/pkg/logger"
 	"github.com/iver-wharf/wharf-core/pkg/logger/consolepretty"
 
-	"github.com/dustin/go-broadcast"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 
 	"github.com/iver-wharf/wharf-api/docs"
-	"github.com/iver-wharf/wharf-api/internal/httputils"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/swaggo/gin-swagger/swaggerFiles"
 )
-
-var logBroadcaster broadcast.Broadcaster
 
 var log = logger.NewScoped("WHARF")
 
@@ -55,7 +52,7 @@ func main() {
 	docs.SwaggerInfo.Version = AppVersion.Version
 
 	if config.CA.CertsFile != "" {
-		client, err := httputils.NewClientWithCerts(config.CA.CertsFile)
+		client, err := cacertutil.NewHTTPClientWithCerts(config.CA.CertsFile)
 		if err != nil {
 			log.Error().WithError(err).Message("Failed to get net/http.Client with certs")
 			os.Exit(1)
@@ -97,6 +94,9 @@ func main() {
 		}()
 	}
 
+	gin.DefaultWriter = ginutil.DefaultLoggerWriter
+	gin.DefaultErrorWriter = ginutil.DefaultLoggerWriter
+
 	r := gin.New()
 	r.Use(
 		ginutil.LoggerWithConfig(ginutil.LoggerConfig{
@@ -105,9 +105,6 @@ func main() {
 		}),
 		ginutil.RecoverProblem,
 	)
-
-	gin.DefaultWriter = ginutil.DefaultLoggerWriter
-	gin.DefaultErrorWriter = ginutil.DefaultLoggerWriter
 
 	if config.HTTP.CORS.AllowAllOrigins {
 		log.Info().Message("Allowing all origins in CORS.")

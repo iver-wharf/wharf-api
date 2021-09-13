@@ -42,6 +42,7 @@ var toID = map[string]BuildStatus{
 	"Failed":     BuildFailed,
 }
 
-func parseBuildStatus(name string) BuildStatus {
-	return toID[name]
+func parseBuildStatus(name string) (status BuildStatus, ok bool) {
+	status, ok = toID[name]
+	return
 }

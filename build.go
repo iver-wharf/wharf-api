@@ -20,28 +20,27 @@ import (
 // BuildLog is a single log line, together with its timestamp of when it was
 // logged.
 type BuildLog struct {
-	Message   string      `json:"message"`
-	StatusID  BuildStatus `json:"-"`
-	Timestamp time.Time   `json:"timestamp"`
+	Message   string    `json:"message"`
+	Timestamp time.Time `json:"timestamp"`
+	Status    string    `json:"status"`
+	// StatusID is populated when unmarshalled via UnmarshalJSON
+	StatusID BuildStatus `json:"-"`
 }
 
-func (bl *BuildLog) unmarshalJSON(data []byte) error {
-	type Alias BuildLog
-	aux := &struct {
-		Status string `json:"status"`
-		*Alias
-	}{
-		Alias: (*Alias)(bl),
-	}
-
-	if err := json.Unmarshal(data, &aux); err != nil {
+// UnmarshalJSON implements Unmarshaler interface from encoding/json.
+func (bl *BuildLog) UnmarshalJSON(data []byte) error {
+	type antiInfiniteLoop BuildLog
+	if err := json.Unmarshal(data, (*antiInfiniteLoop)(bl)); err != nil {
 		return err
 	}
-
-	if aux.Status != "" {
-		bl.StatusID = parseBuildStatus(aux.Status)
-	} else {
+	if bl.Status == "" {
 		bl.StatusID = -1
+	} else {
+		if statusID, ok := parseBuildStatus(bl.Status); ok {
+			bl.StatusID = statusID
+		} else {
+			return fmt.Errorf("invalid build status: %s", bl.Status)
+		}
 	}
 	return nil
 }
@@ -284,7 +283,14 @@ func (m buildModule) putBuildStatus(c *gin.Context) {
 		return
 	}
 
-	build, err := m.updateBuildStatus(buildID, parseBuildStatus(status))
+	statusID, ok := parseBuildStatus(status)
+	if !ok {
+		ginutil.WriteInvalidParamError(c, nil, "status", fmt.Sprintf(
+			"Unable to parse build status from %q", status))
+		return
+	}
+
+	build, err := m.updateBuildStatus(buildID, statusID)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		ginutil.WriteDBNotFound(c, fmt.Sprintf(
 			"Build with ID %d was not found when trying to update status to %q.",

@@ -69,6 +69,8 @@ type Project struct {
 	BuildDefinition string    `sql:"type:text" json:"buildDefinition"`
 	Branches        []Branch  `gorm:"foreignKey:ProjectID" json:"branches"`
 	GitURL          string    `gorm:"nullable;default:NULL" json:"gitUrl"`
+	// ParsedBuildDefinition is populated when marshalled via MarshalJSON
+	ParsedBuildDefinition interface{} `gorm:"-" json:"build"`
 }
 
 const (
@@ -114,15 +116,17 @@ type Build struct {
 	StatusID            BuildStatus         `gorm:"not null" json:"statusId"`
 	ProjectID           uint                `gorm:"not null;index:build_idx_project_id" json:"projectId"`
 	Project             *Project            `gorm:"foreignKey:ProjectID;constraint:OnUpdate:RESTRICT,OnDelete:RESTRICT" json:"-"`
-	ScheduledOn         null.Time           `gorm:"nullable;default:NULL" json:"scheduledOn" format:"date-time"`
-	StartedOn           null.Time           `gorm:"nullable;default:NULL" json:"startedOn" format:"date-time"`
-	CompletedOn         null.Time           `gorm:"nullable;default:NULL" json:"finishedOn" format:"date-time"`
+	ScheduledOn         *time.Time          `gorm:"nullable;default:NULL" json:"scheduledOn" format:"date-time"`
+	StartedOn           *time.Time          `gorm:"nullable;default:NULL" json:"startedOn" format:"date-time"`
+	CompletedOn         *time.Time          `gorm:"nullable;default:NULL" json:"finishedOn" format:"date-time"`
 	GitBranch           string              `gorm:"size:300;default:'';not null" json:"gitBranch"`
 	Environment         null.String         `gorm:"nullable;size:40" json:"environment" swaggertype:"string"`
 	Stage               string              `gorm:"size:40;default:'';not null" json:"stage"`
 	Params              []BuildParam        `gorm:"foreignKey:BuildID" json:"params"`
 	IsInvalid           bool                `gorm:"not null;default:false" json:"isInvalid"`
 	TestResultSummaries []TestResultSummary `gorm:"foreignKey:BuildID" json:"testResultSummaries"`
+	// Status is populated when marshalled via MarshalJSON
+	Status string `gorm:"-" json:"status"`
 }
 
 // BuildParam holds the name and value of an input parameter fed into a build.

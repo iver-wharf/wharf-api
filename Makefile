@@ -10,6 +10,7 @@ test: swag
 
 docker:
 	docker build . \
+		--pull \
 		-t "quay.io/iver-wharf/wharf-api:latest" \
 		-t "quay.io/iver-wharf/wharf-api:$(version)" \
 		--build-arg BUILD_VERSION="$(version)" \

@@ -12,7 +12,41 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 	https://changelog.md/
 -->
 
-## v4.2.0 (WIP)
+## v4.3.0 (WIP)
+
+- Fixed where wharf-core logging for Gin debug and error messages were set up
+  after they were initially used, leading to a mix of wharf-core and Gin
+  formatted logs. (#63)
+
+- Added database tables: (#43)
+
+  - test_result_detail
+  - test_result_summary
+
+- Added test-result specific endpoints: (#43)
+
+  - `POST /build/{buildid}/test-result`
+
+    This should be used instead of `POST /build/{buildid}/artifact`
+    when uploading test result files.
+
+  - `GET /build/{buildid}/test-result/detail`
+
+  - `GET /build/{buildid}/test-result/summary`
+
+  - `GET /build/{buildid}/test-result/summary/{artifactId}`
+
+  - `GET /build/{buildid}/test-result/summary/{artifactId}/detail`
+
+  - `GET /build/{buildid}/test-result/list-summary`
+
+- Deprecated endpoint `GET /build/{buildid}/tests-results`.
+
+  Use `GET /build/{buildid}/test-result/list-summary` instead. The response
+  data has changed slightly; it has additional properties, and does not
+  have a `status` property. (#43)
+
+## v4.2.0 (2021-09-10)
 
 - Added support for the TZ environment variable (setting timezones ex.
   `"Europe/Stockholm"`) through the tzdata package. (#40)
@@ -33,11 +67,11 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
 - Added wharf-core logging for GORM debug logging. (#45)
 
-- Changed version of `github.com/iver-wharf/wharf-core` from v1.0.0 to v1.1.0.
-  (#45)
+- Changed version of `github.com/iver-wharf/wharf-core` from v1.0.0 to v1.2.0.
+  (#45, #52)
 
 - Added documentation to the remaining types in the project. No more linting
-  errors! (#46)
+  errors! (#46, #54)
 
 - Added new endpoints `/api/ping` and `/api/health`. (#44)
 
@@ -54,33 +88,24 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Changed logging on "attempting to reach database" during initialization from
   "ERROR" to "WARN", and rephrased it a little. (#50)
 
-- Added database tables: (#43)
+- Fixed so failed parsing of build status in the `PUT /build/{buildid}` and
+  `POST /build/{buildid}/log` endpoints not silently ignore it and fallback to
+  "Scheduling", but instead respond with appropriate problem responses. (#54)
 
-  - test_result_detail
-  - test_result_summary
+- Removed constraint that project groups cannot be changed in the
+  `PUT /project` endpoint. This deprecates the problem
+  `/prob/api/project/cannot-change-group`. (#55)
 
-- Added test-result specific endpoints: (#43)
+- Removed dead/unused function `getProjectGroupFromGitURL` and type
+  `logBroadcaster`. (#57)
 
-  - `POST /build/{buildid}/test-result/`
+- Removed `internal/httputils`, which was moved to
+  `github.com/iver-wharf/wharf-core/pkg/cacertutil`. (#52)
 
-    This should be used instead of `POST /build/{buildid}/artifact`
-    when uploading test result files.
+- Changed version of Docker base images, relying on "latest" patch version:
 
-  - `GET /build/{buildid}/test-result/detail`
-
-  - `GET /build/{buildid}/test-result/summary`
-
-  - `GET /build/{buildid}/test-result/summary/{artifactId}`
-
-  - `GET /build/{buildid}/test-result/summary/{artifactId}/detail`
-
-  - `GET /build/{buildid}/test-result/list-summary`
-
-- Deprecated endpoint `GET /build/{buildid}/tests-results`.
-
-  Use `GET /build/{buildid}/test-results-summary` instead. The response
-  data has changed slightly; it has additional properties, and does not
-  have a `status` property. (#43)
+  - Alpine: 3.14.0 -> 3.14 (#59)
+  - Golang: 1.16.5 -> 1.16 (#59)
 
 ## v4.1.1 (2021-07-12)
 
