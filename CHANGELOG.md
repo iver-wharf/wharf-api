@@ -43,8 +43,8 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Deprecated endpoint `GET /build/{buildid}/tests-results`.
 
   Use `GET /build/{buildid}/test-result/list-summary` instead. The response
-  data has changed slightly; it has additional properties, and does not
-  have a `status` property. (#43)
+  data is slightly different; it has additional properties, and does not have a
+  `status` property. (#43)
 
 ## v4.2.0 (2021-09-10)
 
