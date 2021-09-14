@@ -12,6 +12,21 @@ func runDatabaseMigrations(db *gorm.DB) error {
 		&Branch{}, &Build{}, &Log{},
 		&Artifact{}, &BuildParam{}, &Param{}}
 
+	// since v4.2.1, drop these constraints to refresh the constraint behavior.
+	// Previously it was RESTRICT, now it's CASCADE.
+	//
+	// Perform before AutoMigrate because we want them readded in that step.
+	if err := dropOldConstraints(db, []constraintToDrop{
+		{"artifact", "fk_artifact_build"},
+		{"log", "fk_log_build"},
+		{"build", "fk_build_project"},
+		{"log", "fk_log_build"},
+		{"branch", "fk_project_branches"},
+		{"build_param", "fk_build_params"},
+	}); err != nil {
+		return err
+	}
+
 	db.DisableForeignKeyConstraintWhenMigrating = true
 	if err := db.AutoMigrate(tables...); err != nil {
 		return fmt.Errorf("migrating without constraints: %w", err)
