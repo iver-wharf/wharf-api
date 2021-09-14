@@ -67,7 +67,7 @@ type Project struct {
 	ProviderID      uint      `gorm:"nullable;default:NULL;index:project_idx_provider_id" json:"providerId"`
 	Provider        *Provider `gorm:"foreignKey:ProviderID;constraint:OnUpdate:RESTRICT,OnDelete:RESTRICT" json:"provider"`
 	BuildDefinition string    `sql:"type:text" json:"buildDefinition"`
-	Branches        []Branch  `gorm:"foreignKey:ProjectID" json:"branches"`
+	Branches        []Branch  `gorm:"foreignKey:ProjectID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"branches"`
 	GitURL          string    `gorm:"nullable;default:NULL" json:"gitUrl"`
 	// ParsedBuildDefinition is populated when marshalled via MarshalJSON
 	ParsedBuildDefinition interface{} `gorm:"-" json:"build"`
@@ -85,7 +85,7 @@ const (
 type Branch struct {
 	BranchID  uint     `gorm:"primaryKey" json:"branchId"`
 	ProjectID uint     `gorm:"not null;index:branch_idx_project_id" json:"projectId"`
-	Project   *Project `gorm:"foreignKey:ProjectID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"-"`
+	Project   *Project `gorm:"foreignKey:ProjectID" json:"-"`
 	Name      string   `gorm:"not null" json:"name"`
 	Default   bool     `gorm:"not null" json:"default"`
 	TokenID   uint     `gorm:"nullable;default:NULL;index:branch_idx_token_id" json:"tokenId"`
@@ -122,7 +122,7 @@ type Build struct {
 	GitBranch   string       `gorm:"size:300;default:'';not null" json:"gitBranch"`
 	Environment null.String  `gorm:"nullable;size:40" json:"environment" swaggertype:"string"`
 	Stage       string       `gorm:"size:40;default:'';not null" json:"stage"`
-	Params      []BuildParam `gorm:"foreignKey:BuildID" json:"params"`
+	Params      []BuildParam `gorm:"foreignKey:BuildID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"params"`
 	IsInvalid   bool         `gorm:"not null;default:false" json:"isInvalid"`
 	// Status is populated when marshalled via MarshalJSON
 	Status string `gorm:"-" json:"status"`
@@ -132,7 +132,7 @@ type Build struct {
 type BuildParam struct {
 	BuildParamID uint   `gorm:"primaryKey" json:"-"`
 	BuildID      uint   `gorm:"not null;index:buildparam_idx_build_id" json:"buildId"`
-	Build        *Build `gorm:"foreignKey:BuildID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"-"`
+	Build        *Build `gorm:"foreignKey:BuildID" json:"-"`
 	Name         string `gorm:"not null" json:"name"`
 	Value        string `gorm:"nullable" json:"value"`
 }
