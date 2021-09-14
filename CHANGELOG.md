@@ -17,6 +17,10 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Fixed bug where unable to delete a Project without first deleting all child
   objects. (#64)
 
+- Fixed where wharf-core logging for Gin debug and error messages were set up
+  after they were initially used, leading to a mix of wharf-core and Gin
+  formatted logs. (#63
+
 ## v4.2.0 (2021-09-10)
 
 - Added support for the TZ environment variable (setting timezones ex.

@@ -94,6 +94,9 @@ func main() {
 		}()
 	}
 
+	gin.DefaultWriter = ginutil.DefaultLoggerWriter
+	gin.DefaultErrorWriter = ginutil.DefaultLoggerWriter
+
 	r := gin.New()
 	r.Use(
 		ginutil.LoggerWithConfig(ginutil.LoggerConfig{
@@ -102,9 +105,6 @@ func main() {
 		}),
 		ginutil.RecoverProblem,
 	)
-
-	gin.DefaultWriter = ginutil.DefaultLoggerWriter
-	gin.DefaultErrorWriter = ginutil.DefaultLoggerWriter
 
 	if config.HTTP.CORS.AllowAllOrigins {
 		log.Info().Message("Allowing all origins in CORS.")
