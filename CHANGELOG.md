@@ -14,8 +14,8 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
 ## v4.2.1 (WIP)
 
-- Fixed not being able to delete projects without first deleting all child
-  objects. (#?)
+- Fixed bug not being able to delete projects without first deleting all child
+  objects. (#64)
 
 ## v4.2.0 (2021-09-10)
 
