@@ -38,7 +38,7 @@ func runDatabaseMigrations(db *gorm.DB) error {
 
 		return nil
 	}); err != nil {
-		return fmt.Errorf("transaction failed: %w", err)
+		return err
 	}
 
 	// since v3.1.0, new constraints with other names are added by GORM
