@@ -12,6 +12,19 @@ import (
 //  - JSON property names:            {type}JSON{FieldName}
 //  - SQL column names:               {type}Column{FieldName}
 
+// Constraint convention in this file:
+//
+// When applying constraints using gorm tags, like:
+//  `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+// we apply it to both referencing fields.
+//
+// Examples:
+//  - Build.Params and BuildParam.Build
+//  - Project.Branches and Branch.Project
+//
+// One seems to take precedence, but to make sure and to keep the code
+// consistent we add it to both referencing fields.
+
 const (
 	providerFieldName      = "Name"
 	providerFieldURL       = "URL"
