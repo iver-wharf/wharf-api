@@ -62,11 +62,6 @@ type constraintToDrop struct {
 	name  string
 }
 
-type indexToDrop struct {
-	table string
-	name  string
-}
-
 func dropOldConstraints(db *gorm.DB, constraints []constraintToDrop) error {
 	log.Debug().WithInt("constraints", len(constraints)).Message("Dropping old constraints.")
 	for _, constraint := range constraints {
@@ -111,6 +106,11 @@ func dropOldColumn(db *gorm.DB, model interface{}, columnName string) error {
 			Message("No old column to remove.")
 	}
 	return nil
+}
+
+type indexToDrop struct {
+	table string
+	name  string
 }
 
 func dropOldIndices(db *gorm.DB, indices []indexToDrop) error {

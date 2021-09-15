@@ -17,7 +17,8 @@ type buildTestResultModule struct {
 	Database *gorm.DB
 }
 
-type artifactListItem struct {
+// ArtifactMetaData contains the file name and artifact ID of an Artifact.
+type ArtifactMetaData struct {
 	FileName   string `json:"fileName"`
 	ArtifactID uint   `json:"artifactId"`
 }
@@ -52,7 +53,7 @@ func (m buildTestResultModule) Register(r gin.IRouter) {
 // @accept multipart/form-data
 // @param buildid path int true "Build ID"
 // @param file formData file true "Test result file"
-// @success 201 {object} []artifactListItem "Added new test result data and created summaries"
+// @success 201 {object} []ArtifactMetaData "Added new test result data and created summaries"
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 502 {object} problem.Response "Database unreachable or bad gateway"
 // @router /build/{buildid}/test-result [post]
@@ -75,7 +76,7 @@ func (m buildTestResultModule) postBuildTestResultDataHandler(c *gin.Context) {
 		return
 	}
 
-	artifactList := []artifactListItem{}
+	artifactMetaDataList := []ArtifactMetaData{}
 
 	summaries := make([]TestResultSummary, 0, len(artifacts))
 	lotsOfDetails := make([]TestResultDetail, 0)
@@ -106,7 +107,7 @@ func (m buildTestResultModule) postBuildTestResultDataHandler(c *gin.Context) {
 		summaries = append(summaries, summary)
 		lotsOfDetails = append(lotsOfDetails, details...)
 
-		artifactList = append(artifactList, artifactListItem{
+		artifactMetaDataList = append(artifactMetaDataList, ArtifactMetaData{
 			FileName:   artifact.FileName,
 			ArtifactID: artifact.ArtifactID,
 		})
@@ -128,7 +129,7 @@ func (m buildTestResultModule) postBuildTestResultDataHandler(c *gin.Context) {
 			buildID))
 	}
 
-	c.JSON(http.StatusOK, artifactList)
+	c.JSON(http.StatusOK, artifactMetaDataList)
 }
 
 // getBuildAllTestResultDetailsHandler godoc

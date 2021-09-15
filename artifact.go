@@ -222,24 +222,24 @@ func (m artifactModule) getBuildTestsResultsHandler(c *gin.Context) {
 func createArtifacts(c *gin.Context, db *gorm.DB, files []ctxparser.File, buildID uint) ([]Artifact, bool) {
 	artifacts := make([]Artifact, len(files))
 	for idx, f := range files {
-		artifact := &artifacts[idx]
-		artifact.Data = f.Data
-		artifact.Name = f.Name
-		artifact.FileName = f.FileName
-		artifact.BuildID = buildID
+		artifactPtr := &artifacts[idx]
+		artifactPtr.Data = f.Data
+		artifactPtr.Name = f.Name
+		artifactPtr.FileName = f.FileName
+		artifactPtr.BuildID = buildID
 
-		err := db.Create(artifact).Error
+		err := db.Create(artifactPtr).Error
 		if err != nil {
 			ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
 				"Failed saving artifact with name %q for build with ID %d in database.",
-				artifact.FileName, buildID))
+				artifactPtr.FileName, buildID))
 			return artifacts, false
 		}
 
 		log.Debug().
-			WithString("filename", artifact.FileName).
+			WithString("filename", artifactPtr.FileName).
 			WithUint("build", buildID).
-			WithUint("artifact", artifact.ArtifactID).
+			WithUint("artifact", artifactPtr.ArtifactID).
 			Message("File saved as artifact")
 	}
 	return artifacts, true
