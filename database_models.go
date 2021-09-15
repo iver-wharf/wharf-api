@@ -85,7 +85,7 @@ const (
 type Branch struct {
 	BranchID  uint     `gorm:"primaryKey" json:"branchId"`
 	ProjectID uint     `gorm:"not null;index:branch_idx_project_id" json:"projectId"`
-	Project   *Project `gorm:"foreignKey:ProjectID" json:"-"`
+	Project   *Project `gorm:"foreignKey:ProjectID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"-"`
 	Name      string   `gorm:"not null" json:"name"`
 	Default   bool     `gorm:"not null" json:"default"`
 	TokenID   uint     `gorm:"nullable;default:NULL;index:branch_idx_token_id" json:"tokenId"`
@@ -132,7 +132,7 @@ type Build struct {
 type BuildParam struct {
 	BuildParamID uint   `gorm:"primaryKey" json:"-"`
 	BuildID      uint   `gorm:"not null;index:buildparam_idx_build_id" json:"buildId"`
-	Build        *Build `gorm:"foreignKey:BuildID" json:"-"`
+	Build        *Build `gorm:"foreignKey:BuildID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"-"`
 	Name         string `gorm:"not null" json:"name"`
 	Value        string `gorm:"nullable" json:"value"`
 }
