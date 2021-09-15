@@ -56,7 +56,7 @@ func (m buildModule) Register(g *gin.RouterGroup) {
 		builds.POST("/search", m.postBuildSearchHandler)
 	}
 
-	build := g.Group("/build/:buildid")
+	build := g.Group("/build/:buildId")
 	{
 		build.GET("", m.getBuildHandler)
 		build.PUT("", m.putBuildStatus)
@@ -97,15 +97,15 @@ func build(buildID uint) broadcast.Broadcaster {
 // getBuildHandler godoc
 // @summary Finds build by build ID
 // @tags build
-// @param buildid path int true "build id"
+// @param buildId path int true "build id"
 // @success 200 {object} Build
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 404 {object} problem.Response "Build not found"
 // @failure 502 {object} problem.Response "Database is unreachable"
-// @router /build/{buildid} [get]
+// @router /build/{buildId} [get]
 func (m buildModule) getBuildHandler(c *gin.Context) {
-	buildID, ok := ginutil.ParseParamUint(c, "buildid")
+	buildID, ok := ginutil.ParseParamUint(c, "buildId")
 	if !ok {
 		return
 	}
@@ -163,14 +163,14 @@ func (m buildModule) postBuildSearchHandler(c *gin.Context) {
 // getLogHandler godoc
 // @summary Finds logs for build with selected build ID
 // @tags build
-// @param buildid path int true "build id"
+// @param buildId path int true "build id"
 // @success 200 {object} []Log "logs from selected build"
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
-// @router /build/{buildid}/log [get]
+// @router /build/{buildId}/log [get]
 func (m buildModule) getLogHandler(c *gin.Context) {
-	buildID, ok := ginutil.ParseParamUint(c, "buildid")
+	buildID, ok := ginutil.ParseParamUint(c, "buildId")
 	if !ok {
 		return
 	}
@@ -190,13 +190,13 @@ func (m buildModule) getLogHandler(c *gin.Context) {
 // streamBuildLogHandler godoc
 // @summary Opens stream listener
 // @tags build
-// @param buildid path int true "build id"
+// @param buildId path int true "build id"
 // @success 200 "Open stream"
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
-// @router /build/{buildid}/stream [get]
+// @router /build/{buildId}/stream [get]
 func (m buildModule) streamBuildLogHandler(c *gin.Context) {
-	buildID, ok := ginutil.ParseParamUint(c, "buildid")
+	buildID, ok := ginutil.ParseParamUint(c, "buildId")
 	if !ok {
 		return
 	}
@@ -220,15 +220,15 @@ func (m buildModule) streamBuildLogHandler(c *gin.Context) {
 // postBuildLogHandler godoc
 // @summary Post a log to selected build
 // @tags build
-// @param buildid path int true "build id"
+// @param buildId path int true "build id"
 // @param data body BuildLog true "data"
 // @success 201 "Created"
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
-// @router /build/{buildid}/log [post]
+// @router /build/{buildId}/log [post]
 func (m buildModule) postBuildLogHandler(c *gin.Context) {
-	buildID, ok := ginutil.ParseParamUint(c, "buildid")
+	buildID, ok := ginutil.ParseParamUint(c, "buildId")
 	if !ok {
 		return
 	}
@@ -264,16 +264,16 @@ func (m buildModule) postBuildLogHandler(c *gin.Context) {
 // putBuildStatus godoc
 // @summary Partially update specific build
 // @tags build
-// @param buildid path uint true "build id"
+// @param buildId path uint true "build id"
 // @param status query string true "Build status term" Enums(Scheduling, Running, Completed, Failed)
 // @success 200 {object} Build
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 404 {object} problem.Response "Build not found"
 // @failure 502 {object} problem.Response "Database is unreachable"
-// @router /build/{buildid} [put]
+// @router /build/{buildId} [put]
 func (m buildModule) putBuildStatus(c *gin.Context) {
-	buildID, ok := ginutil.ParseParamUint(c, "buildid")
+	buildID, ok := ginutil.ParseParamUint(c, "buildId")
 	if !ok {
 		return
 	}
