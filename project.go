@@ -46,16 +46,16 @@ func (m projectModule) Register(g *gin.RouterGroup) {
 	{
 		projects.GET("", m.getProjectsHandler)
 		projects.POST("/search", m.searchProjectsHandler)
-		projects.GET("/:projectid/builds", m.getBuildsSliceHandler)
+		projects.GET("/:projectId/builds", m.getBuildsSliceHandler)
 	}
 
 	project := g.Group("/project")
 	{
-		project.GET("/:projectid", m.getProjectHandler)
+		project.GET("/:projectId", m.getProjectHandler)
 		project.POST("", m.postProjectHandler)
-		project.DELETE("/:projectid", m.deleteProjectHandler)
+		project.DELETE("/:projectId", m.deleteProjectHandler)
 		project.PUT("", m.putProjectHandler)
-		project.POST("/:projectid/:stage/run", m.runStageHandler)
+		project.POST("/:projectId/:stage/run", m.runStageHandler)
 	}
 }
 
@@ -127,7 +127,7 @@ func (m projectModule) searchProjectsHandler(c *gin.Context) {
 // getBuildsSliceHandler godoc
 // @summary Get slice of builds.
 // @tags project
-// @param projectid path int true "project ID"
+// @param projectId path int true "project ID"
 // @param limit query string true "number of fetched branches"
 // @param offset query string true "PK of last branch taken"
 // @param orderby query []string false "Sorting orders. Takes the property name followed by either 'asc' or 'desc'. Can be specified multiple times for more granular sorting. Defaults to '?orderby=buildId desc'"
@@ -135,9 +135,9 @@ func (m projectModule) searchProjectsHandler(c *gin.Context) {
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
-// @router /projects/{projectid}/builds [get]
+// @router /projects/{projectId}/builds [get]
 func (m projectModule) getBuildsSliceHandler(c *gin.Context) {
-	projectID, ok := ginutil.ParseParamUint(c, "projectid")
+	projectID, ok := ginutil.ParseParamUint(c, "projectId")
 	if !ok {
 		return
 	}
@@ -182,15 +182,15 @@ func (m projectModule) getBuildsSliceHandler(c *gin.Context) {
 // getProjectHandler godoc
 // @summary Returns project with selected project ID
 // @tags project
-// @param projectid path int true "project ID"
+// @param projectId path int true "project ID"
 // @success 200 {object} Project
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 404 {object} problem.Response "Project not found"
 // @failure 502 {object} problem.Response "Database is unreachable"
-// @router /project/{projectid} [get]
+// @router /project/{projectId} [get]
 func (m projectModule) getProjectHandler(c *gin.Context) {
-	projectID, ok := ginutil.ParseParamUint(c, "projectid")
+	projectID, ok := ginutil.ParseParamUint(c, "projectId")
 	if !ok {
 		return
 	}
@@ -280,15 +280,15 @@ func (m projectModule) postProjectHandler(c *gin.Context) {
 // deleteProjectHandler godoc
 // @summary Delete project with selected project ID
 // @tags project
-// @param projectid path int true "project ID"
+// @param projectId path int true "project ID"
 // @success 204 "Deleted"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 404 {object} problem.Response "Project to delete is not found"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
-// @router /project/{projectid} [delete]
+// @router /project/{projectId} [delete]
 func (m projectModule) deleteProjectHandler(c *gin.Context) {
-	projectID, ok := ginutil.ParseParamUint(c, "projectid")
+	projectID, ok := ginutil.ParseParamUint(c, "projectId")
 	if !ok {
 		return
 	}
@@ -378,7 +378,7 @@ func (m projectModule) putProjectHandler(c *gin.Context) {
 // @summary Responsible for run stage environment for selected project
 // @tags project
 // @accept json
-// @param projectid path int true "project ID"
+// @param projectId path int true "project ID"
 // @param stage path string true "name of stage to run, or specify ALL to run everything"
 // @param branch query string false "branch name, uses default branch if omitted"
 // @param environment query string false "environment name"
@@ -388,9 +388,9 @@ func (m projectModule) putProjectHandler(c *gin.Context) {
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 404 {object} problem.Response "Project was not found"
 // @failure 502 {object} problem.Response "Database or code execution engine is unreachable"
-// @router /project/{projectid}/{stage}/run [post]
+// @router /project/{projectId}/{stage}/run [post]
 func (m projectModule) runStageHandler(c *gin.Context) {
-	projectID, ok := ginutil.ParseParamUint(c, "projectid")
+	projectID, ok := ginutil.ParseParamUint(c, "projectId")
 	if !ok {
 		return
 	}
