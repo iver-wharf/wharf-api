@@ -17,9 +17,28 @@ func runDatabaseMigrations(db *gorm.DB) error {
 		return fmt.Errorf("migrating without constraints: %w", err)
 	}
 
-	db.DisableForeignKeyConstraintWhenMigrating = false
-	if err := db.AutoMigrate(tables...); err != nil {
-		return fmt.Errorf("migrating with constraints: %w", err)
+	if err := db.Transaction(func(tx *gorm.DB) error {
+		// since v4.2.1, drop these constraints to refresh the constraint behavior.
+		// Previously it was RESTRICT, now it's CASCADE.
+		if err := dropOldConstraints(tx, []constraintToDrop{
+			{"artifact", "fk_artifact_build"},
+			{"log", "fk_log_build"},
+			{"build", "fk_build_project"},
+			{"log", "fk_log_build"},
+			{"branch", "fk_project_branches"},
+			{"build_param", "fk_build_params"},
+		}); err != nil {
+			return err
+		}
+
+		tx.DisableForeignKeyConstraintWhenMigrating = false
+		if err := tx.AutoMigrate(tables...); err != nil {
+			return fmt.Errorf("migrating with constraints: %w", err)
+		}
+
+		return nil
+	}); err != nil {
+		return err
 	}
 
 	// since v3.1.0, new constraints with other names are added by GORM
