@@ -3,15 +3,16 @@ package main
 import (
 	"fmt"
 
+	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"gorm.io/gorm"
 )
 
 func runDatabaseMigrations(db *gorm.DB) error {
 	tables := []interface{}{
-		&Token{}, &Provider{}, &Project{},
-		&Branch{}, &Build{}, &Log{},
-		&Artifact{}, &BuildParam{}, &Param{},
-		&TestResultDetail{}, &TestResultSummary{}}
+		&database.Token{}, &database.Provider{}, &database.Project{},
+		&database.Branch{}, &database.Build{}, &database.Log{},
+		&database.Artifact{}, &database.BuildParam{}, &database.Param{},
+		&database.TestResultDetail{}, &database.TestResultSummary{}}
 
 	db.DisableForeignKeyConstraintWhenMigrating = true
 	if err := db.AutoMigrate(tables...); err != nil {
@@ -62,7 +63,7 @@ func runDatabaseMigrations(db *gorm.DB) error {
 
 	// since v3.1.0, the token.provider_id column was removed as it induced a
 	// circular dependency between the token and provider tables
-	if err := dropOldColumn(db, &Token{}, "provider_id"); err != nil {
+	if err := dropOldColumn(db, &database.Token{}, "provider_id"); err != nil {
 		return err
 	}
 
