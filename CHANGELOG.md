@@ -49,6 +49,20 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   data is slightly different; it has additional properties, and does not have a
   `status` property. (#43)
 
+- Added packages for "Plain Old Go Objects", with finer-grained decoupling
+  between database, HTTP request, and HTTP response models.
+  The Swagger documentation is affected by this, and some unused fields has
+  been removed from certain endpoints, such as the `tokenId` in `POST /token`.
+  The new packages are: (#78)
+
+  - `pkg/model/database`
+  - `pkg/model/request`
+  - `pkg/model/response`
+
+- Fixed `PUT /token` where it did not use the `providerId` value from the HTTP
+  request body. It now sets the provider's token if the field is supplied and
+  non-zero. (#78)
+
 ## v4.2.0 (2021-09-10)
 
 - Added support for the TZ environment variable (setting timezones ex.
