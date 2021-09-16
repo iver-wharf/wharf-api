@@ -22,7 +22,7 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   formatted logs. (#63)
 
 - Deprecated endpoint `GET /branch/{branchid}`. Getting a single branch by its
-  ID has been not shown any benefits. Please refer to the
+  ID has not been shown to have any benefits. Please refer to the
   `GET /project/{projectid}` endpoint instead. (#75)
 
 ## v4.2.0 (2021-09-10)
