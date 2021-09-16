@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/iver-wharf/wharf-api/internal/ctxparser"
+	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"gorm.io/gorm"
 )
@@ -112,7 +113,7 @@ func (m artifactModule) getBuildArtifactHandler(c *gin.Context) {
 		Where(&Artifact{
 			BuildID:    buildID,
 			ArtifactID: artifactID}).
-		Order(artifactColumnArtifactID + " DESC").
+		Order(database.ArtifactColumns.ArtifactID + " DESC").
 		First(&artifact).
 		Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -189,7 +190,7 @@ func (m artifactModule) getBuildTestsResultsHandler(c *gin.Context) {
 
 	err := m.Database.
 		Where(&Artifact{BuildID: buildID}).
-		Where(artifactColumnFileName+" LIKE ?", "%.trx").
+		Where(database.ArtifactColumns.FileName+" LIKE ?", "%.trx").
 		Find(&testRunFiles).
 		Error
 	if err != nil {

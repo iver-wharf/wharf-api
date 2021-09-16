@@ -64,11 +64,11 @@ func (m projectModule) FindProjectByID(id uint) (Project, error) {
 	var project Project
 	err := m.Database.Set("gorm:auto_preload", false).
 		Where(&Project{ProjectID: id}).
-		Preload(projectAssocProvider).
-		Preload(projectAssocBranches, func(db *gorm.DB) *gorm.DB {
-			return db.Order(buildColumnName)
+		Preload(database.ProjectFields.Provider).
+		Preload(database.ProjectFields.Branches, func(db *gorm.DB) *gorm.DB {
+			return db.Order(database.BuildColumns.BuildID)
 		}).
-		Preload(projectAssocToken).
+		Preload(database.ProjectFields.Token).
 		First(&project).
 		Error
 
@@ -85,9 +85,9 @@ func (m projectModule) FindProjectByID(id uint) (Project, error) {
 func (m projectModule) getProjectsHandler(c *gin.Context) {
 	var projects []Project
 	err := m.Database.
-		Preload(projectAssocProvider).
-		Preload(projectAssocBranches, func(db *gorm.DB) *gorm.DB {
-			return db.Order(buildColumnName)
+		Preload(database.ProjectFields.Provider).
+		Preload(database.ProjectFields.Branches, func(db *gorm.DB) *gorm.DB {
+			return db.Order(database.BuildColumns.BuildID)
 		}).
 		Find(&projects).
 		Error
@@ -115,7 +115,7 @@ func (m projectModule) searchProjectsHandler(c *gin.Context) {
 	var projects []Project
 	err := m.Database.
 		Where(&query).
-		Preload(projectAssocProvider).
+		Preload(database.ProjectFields.Provider).
 		Find(&projects).
 		Error
 	if err != nil {
@@ -244,7 +244,7 @@ func (m projectModule) postProjectHandler(c *gin.Context) {
 	var existingProject Project
 	if project.ProjectID != 0 {
 		err := m.Database.
-			Where(&project, projectFieldProjectID).
+			Where(&project, database.ProjectFields.ProjectID).
 			First(&existingProject).
 			Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -260,7 +260,7 @@ func (m projectModule) postProjectHandler(c *gin.Context) {
 		}
 	} else {
 		err := m.Database.
-			Where(&project, projectFieldGroupName, projectFieldTokenID, projectFieldName).
+			Where(&project, database.ProjectFields.GroupName, database.ProjectFields.TokenID, database.ProjectFields.Name).
 			First(&existingProject).
 			Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -361,7 +361,7 @@ func (m projectModule) putProjectHandler(c *gin.Context) {
 		}
 	} else {
 		err := m.Database.
-			Where(&project, projectFieldName, projectFieldGroupName).
+			Where(&project, database.ProjectFields.Name, database.ProjectFields.GroupName).
 			First(&existingProject).
 			Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -702,7 +702,7 @@ func getParams(project Project, build Build, vars []BuildParam, wharfInstanceID 
 	return params, nil
 }
 
-var defaultGetBuildsOrderBy = orderby.OrderBy{Column: buildColumnBuildID, Direction: orderby.Desc}
+var defaultGetBuildsOrderBy = orderby.OrderBy{Column: database.BuildColumns.BuildID, Direction: orderby.Desc}
 
 func (m projectModule) getBuilds(projectID uint, limit int, offset int, orderBySlice []orderby.OrderBy) ([]Build, error) {
 	var builds []Build

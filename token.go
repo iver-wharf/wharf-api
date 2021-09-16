@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 
 	"net/http"
@@ -103,7 +104,7 @@ func (m tokenModule) postSearchTokenHandler(c *gin.Context) {
 
 	var tokens []Token
 	err := m.Database.
-		Where(&token, tokenFieldToken, tokenFieldUserName).
+		Where(&token, database.TokenFields.Token, database.TokenFields.UserName).
 		Find(&tokens).
 		Error
 	if err != nil {

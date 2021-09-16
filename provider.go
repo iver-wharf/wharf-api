@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"github.com/iver-wharf/wharf-core/pkg/problem"
 	"gorm.io/gorm"
@@ -134,7 +135,7 @@ func (m providerModule) postSearchProviderHandler(c *gin.Context) {
 	var providers []Provider
 	if provider.TokenID != 0 {
 		err := m.Database.
-			Where(&provider, providerFieldName, providerFieldURL, providerFieldUploadURL, providerFieldTokenID).
+			Where(&provider, database.ProviderFields.Name, database.ProviderFields.URL, database.ProviderFields.UploadURL, database.ProviderFields.TokenID).
 			Find(&providers).
 			Error
 		if err != nil {
@@ -145,7 +146,7 @@ func (m providerModule) postSearchProviderHandler(c *gin.Context) {
 		}
 	} else {
 		err := m.Database.
-			Where(&provider, providerFieldName, providerFieldURL, providerFieldUploadURL).
+			Where(&provider, database.ProviderFields.Name, database.ProviderFields.URL, database.ProviderFields.UploadURL).
 			Find(&providers).
 			Error
 		if err != nil {
