@@ -18,8 +18,9 @@ func (m BranchModule) Register(g *gin.RouterGroup) {
 }
 
 // GetBranchHandler godoc
-// @summary This endpoint has not been implemented!
-// @summary Deprecated since v4.2.1. Planned for removal in v6.0.0.
+// @summary Get a branch by ID
+// @description This endpoint has not been implemented!
+// @description Deprecated since v4.2.1. Planned for removal in v6.0.0.
 // @deprecated
 // @tags branch
 // @param branchid path int true "branch ID"
