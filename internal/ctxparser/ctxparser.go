@@ -21,24 +21,25 @@ type File struct {
 	Data []byte
 }
 
-// ParseMultipartFormData parses multipart form data files from a gin.Context.
-func ParseMultipartFormData(c *gin.Context) ([]File, error) {
+// ParseMultipartFormDataFiles parses one or more files from a gin.Context's
+// multipart form data's specified File field entry.
+func ParseMultipartFormDataFiles(c *gin.Context, formFileFieldKey string) ([]File, error) {
 	form, err := c.MultipartForm()
 	if err != nil {
 		return nil, err
 	}
 
 	var files []File
-	for k := range form.File {
-		if fhs := form.File[k]; len(fhs) > 0 {
-			data, err := readMultipartFileData(fhs[0])
+	if fhs, ok := form.File[formFileFieldKey]; ok {
+		for _, fh := range fhs {
+			data, err := readMultipartFileData(fh)
 			if err != nil {
 				return nil, err
 			}
 
 			files = append(files, File{
-				Name:     k,
-				FileName: fhs[0].Filename,
+				Name:     formFileFieldKey,
+				FileName: fh.Filename,
 				Data:     data,
 			})
 		}

@@ -140,7 +140,7 @@ func (m artifactModule) getBuildArtifactHandler(c *gin.Context) {
 // @tags artifact
 // @accept multipart/form-data
 // @param buildid path int true "Build ID"
-// @param file formData file true "Build artifact file"
+// @param files formData file true "Build artifact file"
 // @success 201 "Added new artifacts"
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
@@ -153,7 +153,7 @@ func (m artifactModule) postBuildArtifactHandler(c *gin.Context) {
 		return
 	}
 
-	files, err := ctxparser.ParseMultipartFormData(c)
+	files, err := ctxparser.ParseMultipartFormDataFiles(c, "files")
 	if err != nil {
 		ginutil.WriteMultipartFormReadError(c, err,
 			fmt.Sprintf("Failed reading multipart-form's file data from request body when uploading"+

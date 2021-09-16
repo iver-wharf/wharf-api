@@ -52,7 +52,7 @@ func (m buildTestResultModule) Register(r gin.IRouter) {
 // @tags test-result
 // @accept multipart/form-data
 // @param buildid path int true "Build ID"
-// @param file formData file true "Test result file"
+// @param files formData file true "Test result file"
 // @success 201 {object} []ArtifactMetadata "Added new test result data and created summaries"
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 502 {object} problem.Response "Database unreachable or bad gateway"
@@ -63,7 +63,7 @@ func (m buildTestResultModule) postBuildTestResultDataHandler(c *gin.Context) {
 		return
 	}
 
-	files, err := ctxparser.ParseMultipartFormData(c)
+	files, err := ctxparser.ParseMultipartFormDataFiles(c, "files")
 	if err != nil {
 		ginutil.WriteMultipartFormReadError(c, err,
 			fmt.Sprintf("Failed reading multipart-form's file data from request body when uploading"+
