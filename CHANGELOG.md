@@ -47,7 +47,7 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
   Use `GET /build/{buildid}/test-result/list-summary` instead. The response
   data is slightly different; it has additional properties, and does not have a
-  `status` property. (#43)
+  `status` property. (#43, #77)
 
 ## v4.2.0 (2021-09-10)
 
