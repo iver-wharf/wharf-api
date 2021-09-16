@@ -111,17 +111,6 @@ const (
 	buildColumnName    = "name"
 )
 
-var buildJSONToColumns = map[string]string{
-	"buildId":     buildColumnBuildID,
-	"environment": "environment",
-	"finishedOn":  "completed_on",
-	"scheduledOn": "scheduled_on",
-	"stage":       "stage",
-	"startedOn":   "started_on",
-	"statusId":    "status_id",
-	"isInvalid":   "is_invalid",
-}
-
 // Build holds data about the state of a build. Which parameters was used to
 // start it, what status it holds, et.al.
 type Build struct {

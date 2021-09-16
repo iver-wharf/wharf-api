@@ -17,6 +17,7 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/gin-gonic/gin"
 	"github.com/iver-wharf/messagebus-go"
+	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/iver-wharf/wharf-api/pkg/orderby"
 	"github.com/iver-wharf/wharf-core/pkg/problem"
 	"gopkg.in/guregu/null.v4"
@@ -122,6 +123,17 @@ func (m projectModule) searchProjectsHandler(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, projects)
+}
+
+var buildJSONToColumns = map[string]string{
+	"buildId":     database.BuildColumns.BuildID,
+	"environment": database.BuildColumns.Environment,
+	"finishedOn":  database.BuildColumns.CompletedOn,
+	"scheduledOn": database.BuildColumns.ScheduledOn,
+	"startedOn":   database.BuildColumns.StartedOn,
+	"stage":       database.BuildColumns.Stage,
+	"statusId":    database.BuildColumns.StatusID,
+	"isInvalid":   database.BuildColumns.IsInvalid,
 }
 
 // getBuildsSliceHandler godoc
