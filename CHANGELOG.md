@@ -12,7 +12,7 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 	https://changelog.md/
 -->
 
-## v4.2.1 (WIP)
+## v4.3.0 (WIP)
 
 - Fixed bug where unable to delete a Project without first deleting all child
   objects. (#64)
@@ -20,6 +20,34 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Fixed where wharf-core logging for Gin debug and error messages were set up
   after they were initially used, leading to a mix of wharf-core and Gin
   formatted logs. (#63)
+
+- Added database tables: (#43)
+
+  - test_result_detail
+  - test_result_summary
+
+- Added test-result specific endpoints: (#43)
+
+  - `POST /build/{buildid}/test-result`
+
+    This should be used instead of `POST /build/{buildid}/artifact`
+    when uploading test result files.
+
+  - `GET /build/{buildid}/test-result/detail`
+
+  - `GET /build/{buildid}/test-result/summary`
+
+  - `GET /build/{buildid}/test-result/summary/{artifactId}`
+
+  - `GET /build/{buildid}/test-result/summary/{artifactId}/detail`
+
+  - `GET /build/{buildid}/test-result/list-summary`
+
+- Deprecated endpoint `GET /build/{buildid}/tests-results`.
+
+  Use `GET /build/{buildid}/test-result/list-summary` instead. The response
+  data is slightly different; it has additional properties, and does not have a
+  `status` property. (#43)
 
 ## v4.2.0 (2021-09-10)
 

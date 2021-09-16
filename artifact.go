@@ -4,34 +4,18 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"mime"
 	"net/http"
 	"path/filepath"
 
 	"github.com/gin-gonic/gin"
+	"github.com/iver-wharf/wharf-api/internal/ctxparser"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"gorm.io/gorm"
 )
 
 type artifactModule struct {
 	Database *gorm.DB
-}
-
-type testRun struct {
-	XMLName       xml.Name      `xml:"TestRun"`
-	ResultSummary resultSummary `xml:"ResultSummary"`
-}
-
-type resultSummary struct {
-	XMLName  xml.Name `xml:"ResultSummary"`
-	Counters counters `xml:"Counters"`
-}
-
-type counters struct {
-	XMLName xml.Name `xml:"Counters"`
-	Passed  int      `xml:"passed,attr"`
-	Failed  int      `xml:"failed,attr"`
 }
 
 // TestStatus is an enum of different states a test run or test summary can be
@@ -58,16 +42,17 @@ const (
 // any passing tests and no failed tests, and "No tests" if there are no failed
 // nor passing tests.
 type TestsResults struct {
-	Passed int        `json:"passed"`
-	Failed int        `json:"failed"`
+	Passed uint       `json:"passed"`
+	Failed uint       `json:"failed"`
 	Status TestStatus `json:"status" enums:"Success,Failed,No tests"`
 }
 
 func (m artifactModule) Register(g *gin.RouterGroup) {
 	g.GET("/artifacts", m.getBuildArtifactsHandler)
 	g.GET("/artifact/:artifactId", m.getBuildArtifactHandler)
-	g.GET("/tests-results", m.getBuildTestsResultsHandler)
 	g.POST("/artifact", m.postBuildArtifactHandler)
+	// deprecated
+	g.GET("/tests-results", m.getBuildTestsResultsHandler)
 }
 
 // getBuildArtifactsHandler godoc
@@ -85,9 +70,9 @@ func (m artifactModule) getBuildArtifactsHandler(c *gin.Context) {
 		return
 	}
 
-	var artifacts []Artifact
+	artifacts := []Artifact{}
 	err := m.Database.
-		Where(&Artifact{BuildID: uint(buildID)}).
+		Where(&Artifact{BuildID: buildID}).
 		Find(&artifacts).
 		Error
 	if err != nil {
@@ -116,6 +101,7 @@ func (m artifactModule) getBuildArtifactHandler(c *gin.Context) {
 	if !ok {
 		return
 	}
+
 	artifactID, ok := ginutil.ParseParamUint(c, "artifactId")
 	if !ok {
 		return
@@ -149,11 +135,46 @@ func (m artifactModule) getBuildArtifactHandler(c *gin.Context) {
 	c.Data(http.StatusOK, mimeType, artifact.Data)
 }
 
+// postBuildArtifactHandler godoc
+// @summary Post build artifact
+// @tags artifact
+// @accept multipart/form-data
+// @param buildid path int true "Build ID"
+// @param files formData file true "Build artifact file"
+// @success 201 "Added new artifacts"
+// @failure 400 {object} problem.Response "Bad request"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 404 {object} problem.Response "Artifact not found"
+// @failure 502 {object} problem.Response "Database is unreachable"
+// @router /build/{buildid}/artifact [post]
+func (m artifactModule) postBuildArtifactHandler(c *gin.Context) {
+	buildID, ok := ginutil.ParseParamUint(c, "buildid")
+	if !ok {
+		return
+	}
+
+	files, err := ctxparser.ParseMultipartFormDataFiles(c, "files")
+	if err != nil {
+		ginutil.WriteMultipartFormReadError(c, err,
+			fmt.Sprintf("Failed reading multipart-form's file data from request body when uploading"+
+				" new artifact for build with ID %d.", buildID))
+		return
+	}
+
+	_, ok = createArtifacts(c, m.Database, files, buildID)
+	if !ok {
+		return
+	}
+
+	c.Status(http.StatusCreated)
+}
+
 // getBuildTestsResultsHandler godoc
-// @summary Get build tests results from .trx files
+// @deprecated
+// @summary Get build tests results from .trx files. Deprecated, /build/{buildid}/test-results-summary should be used instead.
 // @tags artifact
 // @param buildid path int true "Build ID"
-// @success 200 {object} TestsResults "OK"
+// @success 200 {object} TestsResults
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
@@ -164,10 +185,10 @@ func (m artifactModule) getBuildTestsResultsHandler(c *gin.Context) {
 		return
 	}
 
-	var testRunFiles []Artifact
+	testRunFiles := []Artifact{}
 
 	err := m.Database.
-		Where(&Artifact{BuildID: uint(buildID)}).
+		Where(&Artifact{BuildID: buildID}).
 		Where(artifactColumnFileName+" LIKE ?", "%.trx").
 		Find(&testRunFiles).
 		Error
@@ -179,7 +200,7 @@ func (m artifactModule) getBuildTestsResultsHandler(c *gin.Context) {
 	}
 
 	var results TestsResults
-	var run testRun
+	var run trxTestRun
 
 	for _, testRunFile := range testRunFiles {
 		xml.Unmarshal(testRunFile.Data, &run)
@@ -198,72 +219,28 @@ func (m artifactModule) getBuildTestsResultsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, results)
 }
 
-// postBuildArtifactHandler godoc
-// @summary Post build artifact
-// @tags artifact
-// @accept multipart/form-data
-// @param buildid path int true "Build ID"
-// @param file formData file true "build artifact file"
-// @success 200 "OK"
-// @failure 400 {object} problem.Response "Bad request"
-// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
-// @failure 404 {object} problem.Response "Artifact not found"
-// @failure 502 {object} problem.Response "Database is unreachable"
-// @router /build/{buildid}/artifact [post]
-func (m artifactModule) postBuildArtifactHandler(c *gin.Context) {
-	buildID, ok := ginutil.ParseParamUint(c, "buildid")
-	if !ok {
-		return
-	}
+func createArtifacts(c *gin.Context, db *gorm.DB, files []ctxparser.File, buildID uint) ([]Artifact, bool) {
+	artifacts := make([]Artifact, len(files))
+	for idx, f := range files {
+		artifactPtr := &artifacts[idx]
+		artifactPtr.Data = f.Data
+		artifactPtr.Name = f.Name
+		artifactPtr.FileName = f.FileName
+		artifactPtr.BuildID = buildID
 
-	form, err := c.MultipartForm()
-	if err != nil {
-		ginutil.WriteMultipartFormReadError(c, err, fmt.Sprintf(
-			"Failed reading multipart-form content from request body when uploading new artifact for build with ID %d.",
-			buildID))
-		return
-	}
-
-	for k := range form.File {
-		if fhs := form.File[k]; len(fhs) > 0 {
-			f, err := fhs[0].Open()
-			if err != nil {
-				ginutil.WriteMultipartFormReadError(c, err, fmt.Sprintf(
-					"Failed with starting to read file content from multipart form request body when uploading new artifact for build with ID %d.",
-					buildID))
-				return
-			}
-
-			data, err := ioutil.ReadAll(f)
-			if err != nil {
-				ginutil.WriteMultipartFormReadError(c, err, fmt.Sprintf(
-					"Failed reading file content from multipart form request body when uploading new artifact for build with ID %d.",
-					buildID))
-				return
-			}
-
-			artifact := Artifact{
-				Data:     data,
-				Name:     k,
-				FileName: fhs[0].Filename,
-				BuildID:  buildID,
-			}
-
-			err = m.Database.Create(&artifact).Error
-			if err != nil {
-				ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
-					"Failed saving artifact with name %q for build with ID %d in database.",
-					artifact.FileName, buildID))
-				return
-			}
-
-			log.Info().
-				WithString("filename", artifact.Name).
-				WithUint("build", buildID).
-				WithUint("artifact", artifact.ArtifactID).
-				Message("File saved as artifact")
+		err := db.Create(artifactPtr).Error
+		if err != nil {
+			ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
+				"Failed saving artifact with name %q for build with ID %d in database.",
+				artifactPtr.FileName, buildID))
+			return artifacts, false
 		}
-	}
 
-	c.Status(http.StatusCreated)
+		log.Debug().
+			WithString("filename", artifactPtr.FileName).
+			WithUint("build", buildID).
+			WithUint("artifact", artifactPtr.ArtifactID).
+			Message("File saved as artifact")
+	}
+	return artifacts, true
 }

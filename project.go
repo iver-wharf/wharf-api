@@ -430,7 +430,7 @@ func (m projectModule) runStageHandler(c *gin.Context) {
 	now := time.Now().UTC()
 	build := Build{
 		ProjectID:   project.ProjectID,
-		ScheduledOn: &now,
+		ScheduledOn: null.TimeFrom(now),
 		GitBranch:   branch,
 		Environment: null.NewString(env, hasEnv),
 		Stage:       stageName,

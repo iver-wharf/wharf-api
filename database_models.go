@@ -125,18 +125,19 @@ var buildJSONToColumns = map[string]string{
 // Build holds data about the state of a build. Which parameters was used to
 // start it, what status it holds, et.al.
 type Build struct {
-	BuildID     uint         `gorm:"primaryKey" json:"buildId"`
-	StatusID    BuildStatus  `gorm:"not null" json:"statusId"`
-	ProjectID   uint         `gorm:"not null;index:build_idx_project_id" json:"projectId"`
-	Project     *Project     `gorm:"foreignKey:ProjectID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"-"`
-	ScheduledOn *time.Time   `gorm:"nullable;default:NULL" json:"scheduledOn" format:"date-time"`
-	StartedOn   *time.Time   `gorm:"nullable;default:NULL" json:"startedOn" format:"date-time"`
-	CompletedOn *time.Time   `gorm:"nullable;default:NULL" json:"finishedOn" format:"date-time"`
-	GitBranch   string       `gorm:"size:300;default:'';not null" json:"gitBranch"`
-	Environment null.String  `gorm:"nullable;size:40" json:"environment" swaggertype:"string"`
-	Stage       string       `gorm:"size:40;default:'';not null" json:"stage"`
-	Params      []BuildParam `gorm:"foreignKey:BuildID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"params"`
-	IsInvalid   bool         `gorm:"not null;default:false" json:"isInvalid"`
+	BuildID             uint                `gorm:"primaryKey" json:"buildId"`
+	StatusID            BuildStatus         `gorm:"not null" json:"statusId"`
+	ProjectID           uint                `gorm:"not null;index:build_idx_project_id" json:"projectId"`
+	Project             *Project            `gorm:"foreignKey:ProjectID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"-"`
+	ScheduledOn         null.Time           `gorm:"nullable;default:NULL" json:"scheduledOn" format:"date-time"`
+	StartedOn           null.Time           `gorm:"nullable;default:NULL" json:"startedOn" format:"date-time"`
+	CompletedOn         null.Time           `gorm:"nullable;default:NULL" json:"finishedOn" format:"date-time"`
+	GitBranch           string              `gorm:"size:300;default:'';not null" json:"gitBranch"`
+	Environment         null.String         `gorm:"nullable;size:40" json:"environment" swaggertype:"string"`
+	Stage               string              `gorm:"size:40;default:'';not null" json:"stage"`
+	Params              []BuildParam        `gorm:"foreignKey:BuildID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"params"`
+	IsInvalid           bool                `gorm:"not null;default:false" json:"isInvalid"`
+	TestResultSummaries []TestResultSummary `gorm:"foreignKey:BuildID" json:"testResultSummaries"`
 	// Status is populated when marshalled via MarshalJSON
 	Status string `gorm:"-" json:"status"`
 }
@@ -177,9 +178,49 @@ const (
 // the file name and which build it belongs to.
 type Artifact struct {
 	ArtifactID uint   `gorm:"primaryKey" json:"artifactId"`
-	BuildID    uint   `gorm:"not null;index:param_idx_build_id" json:"buildId"`
+	BuildID    uint   `gorm:"not null;index:artifact_idx_build_id" json:"buildId"`
 	Build      *Build `gorm:"foreignKey:BuildID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"-"`
 	Name       string `gorm:"not null" json:"name"`
 	FileName   string `gorm:"nullable" json:"fileName"`
 	Data       []byte `gorm:"nullable" json:"-"`
+}
+
+// TestResultSummary contains data about a single test result file.
+type TestResultSummary struct {
+	TestResultSummaryID uint      `gorm:"primaryKey" json:"testResultSummaryId"`
+	FileName            string    `gorm:"nullable" json:"fileName"`
+	ArtifactID          uint      `gorm:"not null;index:testresultsummary_idx_artifact_id" json:"artifactId"`
+	Artifact            *Artifact `gorm:"foreignKey:ArtifactID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL" json:"-"`
+	BuildID             uint      `gorm:"not null;index:testresultsummary_idx_build_id" json:"buildId"`
+	Build               *Build    `gorm:"foreignKey:BuildID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"-"`
+	Total               uint      `gorm:"not null" json:"total"`
+	Failed              uint      `gorm:"not null" json:"failed"`
+	Passed              uint      `gorm:"not null" json:"passed"`
+	Skipped             uint      `gorm:"not null" json:"skipped"`
+}
+
+// TestResultStatus is an enum of different states a test result can be in.
+type TestResultStatus string
+
+const (
+	// TestResultStatusSuccess means the test succeeded.
+	TestResultStatusSuccess TestResultStatus = "Success"
+	// TestResultStatusFailed means the test failed.
+	TestResultStatusFailed TestResultStatus = "Failed"
+	// TestResultStatusSkipped means the test was skipped.
+	TestResultStatusSkipped TestResultStatus = "Skipped"
+)
+
+// TestResultDetail contains data about a single test in a test result file.
+type TestResultDetail struct {
+	TestResultDetailID uint             `gorm:"primaryKey" json:"testResultDetailId"`
+	ArtifactID         uint             `gorm:"not null;index:testresultdetail_idx_artifact_id" json:"artifactId"`
+	Artifact           *Artifact        `gorm:"foreignKey:ArtifactID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL" json:"-"`
+	BuildID            uint             `gorm:"not null;index:testresultdetail_idx_build_id" json:"buildId"`
+	Build              *Build           `gorm:"foreignKey:BuildID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"-"`
+	Name               string           `gorm:"not null" json:"name"`
+	Message            null.String      `gorm:"nullable" json:"message" swaggertype:"string"`
+	StartedOn          null.Time        `gorm:"nullable;default:NULL;" json:"startedOn" format:"date-time"`
+	CompletedOn        null.Time        `gorm:"nullable;default:NULL;" json:"completedOn" format:"date-time"`
+	Status             TestResultStatus `gorm:"not null" enums:"Failed,Passed,Skipped" json:"status"`
 }

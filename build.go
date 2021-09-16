@@ -66,6 +66,9 @@ func (m buildModule) Register(g *gin.RouterGroup) {
 
 		artifacts := artifactModule{m.Database}
 		artifacts.Register(build)
+
+		buildTestResults := buildTestResultModule{m.Database}
+		buildTestResults.Register(build)
 	}
 }
 
@@ -352,8 +355,8 @@ func setStatusDate(build *Build, statusID BuildStatus) {
 	now := time.Now().UTC()
 	switch statusID {
 	case BuildRunning:
-		build.StartedOn = &now
+		build.StartedOn.SetValid(now)
 	case BuildCompleted, BuildFailed:
-		build.CompletedOn = &now
+		build.CompletedOn.SetValid(now)
 	}
 }
