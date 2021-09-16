@@ -42,7 +42,6 @@ func (m tokenModule) Register(g *gin.RouterGroup) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /tokens [get]
 func (m tokenModule) getTokensHandler(c *gin.Context) {
-
 	var dbTokens []database.Token
 	err := m.Database.Limit(100).Find(&dbTokens).Error
 	if err != nil {
@@ -50,11 +49,7 @@ func (m tokenModule) getTokensHandler(c *gin.Context) {
 		return
 	}
 
-	resTokens := make([]response.Token, len(dbTokens))
-	for i, dbToken := range dbTokens {
-		resTokens[i] = dbTokenToResponseToken(dbToken)
-	}
-
+	resTokens := dbTokensToResponseTokens(dbTokens)
 	c.JSON(http.StatusOK, resTokens)
 }
 
@@ -125,11 +120,7 @@ func (m tokenModule) postSearchTokenHandler(c *gin.Context) {
 		return
 	}
 
-	resTokens := make([]response.Token, len(dbTokens))
-	for i, dbToken := range dbTokens {
-		resTokens[i] = dbTokenToResponseToken(dbToken)
-	}
-
+	resTokens := dbTokensToResponseTokens(dbTokens)
 	c.JSON(http.StatusOK, resTokens)
 }
 
@@ -245,14 +236,23 @@ func (m tokenModule) putTokenHandler(c *gin.Context) {
 			"Failed fetch or create on token by username %q and token value.",
 			reqToken.UserName))
 	}
+
 	resToken := dbTokenToResponseToken(dbToken)
 	c.JSON(http.StatusOK, resToken)
 }
 
-func dbTokenToResponseToken(token database.Token) response.Token {
+func dbTokensToResponseTokens(dbTokens []database.Token) []response.Token {
+	resTokens := make([]response.Token, len(dbTokens))
+	for i, dbToken := range dbTokens {
+		resTokens[i] = dbTokenToResponseToken(dbToken)
+	}
+	return resTokens
+}
+
+func dbTokenToResponseToken(dbToken database.Token) response.Token {
 	return response.Token{
-		TokenID:  token.TokenID,
-		Token:    token.Token,
-		UserName: token.UserName,
+		TokenID:  dbToken.TokenID,
+		Token:    dbToken.Token,
+		UserName: dbToken.UserName,
 	}
 }
