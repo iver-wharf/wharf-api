@@ -171,7 +171,8 @@ func (m artifactModule) postBuildArtifactHandler(c *gin.Context) {
 
 // getBuildTestsResultsHandler godoc
 // @deprecated
-// @summary Get build tests results from .trx files. Deprecated, /build/{buildid}/test-results-summary should be used instead.
+// @summary Gets build tests results from .trx files.
+// @description Deprecated, /build/{buildid}/test-result/list-summary should be used instead.
 // @tags artifact
 // @param buildid path int true "Build ID"
 // @success 200 {object} TestsResults
