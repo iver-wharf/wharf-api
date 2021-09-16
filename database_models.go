@@ -222,5 +222,5 @@ type TestResultDetail struct {
 	Message            null.String      `gorm:"nullable" json:"message" swaggertype:"string"`
 	StartedOn          null.Time        `gorm:"nullable;default:NULL;" json:"startedOn" format:"date-time"`
 	CompletedOn        null.Time        `gorm:"nullable;default:NULL;" json:"completedOn" format:"date-time"`
-	Status             TestResultStatus `gorm:"not null" enums:"Failed,Passed,Skipped" json:"status"`
+	Status             TestResultStatus `gorm:"not null" enum:"Failed,Passed,Skipped" json:"status"`
 }
