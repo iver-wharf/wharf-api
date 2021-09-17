@@ -49,6 +49,17 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   data is slightly different; it has additional properties, and does not have a
   `status` property. (#43)
 
+- Changed format of all endpoint's path parameters from all lowercase to
+  camelCase: (#76)
+
+  - branchid -> branchId
+  - projectid -> projectId
+  - providerid -> providerId
+  - tokenid -> tokenId
+  - buildid -> buildId
+
+  This affects the Swagger documentation, but has no behavioral implications.
+
 - Deprecated endpoint `GET /branch/{branchid}`. Getting a single branch by its
   ID has not been shown to have any benefits. Please refer to the
   `GET /project/{projectid}` endpoint instead. (#75)

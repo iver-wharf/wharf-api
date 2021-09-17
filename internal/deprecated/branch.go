@@ -13,7 +13,7 @@ type BranchModule struct{}
 func (m BranchModule) Register(g *gin.RouterGroup) {
 	branch := g.Group("/branch")
 	{
-		branch.GET("/:branchid", m.GetBranchHandler)
+		branch.GET("/:branchId", m.GetBranchHandler)
 	}
 }
 
@@ -23,9 +23,9 @@ func (m BranchModule) Register(g *gin.RouterGroup) {
 // @description Deprecated since v4.2.1. Planned for removal in v6.0.0.
 // @deprecated
 // @tags branch
-// @param branchid path int true "branch ID"
+// @param branchId path int true "branch ID"
 // @success 501 "Not Implemented"
-// @router /branch/{branchid} [get]
+// @router /branch/{branchId} [get]
 func (m BranchModule) GetBranchHandler(c *gin.Context) {
 	c.Status(http.StatusNotImplemented)
 }
