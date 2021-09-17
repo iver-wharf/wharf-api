@@ -24,7 +24,7 @@ func (m branchModule) Register(g *gin.RouterGroup) {
 
 	branch := g.Group("/branch")
 	{
-		branch.GET("/:branchid", m.GetBranchHandler)
+		branch.GET("/:branchId", m.GetBranchHandler)
 		branch.POST("", m.PostBranchHandler)
 	}
 }
@@ -41,9 +41,9 @@ func (m branchModule) GetBranchesHandler(c *gin.Context) {
 // GetBranchHandler godoc
 // @summary NOT IMPLEMENTED YET
 // @tags branch
-// @param branchid path int true "branch ID"
+// @param branchId path int true "branch ID"
 // @success 501 "Not Implemented"
-// @router /branch/{branchid} [get]
+// @router /branch/{branchId} [get]
 func (m branchModule) GetBranchHandler(c *gin.Context) {
 	c.Status(http.StatusNotImplemented)
 }
