@@ -48,6 +48,7 @@ func (m buildTestResultModule) Register(r gin.IRouter) {
 }
 
 // postBuildTestResultDataHandler godoc
+// @id createBuildTestResult
 // @summary Post test result data
 // @tags test-result
 // @accept multipart/form-data
@@ -133,6 +134,7 @@ func (m buildTestResultModule) postBuildTestResultDataHandler(c *gin.Context) {
 }
 
 // getBuildAllTestResultDetailsHandler godoc
+// @id getBuildAllTestResultDetailList
 // @summary Get all test result details for specified build
 // @tags test-result
 // @param buildId path int true "Build ID"
@@ -163,6 +165,7 @@ func (m buildTestResultModule) getBuildAllTestResultDetailsHandler(c *gin.Contex
 }
 
 // getBuildAllTestResultSummariesHandler godoc
+// @id getBuildAllTestResultSummaryList
 // @summary Get all test result summaries for specified build
 // @tags test-result
 // @param buildId path int true "Build ID"
@@ -193,6 +196,7 @@ func (m buildTestResultModule) getBuildAllTestResultSummariesHandler(c *gin.Cont
 }
 
 // getBuildTestResultSummaryHandler godoc
+// @id getBuildTestResultSummary
 // @summary Get test result summary for specified test
 // @tags test-result
 // @param buildId path int true "Build ID"
@@ -229,6 +233,7 @@ func (m buildTestResultModule) getBuildTestResultSummaryHandler(c *gin.Context) 
 }
 
 // getBuildTestResultDetailsHandler godoc
+// @id getBuildTestResultDetail
 // @summary Get all test result details for specified test
 // @tags test-result
 // @param buildId path int true "Build ID"
@@ -265,6 +270,7 @@ func (m buildTestResultModule) getBuildTestResultDetailsHandler(c *gin.Context) 
 }
 
 // getBuildTestResultListSummaryHandler godoc
+// @id getBuildAllTestResultSummary
 // @summary Get test result list summary of all tests for specified build
 // @tags test-result
 // @param buildId path int true "Build ID"

@@ -19,26 +19,27 @@ type tokenModule struct {
 func (m tokenModule) Register(g *gin.RouterGroup) {
 	tokens := g.Group("/tokens")
 	{
-		tokens.GET("", m.getTokensHandler)
-		tokens.POST("/search", m.postSearchTokenHandler)
+		tokens.GET("", m.getTokenListHandler)
+		tokens.POST("/search", m.searchTokenListHandler)
 	}
 
 	token := g.Group("/token")
 	{
 		token.GET("/:tokenId", m.getTokenHandler)
-		token.POST("", m.postTokenHandler)
-		token.PUT("", m.putTokenHandler)
+		token.POST("", m.createTokenHandler)
+		token.PUT("", m.updateTokenHandler)
 	}
 }
 
-// getTokensHandler godoc
+// getTokenListHandler godoc
+// @id getTokenList
 // @summary Returns first 100 tokens
 // @tags token
 // @success 200 {object} []Token
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /tokens [get]
-func (m tokenModule) getTokensHandler(c *gin.Context) {
+func (m tokenModule) getTokenListHandler(c *gin.Context) {
 
 	var tokens []Token
 	err := m.Database.Limit(100).Find(&tokens).Error
@@ -51,6 +52,7 @@ func (m tokenModule) getTokensHandler(c *gin.Context) {
 }
 
 // getTokenHandler godoc
+// @id getToken
 // @summary Returns token with selected token ID
 // @tags token
 // @param tokenId path int true "Token ID"
@@ -80,7 +82,8 @@ func (m tokenModule) getTokenHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, token)
 }
 
-// postSearchTokenHandler godoc
+// searchTokenListHandler godoc
+// @id searchTokenList
 // @summary Returns arrays of tokens that match to search criteria.
 // @description Returns arrays of tokens that match to search criteria.
 // @description It takes into consideration only token string and user name.
@@ -93,7 +96,7 @@ func (m tokenModule) getTokenHandler(c *gin.Context) {
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /tokens/search [post]
-func (m tokenModule) postSearchTokenHandler(c *gin.Context) {
+func (m tokenModule) searchTokenListHandler(c *gin.Context) {
 	var token Token
 	if err := c.ShouldBindJSON(&token); err != nil {
 		ginutil.WriteInvalidBindError(c, err,
@@ -123,7 +126,8 @@ type TokenWithProviderID struct {
 	ProviderID uint `json:"providerId"`
 }
 
-// postTokenHandler godoc
+// createTokenHandler godoc
+// @id createToken
 // @summary Add token to database.
 // @description Add token to database. Provider in post object has to exists or should be empty.
 // @tags token
@@ -136,7 +140,7 @@ type TokenWithProviderID struct {
 // @failure 404 {object} problem.Response "Referenced provider not found"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /token [post]
-func (m tokenModule) postTokenHandler(c *gin.Context) {
+func (m tokenModule) createTokenHandler(c *gin.Context) {
 	var (
 		tokenWithProviderID TokenWithProviderID
 		token               *Token
@@ -182,7 +186,8 @@ func (m tokenModule) postTokenHandler(c *gin.Context) {
 	c.JSON(http.StatusCreated, token)
 }
 
-// postTokenHandler godoc
+// updateTokenHandler godoc
+// @id updateToken
 // @summary Put token in database.
 // @description Creates a new token if a match is not found.
 // @tags token
@@ -194,7 +199,7 @@ func (m tokenModule) postTokenHandler(c *gin.Context) {
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /token [put]
-func (m tokenModule) putTokenHandler(c *gin.Context) {
+func (m tokenModule) updateTokenHandler(c *gin.Context) {
 	var inputToken Token
 	if err := c.ShouldBindJSON(&inputToken); err != nil {
 		ginutil.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading the request body.")
