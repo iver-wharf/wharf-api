@@ -64,6 +64,9 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   ID has not been shown to have any benefits. Please refer to the
   `GET /project/{projectId}` endpoint instead. (#75)
 
+- Added Swagger operation IDs to all endpoints. This has no effect on the APIs
+  behavior, but affects code generators. (#79)
+
 ## v4.2.0 (2021-09-10)
 
 - Added support for the TZ environment variable (setting timezones ex.
