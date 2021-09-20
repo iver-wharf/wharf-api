@@ -62,13 +62,8 @@ func (m projectModule) Register(g *gin.RouterGroup) {
 
 func (m projectModule) FindProjectByID(id uint) (Project, error) {
 	var project Project
-	err := m.Database.Set("gorm:auto_preload", false).
+	err := m.databaseProjectPreloaded().
 		Where(&Project{ProjectID: id}).
-		Preload(database.ProjectFields.Provider).
-		Preload(database.ProjectFields.Branches, func(db *gorm.DB) *gorm.DB {
-			return db.Order(database.BranchColumns.BranchID)
-		}).
-		Preload(database.ProjectFields.Token).
 		First(&project).
 		Error
 
@@ -84,11 +79,7 @@ func (m projectModule) FindProjectByID(id uint) (Project, error) {
 // @router /projects [get]
 func (m projectModule) getProjectsHandler(c *gin.Context) {
 	var projects []Project
-	err := m.Database.
-		Preload(database.ProjectFields.Provider).
-		Preload(database.ProjectFields.Branches, func(db *gorm.DB) *gorm.DB {
-			return db.Order(database.BranchColumns.BranchID)
-		}).
+	err := m.databaseProjectPreloaded().
 		Find(&projects).
 		Error
 	if err != nil {
@@ -96,6 +87,15 @@ func (m projectModule) getProjectsHandler(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, projects)
+}
+
+func (m projectModule) databaseProjectPreloaded() *gorm.DB {
+	return m.Database.Set("gorm:auto_preload", false).
+		Preload(database.ProjectFields.Provider).
+		Preload(database.ProjectFields.Branches, func(db *gorm.DB) *gorm.DB {
+			return db.Order(database.BranchColumns.BranchID)
+		}).
+		Preload(database.ProjectFields.Token)
 }
 
 // searchProjectsHandler godoc
