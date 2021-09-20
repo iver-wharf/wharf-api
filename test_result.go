@@ -51,14 +51,14 @@ func (m buildTestResultModule) Register(r gin.IRouter) {
 // @summary Post test result data
 // @tags test-result
 // @accept multipart/form-data
-// @param buildid path int true "Build ID"
+// @param buildId path int true "Build ID"
 // @param files formData file true "Test result file"
 // @success 201 {object} []ArtifactMetadata "Added new test result data and created summaries"
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 502 {object} problem.Response "Database unreachable or bad gateway"
-// @router /build/{buildid}/test-result [post]
+// @router /build/{buildId}/test-result [post]
 func (m buildTestResultModule) postBuildTestResultDataHandler(c *gin.Context) {
-	buildID, ok := ginutil.ParseParamUint(c, "buildid")
+	buildID, ok := ginutil.ParseParamUint(c, "buildId")
 	if !ok {
 		return
 	}
@@ -135,13 +135,13 @@ func (m buildTestResultModule) postBuildTestResultDataHandler(c *gin.Context) {
 // getBuildAllTestResultDetailsHandler godoc
 // @summary Get all test result details for specified build
 // @tags test-result
-// @param buildid path int true "Build ID"
+// @param buildId path int true "Build ID"
 // @success 200 {object} []TestResultDetail
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 502 {object} problem.Response "Database is unreachable"
-// @router /build/{buildid}/test-result/detail [get]
+// @router /build/{buildId}/test-result/detail [get]
 func (m buildTestResultModule) getBuildAllTestResultDetailsHandler(c *gin.Context) {
-	buildID, ok := ginutil.ParseParamUint(c, "buildid")
+	buildID, ok := ginutil.ParseParamUint(c, "buildId")
 	if !ok {
 		return
 	}
@@ -165,13 +165,13 @@ func (m buildTestResultModule) getBuildAllTestResultDetailsHandler(c *gin.Contex
 // getBuildAllTestResultSummariesHandler godoc
 // @summary Get all test result summaries for specified build
 // @tags test-result
-// @param buildid path int true "Build ID"
+// @param buildId path int true "Build ID"
 // @success 200 {object} []TestResultSummary
 // @failure 400 {object} problem.Response "Bad Request"
 // @failure 502 {object} problem.Response "Database is unreachable"
-// @router /build/{buildid}/test-result/summary [get]
+// @router /build/{buildId}/test-result/summary [get]
 func (m buildTestResultModule) getBuildAllTestResultSummariesHandler(c *gin.Context) {
-	buildID, ok := ginutil.ParseParamUint(c, "buildid")
+	buildID, ok := ginutil.ParseParamUint(c, "buildId")
 	if !ok {
 		return
 	}
@@ -195,14 +195,14 @@ func (m buildTestResultModule) getBuildAllTestResultSummariesHandler(c *gin.Cont
 // getBuildTestResultSummaryHandler godoc
 // @summary Get test result summary for specified test
 // @tags test-result
-// @param buildid path int true "Build ID"
+// @param buildId path int true "Build ID"
 // @param artifactId path int true "Artifact ID"
 // @success 200 {object} TestResultSummary
 // @failure 400 {object} problem.Response "Bad Request"
 // @failure 502 {object} problem.Response "Database is unreachable"
-// @router /build/{buildid}/test-result/summary/{artifactId} [get]
+// @router /build/{buildId}/test-result/summary/{artifactId} [get]
 func (m buildTestResultModule) getBuildTestResultSummaryHandler(c *gin.Context) {
-	buildID, ok := ginutil.ParseParamUint(c, "buildid")
+	buildID, ok := ginutil.ParseParamUint(c, "buildId")
 	if !ok {
 		return
 	}
@@ -231,14 +231,14 @@ func (m buildTestResultModule) getBuildTestResultSummaryHandler(c *gin.Context) 
 // getBuildTestResultDetailsHandler godoc
 // @summary Get all test result details for specified test
 // @tags test-result
-// @param buildid path int true "Build ID"
+// @param buildId path int true "Build ID"
 // @param artifactId path int true "Artifact ID"
 // @success 200 {object} []TestResultDetail
 // @failure 400 {object} problem.Response "Bad Request"
 // @failure 502 {object} problem.Response "Database is unreachable"
-// @router /build/{buildid}/test-result/summary/{artifactId}/detail [get]
+// @router /build/{buildId}/test-result/summary/{artifactId}/detail [get]
 func (m buildTestResultModule) getBuildTestResultDetailsHandler(c *gin.Context) {
-	buildID, ok := ginutil.ParseParamUint(c, "buildid")
+	buildID, ok := ginutil.ParseParamUint(c, "buildId")
 	if !ok {
 		return
 	}
@@ -267,13 +267,13 @@ func (m buildTestResultModule) getBuildTestResultDetailsHandler(c *gin.Context) 
 // getBuildTestResultListSummaryHandler godoc
 // @summary Get test result list summary of all tests for specified build
 // @tags test-result
-// @param buildid path int true "Build ID"
+// @param buildId path int true "Build ID"
 // @success 200 {object} TestResultListSummary
 // @failure 400 {object} problem.Response "Bad Request"
 // @failure 502 {object} problem.Response "Database is unreachable"
-// @router /build/{buildid}/test-result/list-summary [get]
+// @router /build/{buildId}/test-result/list-summary [get]
 func (m buildTestResultModule) getBuildTestResultListSummaryHandler(c *gin.Context) {
-	buildID, ok := ginutil.ParseParamUint(c, "buildid")
+	buildID, ok := ginutil.ParseParamUint(c, "buildId")
 	if !ok {
 		return
 	}
