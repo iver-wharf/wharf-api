@@ -66,7 +66,7 @@ func (m projectModule) FindProjectByID(id uint) (Project, error) {
 		Where(&Project{ProjectID: id}).
 		Preload(database.ProjectFields.Provider).
 		Preload(database.ProjectFields.Branches, func(db *gorm.DB) *gorm.DB {
-			return db.Order(database.BuildColumns.BuildID)
+			return db.Order(database.BranchColumns.BranchID)
 		}).
 		Preload(database.ProjectFields.Token).
 		First(&project).
@@ -87,7 +87,7 @@ func (m projectModule) getProjectsHandler(c *gin.Context) {
 	err := m.Database.
 		Preload(database.ProjectFields.Provider).
 		Preload(database.ProjectFields.Branches, func(db *gorm.DB) *gorm.DB {
-			return db.Order(database.BuildColumns.BuildID)
+			return db.Order(database.BranchColumns.BranchID)
 		}).
 		Find(&projects).
 		Error

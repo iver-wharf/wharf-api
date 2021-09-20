@@ -126,6 +126,15 @@ var BranchFields = struct {
 	TokenID:   "TokenID",
 }
 
+// BranchColumns holds the DB column names for each field.
+// Useful in GORM .Order() statements to order the results based on a specific
+// column, which does not support the regular Go field names.
+var BranchColumns = struct{
+	BranchID string
+}{
+	BranchID: "branch_id",
+}
+
 // Branch is a single branch in the VCS that can be targeted during builds.
 // For example a Git branch.
 type Branch struct {
