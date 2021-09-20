@@ -60,6 +60,10 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
   This affects the Swagger documentation, but has no behavioral implications.
 
+- Deprecated endpoint `GET /branch/{branchId}`. Getting a single branch by its
+  ID has not been shown to have any benefits. Please refer to the
+  `GET /project/{projectId}` endpoint instead. (#75)
+
 - Added packages for "Plain Old Go Objects", with finer-grained decoupling
   between database, HTTP request, and HTTP response models.
   The Swagger documentation is affected by this, and some unused fields have
