@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/iver-wharf/wharf-api/internal/deprecated"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 
 	"github.com/gin-gonic/gin"
@@ -24,9 +25,10 @@ func (m branchModule) Register(g *gin.RouterGroup) {
 
 	branch := g.Group("/branch")
 	{
-		branch.GET("/:branchId", m.GetBranchHandler)
 		branch.POST("", m.PostBranchHandler)
 	}
+
+	deprecated.BranchModule{}.Register(g)
 }
 
 // GetBranchesHandler godoc
@@ -35,16 +37,6 @@ func (m branchModule) Register(g *gin.RouterGroup) {
 // @success 501 "Not Implemented"
 // @router /branches [get]
 func (m branchModule) GetBranchesHandler(c *gin.Context) {
-	c.Status(http.StatusNotImplemented)
-}
-
-// GetBranchHandler godoc
-// @summary NOT IMPLEMENTED YET
-// @tags branch
-// @param branchId path int true "branch ID"
-// @success 501 "Not Implemented"
-// @router /branch/{branchId} [get]
-func (m branchModule) GetBranchHandler(c *gin.Context) {
 	c.Status(http.StatusNotImplemented)
 }
 
