@@ -85,7 +85,7 @@ type Build struct {
 	Stage               string              `gorm:"size:40;default:'';not null" json:"stage"`
 	Params              []BuildParam        `gorm:"foreignKey:BuildID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"params"`
 	IsInvalid           bool                `gorm:"not null;default:false" json:"isInvalid"`
-	TestResultSummaries []TestResultSummary `gorm:"foreignKey:BuildID" json:"testResultSummaries"`
+	TestResultSummaries []TestResultSummary `gorm:"foreignKey:BuildID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"testResultSummaries"`
 	// Status is populated when marshalled via MarshalJSON
 	Status string `gorm:"-" json:"status"`
 }
@@ -165,5 +165,5 @@ type TestResultDetail struct {
 	Message            null.String      `gorm:"nullable" json:"message" swaggertype:"string"`
 	StartedOn          null.Time        `gorm:"nullable;default:NULL;" json:"startedOn" format:"date-time"`
 	CompletedOn        null.Time        `gorm:"nullable;default:NULL;" json:"completedOn" format:"date-time"`
-	Status             TestResultStatus `gorm:"not null" enums:"Failed,Passed,Skipped" json:"status"`
+	Status             TestResultStatus `gorm:"not null" enum:"Failed,Passed,Skipped" json:"status"`
 }
