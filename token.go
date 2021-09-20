@@ -28,7 +28,7 @@ func (m tokenModule) Register(g *gin.RouterGroup) {
 
 	token := g.Group("/token")
 	{
-		token.GET("/:tokenid", m.getTokenHandler)
+		token.GET("/:tokenId", m.getTokenHandler)
 		token.POST("", m.postTokenHandler)
 		token.PUT("", m.putTokenHandler)
 	}
@@ -56,14 +56,14 @@ func (m tokenModule) getTokensHandler(c *gin.Context) {
 // getTokenHandler godoc
 // @summary Returns token with selected token ID
 // @tags token
-// @param tokenid path int true "Token ID"
+// @param tokenId path int true "Token ID"
 // @success 200 {object} response.Token
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
-// @router /token/{tokenid} [get]
+// @router /token/{tokenId} [get]
 func (m tokenModule) getTokenHandler(c *gin.Context) {
-	tokenID, ok := ginutil.ParseParamUint(c, "tokenid")
+	tokenID, ok := ginutil.ParseParamUint(c, "tokenId")
 	if !ok {
 		return
 	}

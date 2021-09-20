@@ -55,7 +55,7 @@ func (m providerModule) Register(g *gin.RouterGroup) {
 
 	provider := g.Group("/provider")
 	{
-		provider.GET("/:providerid", m.getProviderHandler)
+		provider.GET("/:providerId", m.getProviderHandler)
 		provider.POST("", m.postProviderHandler)
 		provider.PUT("", m.putProviderHandler)
 	}
@@ -81,15 +81,15 @@ func (m providerModule) getProvidersHandler(c *gin.Context) {
 // getProviderHandler godoc
 // @summary Returns provider with selected provider ID
 // @tags provider
-// @param providerid path int true "Provider ID"
+// @param providerId path int true "Provider ID"
 // @success 200 {object} Provider
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 404 {object} problem.Response "Provider not found"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
-// @router /provider/{providerid} [get]
+// @router /provider/{providerId} [get]
 func (m providerModule) getProviderHandler(c *gin.Context) {
-	providerID, ok := ginutil.ParseParamUint(c, "providerid")
+	providerID, ok := ginutil.ParseParamUint(c, "providerId")
 	if !ok {
 		return
 	}

@@ -49,6 +49,17 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   data is slightly different; it has additional properties, and does not have a
   `status` property. (#43)
 
+- Changed format of all endpoint's path parameters from all lowercase to
+  camelCase: (#76)
+
+  - branchid -> branchId
+  - projectid -> projectId
+  - providerid -> providerId
+  - tokenid -> tokenId
+  - buildid -> buildId
+
+  This affects the Swagger documentation, but has no behavioral implications.
+
 - Added packages for "Plain Old Go Objects", with finer-grained decoupling
   between database, HTTP request, and HTTP response models.
   The Swagger documentation is affected by this, and some unused fields have
