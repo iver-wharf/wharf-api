@@ -51,7 +51,7 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
 - Added packages for "Plain Old Go Objects", with finer-grained decoupling
   between database, HTTP request, and HTTP response models.
-  The Swagger documentation is affected by this, and some unused fields has
+  The Swagger documentation is affected by this, and some unused fields have
   been removed from certain endpoints, such as the `tokenId` in `POST /token`.
   The new packages are: (#78)
 
