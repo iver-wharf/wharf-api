@@ -131,8 +131,12 @@ func (m buildModule) getBuild(buildID uint) (Build, error) {
 	if err := m.Database.
 		Where(&Build{BuildID: buildID}).
 		Preload(buildAssocParams).
+		Preload(buildAssocTestResultSummaries).
 		First(&build).
 		Error; err != nil {
+		return Build{}, err
+	}
+	if err := populateTestResultListSummary(m.Database, buildID, &build.TestResultListSummary); err != nil {
 		return Build{}, err
 	}
 	return build, nil
@@ -359,4 +363,21 @@ func setStatusDate(build *Build, statusID BuildStatus) {
 	case BuildCompleted, BuildFailed:
 		build.CompletedOn.SetValid(now)
 	}
+}
+
+func populateTestResultListSummary(db *gorm.DB, buildID uint, listSummaryPtr *TestResultListSummary) error {
+	listSummaryPtr.BuildID = buildID
+	if err := db.
+		Model(&TestResultSummary{}).
+		Select("sum(failed) as Failed, sum(passed) as Passed, sum(skipped) as Skipped").
+		Where(listSummaryPtr).
+		Scan(listSummaryPtr).
+		Error; err != nil {
+		return err
+	}
+	listSummaryPtr.Total =
+		listSummaryPtr.Failed +
+			listSummaryPtr.Passed +
+			listSummaryPtr.Skipped
+	return nil
 }

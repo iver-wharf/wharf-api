@@ -696,12 +696,20 @@ func (m projectModule) getBuilds(projectID uint, limit int, offset int, orderByS
 	var builds []Build
 	var query = m.Database.
 		Where(&Build{ProjectID: projectID}).
+		Preload(buildAssocTestResultSummaries).
 		Limit(limit).
 		Offset(offset)
 	query = orderby.ApplyAllToGormQuery(query, orderBySlice, defaultGetBuildsOrderBy)
 	if err := query.Find(&builds).Error; err != nil {
 		return []Build{}, err
 	}
+
+	for i := range builds {
+		if err := populateTestResultListSummary(m.Database, builds[i].BuildID, &builds[i].TestResultListSummary); err != nil {
+			return []Build{}, err
+		}
+	}
+
 	return builds, nil
 }
 
