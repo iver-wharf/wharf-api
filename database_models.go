@@ -106,10 +106,10 @@ type Branch struct {
 }
 
 const (
-	buildColumnBuildID            = "build_id"
 	buildAssocParams              = "Params"
-	buildColumnName               = "name"
 	buildAssocTestResultSummaries = "TestResultSummaries"
+	buildColumnBuildID            = "build_id"
+	buildColumnName               = "name"
 )
 
 var buildJSONToColumns = map[string]string{
