@@ -60,9 +60,15 @@ func runDatabaseMigrations(db *gorm.DB) error {
 		return err
 	}
 
-	// since v3.1.0, the token.provider_id column was removed as it induced a
-	// circular dependency between the token and provider tables
-	if err := dropOldColumn(db, &Token{}, "provider_id"); err != nil {
+	oldColumns := []columnToDrop{
+		// since v3.1.0, the token.provider_id column was removed as it induced a
+		// circular dependency between the token and provider tables
+		{&Token{}, "provider_id"},
+		// Since v4.3.0, the Provider.upload_url column was removed as it was unused.
+		{&Provider{}, "upload_url"},
+	}
+
+	if err := dropOldColumns(db, oldColumns); err != nil {
 		return err
 	}
 
@@ -105,6 +111,21 @@ func dropOldConstraint(db *gorm.DB, table string, constraintName string) error {
 			WithString("table", table).
 			WithString("constraint", constraintName).
 			Message("No old constraint to remove.")
+	}
+	return nil
+}
+
+type columnToDrop struct {
+	model      interface{}
+	columnName string
+}
+
+func dropOldColumns(db *gorm.DB, columns []columnToDrop) error {
+	log.Debug().WithInt("columns", len(columns)).Message("Dropping old columns.")
+	for _, dbColumn := range columns {
+		if err := dropOldColumn(db, dbColumn.model, dbColumn.columnName); err != nil {
+			return err
+		}
 	}
 	return nil
 }
