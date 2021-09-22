@@ -64,7 +64,8 @@ func runDatabaseMigrations(db *gorm.DB) error {
 		// since v3.1.0, the token.provider_id column was removed as it induced a
 		// circular dependency between the token and provider tables
 		{&Token{}, "provider_id"},
-		// Since v4.3.0, the Provider.upload_url column was removed as it was unused.
+		// Since v5.0.0, the Provider.upload_url column was removed as it was
+		// unused.
 		{&Provider{}, "upload_url"},
 	}
 
