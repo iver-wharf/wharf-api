@@ -11,41 +11,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/iver-wharf/wharf-api/internal/ctxparser"
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
+	"github.com/iver-wharf/wharf-api/pkg/model/response"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"gorm.io/gorm"
 )
 
 type artifactModule struct {
 	Database *gorm.DB
-}
-
-// TestStatus is an enum of different states a test run or test summary can be
-// in.
-type TestStatus string
-
-const (
-	// TestStatusSuccess means the test run or test summary passed, or in the
-	// case that there are multiple tests then that there are no failing tests
-	// and at least one successful test.
-	TestStatusSuccess TestStatus = "Success"
-
-	// TestStatusFailed means the test run or test summary failed, or in the
-	// case that there are multiple tests then that at least one test failed.
-	TestStatusFailed TestStatus = "Failed"
-
-	// TestStatusNoTests means the test run or test summary is inconclusive,
-	// where there are neither any passing nor failing tests.
-	TestStatusNoTests TestStatus = "No tests"
-)
-
-// TestsResults holds how many builds has passed and failed. A test result has
-// the status of "Failed" if there are any failed tests, "Success" if there are
-// any passing tests and no failed tests, and "No tests" if there are no failed
-// nor passing tests.
-type TestsResults struct {
-	Passed uint       `json:"passed"`
-	Failed uint       `json:"failed"`
-	Status TestStatus `json:"status" enums:"Success,Failed,No tests"`
 }
 
 func (m artifactModule) Register(g *gin.RouterGroup) {
@@ -61,7 +33,7 @@ func (m artifactModule) Register(g *gin.RouterGroup) {
 // @summary Get list of build artifacts
 // @tags artifact
 // @param buildId path int true "Build ID"
-// @success 200 {array} Artifact
+// @success 200 {object} []response.Artifact
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
@@ -72,10 +44,10 @@ func (m artifactModule) getBuildArtifactListHandler(c *gin.Context) {
 		return
 	}
 
-	artifacts := []Artifact{}
+	dbArtifacts := []database.Artifact{}
 	err := m.Database.
-		Where(&Artifact{BuildID: buildID}).
-		Find(&artifacts).
+		Where(&database.Artifact{BuildID: buildID}).
+		Find(&dbArtifacts).
 		Error
 	if err != nil {
 		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
@@ -84,7 +56,12 @@ func (m artifactModule) getBuildArtifactListHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, artifacts)
+	resArtifacts := make([]response.Artifact, len(dbArtifacts))
+	for i, dbArtifact := range dbArtifacts {
+		resArtifacts[i] = dbArtifactToResponseArtifact(dbArtifact)
+	}
+
+	c.JSON(http.StatusOK, resArtifacts)
 }
 
 // getBuildArtifactHandler godoc
@@ -110,13 +87,13 @@ func (m artifactModule) getBuildArtifactHandler(c *gin.Context) {
 		return
 	}
 
-	var artifact Artifact
+	var dbArtifact database.Artifact
 	err := m.Database.
-		Where(&Artifact{
+		Where(&database.Artifact{
 			BuildID:    buildID,
 			ArtifactID: artifactID}).
 		Order(database.ArtifactColumns.ArtifactID + " DESC").
-		First(&artifact).
+		First(&dbArtifact).
 		Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		ginutil.WriteDBNotFound(c, fmt.Sprintf(
@@ -130,12 +107,12 @@ func (m artifactModule) getBuildArtifactHandler(c *gin.Context) {
 		return
 	}
 
-	extension := filepath.Ext(artifact.FileName)
+	extension := filepath.Ext(dbArtifact.FileName)
 	mimeType := mime.TypeByExtension(extension)
-	disposition := fmt.Sprintf("attachment; filename=\"%s\"", artifact.FileName)
+	disposition := fmt.Sprintf("attachment; filename=\"%s\"", dbArtifact.FileName)
 
 	c.Header("Content-Disposition", disposition)
-	c.Data(http.StatusOK, mimeType, artifact.Data)
+	c.Data(http.StatusOK, mimeType, dbArtifact.Data)
 }
 
 // createBuildArtifactHandler godoc
@@ -180,7 +157,7 @@ func (m artifactModule) createBuildArtifactHandler(c *gin.Context) {
 // @description Deprecated, /build/{buildid}/test-result/list-summary should be used instead.
 // @tags artifact
 // @param buildId path int true "Build ID"
-// @success 200 {object} TestsResults
+// @success 200 {object} response.TestsResults
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
@@ -205,24 +182,24 @@ func (m artifactModule) getBuildTestResultListHandler(c *gin.Context) {
 		return
 	}
 
-	var results TestsResults
+	var resResults response.TestsResults
 	var run trxTestRun
 
 	for _, testRunFile := range testRunFiles {
 		xml.Unmarshal(testRunFile.Data, &run)
-		results.Passed += run.ResultSummary.Counters.Passed
-		results.Failed += run.ResultSummary.Counters.Failed
+		resResults.Passed += run.ResultSummary.Counters.Passed
+		resResults.Failed += run.ResultSummary.Counters.Failed
 	}
 
-	if results.Failed == 0 && results.Passed == 0 {
-		results.Status = TestStatusNoTests
-	} else if results.Failed == 0 {
-		results.Status = TestStatusSuccess
+	if resResults.Failed == 0 && resResults.Passed == 0 {
+		resResults.Status = response.TestStatusNoTests
+	} else if resResults.Failed == 0 {
+		resResults.Status = response.TestStatusSuccess
 	} else {
-		results.Status = TestStatusFailed
+		resResults.Status = response.TestStatusFailed
 	}
 
-	c.JSON(http.StatusOK, results)
+	c.JSON(http.StatusOK, resResults)
 }
 
 func createArtifacts(c *gin.Context, db *gorm.DB, files []ctxparser.File, buildID uint) ([]Artifact, bool) {
@@ -249,4 +226,13 @@ func createArtifacts(c *gin.Context, db *gorm.DB, files []ctxparser.File, buildI
 			Message("File saved as artifact")
 	}
 	return artifacts, true
+}
+
+func dbArtifactToResponseArtifact(dbArtifact database.Artifact) response.Artifact {
+	return response.Artifact{
+		ArtifactID: dbArtifact.ArtifactID,
+		BuildID:    dbArtifact.BuildID,
+		Name:       dbArtifact.Name,
+		FileName:   dbArtifact.FileName,
+	}
 }
