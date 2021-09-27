@@ -64,3 +64,53 @@ const (
 	// in some build step.
 	BuildFailed BuildStatus = "Failed"
 )
+
+// ProviderName is an enum of different providers that are available over at
+// https://github.com/iver-wharf
+type ProviderName string
+
+const (
+	// ProviderAzureDevOps refers to the Azure DevOps provider plugin,
+	// https://github.com/iver-wharf/wharf-provider-azuredevops
+	ProviderAzureDevOps ProviderName = "azuredevops"
+	// ProviderGitLab refers to the GitLab provider plugin,
+	// https://github.com/iver-wharf/wharf-provider-gitlab
+	ProviderGitLab ProviderName = "gitlab"
+	// ProviderGitHub refers to the GitHub provider plugin,
+	// https://github.com/iver-wharf/wharf-provider-github
+	ProviderGitHub ProviderName = "github"
+	// ProviderNameValues is a concatenated list of the different provider names
+	// available. Useful in validation error messages.
+	ProviderNameValues = ProviderAzureDevOps + ", " + ProviderGitLab + ", " + ProviderGitHub
+)
+
+func (name ProviderName) IsValid() bool {
+	return name == ProviderAzureDevOps ||
+		name == ProviderGitLab ||
+		name == ProviderGitHub
+}
+
+// ProviderSearch holds values used in verbatim searches for providers.
+type ProviderSearch struct {
+	Name      ProviderName `json:"name" enum:"azuredevops,gitlab,github"`
+	URL       string       `json:"url"`
+	UploadURL string       `json:"uploadUrl"`
+	TokenID   uint         `json:"tokenId"`
+}
+
+// Provider specifies fields when creating a new provider.
+type Provider struct {
+	Name      ProviderName `json:"name" enum:"azuredevops,gitlab,github" validate:"required" binding:"required"`
+	URL       string       `json:"url" validate:"required" binding:"required"`
+	UploadURL string       `json:"uploadUrl"`
+	TokenID   uint         `json:"tokenId"`
+}
+
+// ProviderUpdate specifies fields when creating a new provider.
+type ProviderUpdate struct {
+	ProviderID uint         `json:"providerId"`
+	Name       ProviderName `json:"name" enum:"azuredevops,gitlab,github" validate:"required" binding:"required"`
+	URL        string       `json:"url" validate:"required" binding:"required"`
+	UploadURL  string       `json:"uploadUrl"`
+	TokenID    uint         `json:"tokenId"`
+}

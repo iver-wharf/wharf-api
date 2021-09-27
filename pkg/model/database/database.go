@@ -47,7 +47,7 @@ var ProviderFields = struct {
 // used to authenticate.
 type Provider struct {
 	ProviderID uint   `gorm:"primaryKey"`
-	Name       string `gorm:"size:20;not null"enum:"azuredevops,gitlab,github"`
+	Name       string `gorm:"size:20;not null"`
 	URL        string `gorm:"size:500;not null"`
 	UploadURL  string `gorm:"size:500"`
 	TokenID    uint   `gorm:"nullable;default:NULL;index:provider_idx_token_id"`

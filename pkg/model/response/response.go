@@ -99,6 +99,33 @@ type Ping struct {
 type Project struct {
 }
 
+// Provider holds metadata about a connection to a remote provider. Some of
+// importance are the URL field of where to find the remote, and the token field
+// used to authenticate.
+type Provider struct {
+	ProviderID uint         `json:"providerId"`
+	Name       ProviderName `json:"name" enum:"azuredevops,gitlab,github"`
+	URL        string       `json:"url"`
+	UploadURL  string       `json:"uploadUrl"`
+	TokenID    uint         `json:"tokenId"`
+}
+
+// ProviderName is an enum of different providers that are available over at
+// https://github.com/iver-wharf
+type ProviderName string
+
+const (
+	// ProviderAzureDevOps refers to the Azure DevOps provider plugin,
+	// https://github.com/iver-wharf/wharf-provider-azuredevops
+	ProviderAzureDevOps ProviderName = "azuredevops"
+	// ProviderGitLab refers to the GitLab provider plugin,
+	// https://github.com/iver-wharf/wharf-provider-gitlab
+	ProviderGitLab ProviderName = "gitlab"
+	// ProviderGitHub refers to the GitHub provider plugin,
+	// https://github.com/iver-wharf/wharf-provider-github
+	ProviderGitHub ProviderName = "github"
+)
+
 // TestStatus is an enum of different states a test run or test summary can be
 // in.
 type TestStatus string
