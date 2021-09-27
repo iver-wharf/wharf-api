@@ -75,12 +75,24 @@ const (
 	BuildFailed BuildStatus = "Failed"
 )
 
+// HealthStatus holds a human-readable string stating the health of the API and
+// its integrations, as well as a boolean for easy machine-readability.
+type HealthStatus struct {
+	Message   string `json:"message" example:"API is healthy."`
+	IsHealthy bool   `json:"isHealthy" example:"true"`
+}
+
 // Log is a single logged line for a build.
 type Log struct {
 	LogID     uint      `json:"logId"`
 	BuildID   uint      `json:"buildId"`
 	Message   string    `json:"message"`
 	Timestamp time.Time `json:"timestamp" format:"date-time"`
+}
+
+// Ping pongs.
+type Ping struct {
+	Message string `json:"message" example:"pong"`
 }
 
 // Project holds details about a project.
