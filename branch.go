@@ -19,7 +19,7 @@ type branchModule struct {
 func (m branchModule) Register(g *gin.RouterGroup) {
 	branches := g.Group("/branches")
 	{
-		branches.GET("", m.getBrancheListHandler)
+		branches.GET("", m.getBranchListHandler)
 		branches.PUT("", m.updateProjectBranchListHandler)
 	}
 
@@ -31,13 +31,13 @@ func (m branchModule) Register(g *gin.RouterGroup) {
 	deprecated.BranchModule{}.Register(g)
 }
 
-// getBrancheListHandler godoc
+// getBranchListHandler godoc
 // @id getBranchList
 // @summary NOT IMPLEMENTED YET
 // @tags branch
 // @success 501 "Not Implemented"
 // @router /branches [get]
-func (m branchModule) getBrancheListHandler(c *gin.Context) {
+func (m branchModule) getBranchListHandler(c *gin.Context) {
 	c.Status(http.StatusNotImplemented)
 }
 
