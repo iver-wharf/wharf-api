@@ -45,18 +45,18 @@ type BuildReferenceWrapper struct {
 func (m projectModule) Register(g *gin.RouterGroup) {
 	projects := g.Group("/projects")
 	{
-		projects.GET("", m.getProjectsHandler)
-		projects.POST("/search", m.searchProjectsHandler)
-		projects.GET("/:projectId/builds", m.getBuildsSliceHandler)
+		projects.GET("", m.getProjectListHandler)
+		projects.POST("/search", m.searchProjectListHandler)
+		projects.GET("/:projectId/builds", m.getProjectBuildListHandler)
 	}
 
 	project := g.Group("/project")
 	{
 		project.GET("/:projectId", m.getProjectHandler)
-		project.POST("", m.postProjectHandler)
+		project.POST("", m.createProjectHandler)
 		project.DELETE("/:projectId", m.deleteProjectHandler)
-		project.PUT("", m.putProjectHandler)
-		project.POST("/:projectId/:stage/run", m.runStageHandler)
+		project.PUT("", m.updateProjectHandler)
+		project.POST("/:projectId/:stage/run", m.startProjectBuildHandler)
 	}
 }
 
@@ -70,14 +70,15 @@ func (m projectModule) FindProjectByID(id uint) (Project, error) {
 	return project, err
 }
 
-// getProjectsHandler godoc
+// getProjectListHandler godoc
+// @id getProjectList
 // @summary Returns all projects from database
 // @tags project
 // @success 200 {array} Project
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @router /projects [get]
-func (m projectModule) getProjectsHandler(c *gin.Context) {
+func (m projectModule) getProjectListHandler(c *gin.Context) {
 	var projects []Project
 	err := m.databaseProjectPreloaded().
 		Find(&projects).
@@ -98,14 +99,15 @@ func (m projectModule) databaseProjectPreloaded() *gorm.DB {
 		Preload(database.ProjectFields.Token)
 }
 
-// searchProjectsHandler godoc
+// searchProjectListHandler godoc
+// @id searchProjectList
 // @summary Search for projects from database
 // @tags project
 // @success 200 {array} Project
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @router /projects/search [post]
-func (m projectModule) searchProjectsHandler(c *gin.Context) {
+func (m projectModule) searchProjectListHandler(c *gin.Context) {
 	var query Project
 	if err := c.ShouldBindJSON(&query); err != nil {
 		ginutil.WriteInvalidBindError(c, err,
@@ -136,7 +138,8 @@ var buildJSONToColumns = map[string]string{
 	"isInvalid":   database.BuildColumns.IsInvalid,
 }
 
-// getBuildsSliceHandler godoc
+// getProjectBuildListHandler godoc
+// @id getProjectBuildList
 // @summary Get slice of builds.
 // @tags project
 // @param projectId path int true "project ID"
@@ -148,7 +151,7 @@ var buildJSONToColumns = map[string]string{
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /projects/{projectId}/builds [get]
-func (m projectModule) getBuildsSliceHandler(c *gin.Context) {
+func (m projectModule) getProjectBuildListHandler(c *gin.Context) {
 	projectID, ok := ginutil.ParseParamUint(c, "projectId")
 	if !ok {
 		return
@@ -192,6 +195,7 @@ func (m projectModule) getBuildsSliceHandler(c *gin.Context) {
 }
 
 // getProjectHandler godoc
+// @id getProject
 // @summary Returns project with selected project ID
 // @tags project
 // @param projectId path int true "project ID"
@@ -217,7 +221,8 @@ func (m projectModule) getProjectHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, &project)
 }
 
-// postProjectHandler godoc
+// createProjectHandler godoc
+// @id createProject
 // @summary Updates project.
 // @description It finds project by ID or if ID is set to 0 it takes group id, token id and name.
 // @description First found project will have updated avatar, description and build definition
@@ -232,7 +237,7 @@ func (m projectModule) getProjectHandler(c *gin.Context) {
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /project [post]
-func (m projectModule) postProjectHandler(c *gin.Context) {
+func (m projectModule) createProjectHandler(c *gin.Context) {
 	var project Project
 
 	if err := c.ShouldBindJSON(&project); err != nil {
@@ -290,6 +295,7 @@ func (m projectModule) postProjectHandler(c *gin.Context) {
 }
 
 // deleteProjectHandler godoc
+// @id deleteProject
 // @summary Delete project with selected project ID
 // @tags project
 // @param projectId path int true "project ID"
@@ -322,7 +328,8 @@ func (m projectModule) deleteProjectHandler(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-// putProjectHandler godoc
+// updateProjectHandler godoc
+// @id updateProject
 // @summary Adds project when not exists.
 // @description It finds project by ID or if ID is set to 0 it takes group name.
 // @description First found project will be returned. If not found project will be added into database.
@@ -337,7 +344,7 @@ func (m projectModule) deleteProjectHandler(c *gin.Context) {
 // @failure 404 {object} problem.Response "Project to update was not found"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /project [put]
-func (m projectModule) putProjectHandler(c *gin.Context) {
+func (m projectModule) updateProjectHandler(c *gin.Context) {
 	var project Project
 	err := c.ShouldBindJSON(&project)
 	if err != nil {
@@ -386,7 +393,8 @@ func (m projectModule) putProjectHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, project)
 }
 
-// runStageHandler godoc
+// startProjectBuildHandler godoc
+// @id startProjectBuild
 // @summary Responsible for run stage environment for selected project
 // @tags project
 // @accept json
@@ -401,7 +409,7 @@ func (m projectModule) putProjectHandler(c *gin.Context) {
 // @failure 404 {object} problem.Response "Project was not found"
 // @failure 502 {object} problem.Response "Database or code execution engine is unreachable"
 // @router /project/{projectId}/{stage}/run [post]
-func (m projectModule) runStageHandler(c *gin.Context) {
+func (m projectModule) startProjectBuildHandler(c *gin.Context) {
 	projectID, ok := ginutil.ParseParamUint(c, "projectId")
 	if !ok {
 		return

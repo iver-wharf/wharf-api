@@ -78,6 +78,9 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   request body. It now sets the provider's token if the field is supplied and
   non-zero. (#78)
 
+- Added Swagger operation IDs to all endpoints. This has no effect on the API's
+  behavior, but affects code generators. (#79)
+
 ## v4.2.0 (2021-09-10)
 
 - Added support for the TZ environment variable (setting timezones ex.

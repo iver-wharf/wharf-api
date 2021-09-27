@@ -20,28 +20,30 @@ type branchModule struct {
 func (m branchModule) Register(g *gin.RouterGroup) {
 	branches := g.Group("/branches")
 	{
-		branches.GET("", m.GetBranchesHandler)
-		branches.PUT("", m.PutBranchesHandler)
+		branches.GET("", m.getBranchListHandler)
+		branches.PUT("", m.updateProjectBranchListHandler)
 	}
 
 	branch := g.Group("/branch")
 	{
-		branch.POST("", m.PostBranchHandler)
+		branch.POST("", m.createBranchHandler)
 	}
 
 	deprecated.BranchModule{}.Register(g)
 }
 
-// GetBranchesHandler godoc
+// getBranchListHandler godoc
+// @id getBranchList
 // @summary NOT IMPLEMENTED YET
 // @tags branch
 // @success 501 "Not Implemented"
 // @router /branches [get]
-func (m branchModule) GetBranchesHandler(c *gin.Context) {
+func (m branchModule) getBranchListHandler(c *gin.Context) {
 	c.Status(http.StatusNotImplemented)
 }
 
-// PostBranchHandler godoc
+// createBranchHandler godoc
+// @id createBranch
 // @summary Create or update branch.
 // @description It finds branch by project ID, token ID and name.
 // @description First found branch will have updated default flag.
@@ -56,7 +58,7 @@ func (m branchModule) GetBranchesHandler(c *gin.Context) {
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /branch [post]
-func (m branchModule) PostBranchHandler(c *gin.Context) {
+func (m branchModule) createBranchHandler(c *gin.Context) {
 	var branch Branch
 	if err := c.ShouldBindJSON(&branch); err != nil {
 		ginutil.WriteInvalidBindError(c, err,
@@ -90,7 +92,8 @@ func (m branchModule) PostBranchHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, existingBranch)
 }
 
-// PutBranchesHandler godoc
+// updateProjectBranchListHandler godoc
+// @id updateProjectBranchList
 // @summary Resets branches for a project
 // @description Alters the database by removing, adding and updating until the stored branches equals the input branches.
 // @tags branches
@@ -102,21 +105,21 @@ func (m branchModule) PostBranchHandler(c *gin.Context) {
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /branches [put]
-func (m branchModule) PutBranchesHandler(c *gin.Context) {
+func (m branchModule) updateProjectBranchListHandler(c *gin.Context) {
 	var branches []Branch
 	if err := c.ShouldBindJSON(&branches); err != nil {
 		ginutil.WriteInvalidBindError(c, err,
 			"One or more parameters failed to parse when reading the request body for branch object array to update.")
 		return
 	}
-	if err := m.PutBranches(branches); err != nil {
+	if err := m.putBranches(branches); err != nil {
 		ginutil.WriteDBWriteError(c, err, "Failed to update branches in database.")
 		return
 	}
 	c.JSON(http.StatusOK, branches)
 }
 
-func (m branchModule) PutBranches(branches []Branch) error {
+func (m branchModule) putBranches(branches []Branch) error {
 	return m.Database.Transaction(func(tx *gorm.DB) error {
 		var defaultBranch Branch
 		var oldDbBranches []Branch

@@ -49,26 +49,27 @@ type providerModule struct {
 func (m providerModule) Register(g *gin.RouterGroup) {
 	providers := g.Group("/providers")
 	{
-		providers.GET("", m.getProvidersHandler)
-		providers.POST("/search", m.postSearchProviderHandler)
+		providers.GET("", m.getProviderListHandler)
+		providers.POST("/search", m.searchProviderListHandler)
 	}
 
 	provider := g.Group("/provider")
 	{
 		provider.GET("/:providerId", m.getProviderHandler)
-		provider.POST("", m.postProviderHandler)
-		provider.PUT("", m.putProviderHandler)
+		provider.POST("", m.createProviderHandler)
+		provider.PUT("", m.updateProviderHandler)
 	}
 }
 
-// getProvidersHandler godoc
+// getProviderListHandler godoc
+// @id getProviderList
 // @summary Returns first 100 providers
 // @tags provider
 // @success 200 {object} []Provider
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /providers [get]
-func (m providerModule) getProvidersHandler(c *gin.Context) {
+func (m providerModule) getProviderListHandler(c *gin.Context) {
 	var providers []Provider
 	err := m.Database.Limit(100).Find(&providers).Error
 	if err != nil {
@@ -79,6 +80,7 @@ func (m providerModule) getProvidersHandler(c *gin.Context) {
 }
 
 // getProviderHandler godoc
+// @id getProvider
 // @summary Returns provider with selected provider ID
 // @tags provider
 // @param providerId path int true "Provider ID"
@@ -111,7 +113,8 @@ func (m providerModule) getProviderHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, provider)
 }
 
-// postSearchProviderHandler godoc
+// searchProviderListHandler godoc
+// @id searchProviderList
 // @summary Returns arrays of providers that match to search criteria.
 // @description Returns arrays of providers that match to search criteria.
 // @description It takes into consideration name, URL, UploadURL and token ID.
@@ -124,7 +127,7 @@ func (m providerModule) getProviderHandler(c *gin.Context) {
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /providers/search [post]
-func (m providerModule) postSearchProviderHandler(c *gin.Context) {
+func (m providerModule) searchProviderListHandler(c *gin.Context) {
 	var provider Provider
 	if err := c.ShouldBindJSON(&provider); err != nil {
 		ginutil.WriteInvalidBindError(c, err,
@@ -160,7 +163,8 @@ func (m providerModule) postSearchProviderHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, providers)
 }
 
-// postProviderHandler godoc
+// createProviderHandler godoc
+// @id createProvider
 // @summary Add provider to database.
 // @description Add provider to database. Token in post object has to exists or should be empty.
 // @description Token will has to be updated Provider ID during this operation.
@@ -173,7 +177,7 @@ func (m providerModule) postSearchProviderHandler(c *gin.Context) {
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /provider [post]
-func (m providerModule) postProviderHandler(c *gin.Context) {
+func (m providerModule) createProviderHandler(c *gin.Context) {
 	var provider Provider
 	if err := c.ShouldBindJSON(&provider); err != nil {
 		ginutil.WriteInvalidBindError(c, err,
@@ -205,7 +209,8 @@ func (m providerModule) postProviderHandler(c *gin.Context) {
 	c.JSON(http.StatusCreated, provider)
 }
 
-// putProviderHandler godoc
+// updateProviderHandler godoc
+// @id updateProvider
 // @summary Put provider in database.
 // @description Creates a new provider if a match is not found.
 // @tags provider
@@ -217,7 +222,7 @@ func (m providerModule) postProviderHandler(c *gin.Context) {
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /provider [put]
-func (m providerModule) putProviderHandler(c *gin.Context) {
+func (m providerModule) updateProviderHandler(c *gin.Context) {
 	var inputProvider Provider
 	if err := c.ShouldBindJSON(&inputProvider); err != nil {
 		ginutil.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading the request body.")
