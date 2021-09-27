@@ -11,6 +11,7 @@ import (
 
 	"github.com/dustin/go-broadcast"
 	"github.com/gin-gonic/gin"
+	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"gorm.io/gorm"
 
@@ -130,7 +131,7 @@ func (m buildModule) getBuild(buildID uint) (Build, error) {
 	var build Build
 	if err := m.Database.
 		Where(&Build{BuildID: buildID}).
-		Preload(buildAssocParams).
+		Preload(database.BuildFields.Params).
 		First(&build).
 		Error; err != nil {
 		return Build{}, err

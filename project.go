@@ -17,6 +17,7 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/gin-gonic/gin"
 	"github.com/iver-wharf/messagebus-go"
+	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/iver-wharf/wharf-api/pkg/orderby"
 	"github.com/iver-wharf/wharf-core/pkg/problem"
 	"gopkg.in/guregu/null.v4"
@@ -61,13 +62,8 @@ func (m projectModule) Register(g *gin.RouterGroup) {
 
 func (m projectModule) FindProjectByID(id uint) (Project, error) {
 	var project Project
-	err := m.Database.Set("gorm:auto_preload", false).
+	err := m.databaseProjectPreloaded().
 		Where(&Project{ProjectID: id}).
-		Preload(projectAssocProvider).
-		Preload(projectAssocBranches, func(db *gorm.DB) *gorm.DB {
-			return db.Order(buildColumnName)
-		}).
-		Preload(projectAssocToken).
 		First(&project).
 		Error
 
@@ -83,11 +79,7 @@ func (m projectModule) FindProjectByID(id uint) (Project, error) {
 // @router /projects [get]
 func (m projectModule) getProjectsHandler(c *gin.Context) {
 	var projects []Project
-	err := m.Database.
-		Preload(projectAssocProvider).
-		Preload(projectAssocBranches, func(db *gorm.DB) *gorm.DB {
-			return db.Order(buildColumnName)
-		}).
+	err := m.databaseProjectPreloaded().
 		Find(&projects).
 		Error
 	if err != nil {
@@ -95,6 +87,15 @@ func (m projectModule) getProjectsHandler(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, projects)
+}
+
+func (m projectModule) databaseProjectPreloaded() *gorm.DB {
+	return m.Database.Set("gorm:auto_preload", false).
+		Preload(database.ProjectFields.Provider).
+		Preload(database.ProjectFields.Branches, func(db *gorm.DB) *gorm.DB {
+			return db.Order(database.BranchColumns.BranchID)
+		}).
+		Preload(database.ProjectFields.Token)
 }
 
 // searchProjectsHandler godoc
@@ -114,7 +115,7 @@ func (m projectModule) searchProjectsHandler(c *gin.Context) {
 	var projects []Project
 	err := m.Database.
 		Where(&query).
-		Preload(projectAssocProvider).
+		Preload(database.ProjectFields.Provider).
 		Find(&projects).
 		Error
 	if err != nil {
@@ -122,6 +123,17 @@ func (m projectModule) searchProjectsHandler(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, projects)
+}
+
+var buildJSONToColumns = map[string]string{
+	"buildId":     database.BuildColumns.BuildID,
+	"environment": database.BuildColumns.Environment,
+	"finishedOn":  database.BuildColumns.CompletedOn,
+	"scheduledOn": database.BuildColumns.ScheduledOn,
+	"startedOn":   database.BuildColumns.StartedOn,
+	"stage":       database.BuildColumns.Stage,
+	"statusId":    database.BuildColumns.StatusID,
+	"isInvalid":   database.BuildColumns.IsInvalid,
 }
 
 // getBuildsSliceHandler godoc
@@ -232,7 +244,7 @@ func (m projectModule) postProjectHandler(c *gin.Context) {
 	var existingProject Project
 	if project.ProjectID != 0 {
 		err := m.Database.
-			Where(&project, projectFieldProjectID).
+			Where(&project, database.ProjectFields.ProjectID).
 			First(&existingProject).
 			Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -248,7 +260,7 @@ func (m projectModule) postProjectHandler(c *gin.Context) {
 		}
 	} else {
 		err := m.Database.
-			Where(&project, projectFieldGroupName, projectFieldTokenID, projectFieldName).
+			Where(&project, database.ProjectFields.GroupName, database.ProjectFields.TokenID, database.ProjectFields.Name).
 			First(&existingProject).
 			Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -349,7 +361,7 @@ func (m projectModule) putProjectHandler(c *gin.Context) {
 		}
 	} else {
 		err := m.Database.
-			Where(&project, projectFieldName, projectFieldGroupName).
+			Where(&project, database.ProjectFields.Name, database.ProjectFields.GroupName).
 			First(&existingProject).
 			Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -690,7 +702,7 @@ func getParams(project Project, build Build, vars []BuildParam, wharfInstanceID 
 	return params, nil
 }
 
-var defaultGetBuildsOrderBy = orderby.OrderBy{Column: buildColumnBuildID, Direction: orderby.Desc}
+var defaultGetBuildsOrderBy = orderby.OrderBy{Column: database.BuildColumns.BuildID, Direction: orderby.Desc}
 
 func (m projectModule) getBuilds(projectID uint, limit int, offset int, orderBySlice []orderby.OrderBy) ([]Build, error) {
 	var builds []Build
