@@ -202,10 +202,10 @@ func (m artifactModule) getBuildTestResultListHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, resResults)
 }
 
-func createArtifacts(c *gin.Context, db *gorm.DB, files []ctxparser.File, buildID uint) ([]Artifact, bool) {
-	artifacts := make([]Artifact, len(files))
+func createArtifacts(c *gin.Context, db *gorm.DB, files []ctxparser.File, buildID uint) ([]database.Artifact, bool) {
+	dbArtifacts := make([]database.Artifact, len(files))
 	for idx, f := range files {
-		artifactPtr := &artifacts[idx]
+		artifactPtr := &dbArtifacts[idx]
 		artifactPtr.Data = f.Data
 		artifactPtr.Name = f.Name
 		artifactPtr.FileName = f.FileName
@@ -216,7 +216,7 @@ func createArtifacts(c *gin.Context, db *gorm.DB, files []ctxparser.File, buildI
 			ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
 				"Failed saving artifact with name %q for build with ID %d in database.",
 				artifactPtr.FileName, buildID))
-			return artifacts, false
+			return dbArtifacts, false
 		}
 
 		log.Debug().
@@ -225,7 +225,7 @@ func createArtifacts(c *gin.Context, db *gorm.DB, files []ctxparser.File, buildI
 			WithUint("artifact", artifactPtr.ArtifactID).
 			Message("File saved as artifact")
 	}
-	return artifacts, true
+	return dbArtifacts, true
 }
 
 func dbArtifactToResponseArtifact(dbArtifact database.Artifact) response.Artifact {

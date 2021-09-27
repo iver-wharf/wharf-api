@@ -8,6 +8,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/iver-wharf/wharf-api/internal/ctxparser"
+	"github.com/iver-wharf/wharf-api/pkg/model/database"
+	"github.com/iver-wharf/wharf-api/pkg/model/response"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"github.com/iver-wharf/wharf-core/pkg/problem"
 	"gorm.io/gorm"
@@ -15,21 +17,6 @@ import (
 
 type buildTestResultModule struct {
 	Database *gorm.DB
-}
-
-// ArtifactMetadata contains the file name and artifact ID of an Artifact.
-type ArtifactMetadata struct {
-	FileName   string `json:"fileName"`
-	ArtifactID uint   `json:"artifactId"`
-}
-
-// TestResultListSummary contains data about several test result files.
-type TestResultListSummary struct {
-	BuildID uint `json:"buildId"`
-	Total   uint `json:"total"`
-	Failed  uint `json:"failed"`
-	Passed  uint `json:"passed"`
-	Skipped uint `json:"skipped"`
 }
 
 func (m buildTestResultModule) Register(r gin.IRouter) {
@@ -54,7 +41,7 @@ func (m buildTestResultModule) Register(r gin.IRouter) {
 // @accept multipart/form-data
 // @param buildId path int true "Build ID"
 // @param files formData file true "Test result file"
-// @success 201 {object} []ArtifactMetadata "Added new test result data and created summaries"
+// @success 201 {object} []response.ArtifactMetadata "Added new test result data and created summaries"
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 502 {object} problem.Response "Database unreachable or bad gateway"
 // @router /build/{buildId}/test-result [post]
@@ -72,24 +59,24 @@ func (m buildTestResultModule) createBuildTestResultHandler(c *gin.Context) {
 		return
 	}
 
-	artifacts, ok := createArtifacts(c, m.Database, files, buildID)
+	dbArtifacts, ok := createArtifacts(c, m.Database, files, buildID)
 	if !ok {
 		return
 	}
 
-	artifactMetadataList := []ArtifactMetadata{}
+	var dbAllDetails []database.TestResultDetail
 
-	summaries := make([]TestResultSummary, 0, len(artifacts))
-	lotsOfDetails := make([]TestResultDetail, 0)
+	dbAllSummaries := make([]database.TestResultSummary, 0, len(dbArtifacts))
+	resArtifactMetadataList := make([]response.ArtifactMetadata, 0, len(dbArtifacts))
 
-	for _, artifact := range artifacts {
-		summary, details, err := getTestSummaryAndDetails(artifact.Data, artifact.ArtifactID, buildID)
+	for _, dbArtifact := range dbArtifacts {
+		dbSummary, dbDetails, err := getTestSummaryAndDetails(dbArtifact.Data, dbArtifact.ArtifactID, buildID)
 		if err != nil {
 			log.Warn().
 				WithError(err).
-				WithString("filename", artifact.FileName).
+				WithString("filename", dbArtifact.FileName).
 				WithUint("build", buildID).
-				WithUint("artifact", artifact.ArtifactID).
+				WithUint("artifact", dbArtifact.ArtifactID).
 				Message("Failed to unmarshal; invalid/unsupported TRX/XML format.")
 
 			ginutil.WriteProblemError(c, err,
@@ -99,22 +86,22 @@ func (m buildTestResultModule) createBuildTestResultHandler(c *gin.Context) {
 					Title:  "Unexpected response format.",
 					Detail: fmt.Sprintf(
 						"Failed parsing test result ID %d, for build with ID %d in"+
-							" database. Invalid/unsupported TRX/XML format.", summary.ArtifactID, buildID),
+							" database. Invalid/unsupported TRX/XML format.", dbSummary.ArtifactID, buildID),
 				})
 			return
 		}
 
-		summary.FileName = artifact.FileName
-		summaries = append(summaries, summary)
-		lotsOfDetails = append(lotsOfDetails, details...)
+		dbSummary.FileName = dbArtifact.FileName
+		dbAllSummaries = append(dbAllSummaries, dbSummary)
+		dbAllDetails = append(dbAllDetails, dbDetails...)
 
-		artifactMetadataList = append(artifactMetadataList, ArtifactMetadata{
-			FileName:   artifact.FileName,
-			ArtifactID: artifact.ArtifactID,
+		resArtifactMetadataList = append(resArtifactMetadataList, response.ArtifactMetadata{
+			FileName:   dbArtifact.FileName,
+			ArtifactID: dbArtifact.ArtifactID,
 		})
 	}
 
-	if err := m.Database.CreateInBatches(summaries, 10).Error; err != nil {
+	if err := m.Database.CreateInBatches(dbAllSummaries, 10).Error; err != nil {
 		ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
 			"Failed saving test result summaries for build with ID %d in database.",
 			buildID))
@@ -122,7 +109,7 @@ func (m buildTestResultModule) createBuildTestResultHandler(c *gin.Context) {
 	}
 
 	err = m.Database.
-		CreateInBatches(lotsOfDetails, 100).
+		CreateInBatches(dbAllDetails, 100).
 		Error
 	if err != nil {
 		ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
@@ -130,7 +117,7 @@ func (m buildTestResultModule) createBuildTestResultHandler(c *gin.Context) {
 			buildID))
 	}
 
-	c.JSON(http.StatusOK, artifactMetadataList)
+	c.JSON(http.StatusOK, resArtifactMetadataList)
 }
 
 // getBuildAllTestResultDetailListHandler godoc
@@ -138,7 +125,7 @@ func (m buildTestResultModule) createBuildTestResultHandler(c *gin.Context) {
 // @summary Get all test result details for specified build
 // @tags test-result
 // @param buildId path int true "Build ID"
-// @success 200 {object} []TestResultDetail
+// @success 200 {object} []response.TestResultDetail
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildId}/test-result/detail [get]
@@ -148,10 +135,10 @@ func (m buildTestResultModule) getBuildAllTestResultDetailListHandler(c *gin.Con
 		return
 	}
 
-	details := []TestResultDetail{}
+	var dbDetails []database.TestResultDetail
 	err := m.Database.
-		Where(&TestResultDetail{BuildID: buildID}).
-		Find(&details).
+		Where(&database.TestResultDetail{BuildID: buildID}).
+		Find(&dbDetails).
 		Error
 
 	if err != nil {
@@ -161,7 +148,8 @@ func (m buildTestResultModule) getBuildAllTestResultDetailListHandler(c *gin.Con
 		return
 	}
 
-	c.JSON(http.StatusOK, details)
+	resDetails := dbTestResultDetailsToResponses(dbDetails)
+	c.JSON(http.StatusOK, resDetails)
 }
 
 // getBuildAllTestResultSummaryListHandler godoc
@@ -169,7 +157,7 @@ func (m buildTestResultModule) getBuildAllTestResultDetailListHandler(c *gin.Con
 // @summary Get all test result summaries for specified build
 // @tags test-result
 // @param buildId path int true "Build ID"
-// @success 200 {object} []TestResultSummary
+// @success 200 {object} []response.TestResultSummary
 // @failure 400 {object} problem.Response "Bad Request"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildId}/test-result/summary [get]
@@ -179,10 +167,10 @@ func (m buildTestResultModule) getBuildAllTestResultSummaryListHandler(c *gin.Co
 		return
 	}
 
-	summaries := []TestResultSummary{}
+	var dbSummaries []database.TestResultSummary
 	err := m.Database.
-		Where(&TestResultSummary{BuildID: buildID}).
-		Find(&summaries).
+		Where(&database.TestResultSummary{BuildID: buildID}).
+		Find(&dbSummaries).
 		Error
 
 	if err != nil {
@@ -192,7 +180,12 @@ func (m buildTestResultModule) getBuildAllTestResultSummaryListHandler(c *gin.Co
 		return
 	}
 
-	c.JSON(http.StatusOK, summaries)
+	resSummaries := make([]response.TestResultSummary, len(dbSummaries))
+	for i, dbSummary := range dbSummaries {
+		resSummaries[i] = dbTestResultSummaryToResponse(dbSummary)
+	}
+
+	c.JSON(http.StatusOK, resSummaries)
 }
 
 // getBuildTestResultSummaryHandler godoc
@@ -201,7 +194,7 @@ func (m buildTestResultModule) getBuildAllTestResultSummaryListHandler(c *gin.Co
 // @tags test-result
 // @param buildId path int true "Build ID"
 // @param artifactId path int true "Artifact ID"
-// @success 200 {object} TestResultSummary
+// @success 200 {object} response.TestResultSummary
 // @failure 400 {object} problem.Response "Bad Request"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildId}/test-result/summary/{artifactId} [get]
@@ -216,10 +209,10 @@ func (m buildTestResultModule) getBuildTestResultSummaryHandler(c *gin.Context) 
 		return
 	}
 
-	summary := TestResultSummary{}
+	var dbSummary database.TestResultSummary
 	err := m.Database.
-		Where(&TestResultSummary{BuildID: buildID, ArtifactID: artifactID}).
-		Find(&summary).
+		Where(&database.TestResultSummary{BuildID: buildID, ArtifactID: artifactID}).
+		Find(&dbSummary).
 		Error
 
 	if err != nil {
@@ -229,7 +222,8 @@ func (m buildTestResultModule) getBuildTestResultSummaryHandler(c *gin.Context) 
 		return
 	}
 
-	c.JSON(http.StatusOK, summary)
+	resSummary := dbTestResultSummaryToResponse(dbSummary)
+	c.JSON(http.StatusOK, resSummary)
 }
 
 // getBuildTestResultDetailListHandler godoc
@@ -238,7 +232,7 @@ func (m buildTestResultModule) getBuildTestResultSummaryHandler(c *gin.Context) 
 // @tags test-result
 // @param buildId path int true "Build ID"
 // @param artifactId path int true "Artifact ID"
-// @success 200 {object} []TestResultDetail
+// @success 200 {object} []response.TestResultDetail
 // @failure 400 {object} problem.Response "Bad Request"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildId}/test-result/summary/{artifactId}/detail [get]
@@ -253,10 +247,10 @@ func (m buildTestResultModule) getBuildTestResultDetailListHandler(c *gin.Contex
 		return
 	}
 
-	details := []TestResultDetail{}
+	var dbDetails []database.TestResultDetail
 	err := m.Database.
-		Where(&TestResultDetail{BuildID: buildID, ArtifactID: artifactID}).
-		Find(&details).
+		Where(&database.TestResultDetail{BuildID: buildID, ArtifactID: artifactID}).
+		Find(&dbDetails).
 		Error
 
 	if err != nil {
@@ -266,7 +260,8 @@ func (m buildTestResultModule) getBuildTestResultDetailListHandler(c *gin.Contex
 		return
 	}
 
-	c.JSON(http.StatusOK, details)
+	resDetails := dbTestResultDetailsToResponses(dbDetails)
+	c.JSON(http.StatusOK, resDetails)
 }
 
 // getBuildAllTestResultListSummaryHandler godoc
@@ -274,7 +269,7 @@ func (m buildTestResultModule) getBuildTestResultDetailListHandler(c *gin.Contex
 // @summary Get test result list summary of all tests for specified build
 // @tags test-result
 // @param buildId path int true "Build ID"
-// @success 200 {object} TestResultListSummary
+// @success 200 {object} response.TestResultListSummary
 // @failure 400 {object} problem.Response "Bad Request"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildId}/test-result/list-summary [get]
@@ -284,13 +279,17 @@ func (m buildTestResultModule) getBuildAllTestResultListSummaryHandler(c *gin.Co
 		return
 	}
 
-	listSummary := TestResultListSummary{BuildID: buildID}
+	var dbListSummary struct {
+		Failed  uint
+		Passed  uint
+		Skipped uint
+	}
 
 	err := m.Database.
 		Model(&TestResultSummary{}).
+		Where(&TestResultSummary{BuildID: buildID}).
 		Select("sum(failed) as Failed, sum(passed) as Passed, sum(skipped) as Skipped").
-		Where(&listSummary).
-		Scan(&listSummary).
+		Scan(&dbListSummary).
 		Error
 
 	if err != nil {
@@ -300,9 +299,15 @@ func (m buildTestResultModule) getBuildAllTestResultListSummaryHandler(c *gin.Co
 		return
 	}
 
-	listSummary.Total = listSummary.Failed + listSummary.Passed + listSummary.Skipped
+	resListSummary := response.TestResultListSummary{
+		BuildID: buildID,
+		Total:   dbListSummary.Failed + dbListSummary.Passed + dbListSummary.Skipped,
+		Passed:  dbListSummary.Passed,
+		Skipped: dbListSummary.Skipped,
+		Failed:  dbListSummary.Failed,
+	}
 
-	c.JSON(http.StatusOK, listSummary)
+	c.JSON(http.StatusOK, resListSummary)
 }
 
 type xmlInnerString struct {
@@ -349,26 +354,26 @@ type trxTestRun struct {
 	} `xml:"ResultSummary"`
 }
 
-func getTestSummaryAndDetails(data []byte, artifactID, buildID uint) (TestResultSummary, []TestResultDetail, error) {
+func getTestSummaryAndDetails(data []byte, artifactID, buildID uint) (database.TestResultSummary, []database.TestResultDetail, error) {
 	var testRun trxTestRun
 	if err := xml.Unmarshal(data, &testRun); err != nil {
-		return TestResultSummary{}, []TestResultDetail{}, err
+		return database.TestResultSummary{}, nil, err
 	}
 
-	details := make([]TestResultDetail, len(testRun.Results.UnitTestResults))
+	dbDetails := make([]database.TestResultDetail, len(testRun.Results.UnitTestResults))
 	for idx, utr := range testRun.Results.UnitTestResults {
-		detail := &details[idx]
+		detail := &dbDetails[idx]
 		detail.ArtifactID = artifactID
 		detail.BuildID = buildID
 		detail.Name = utr.TestName
 		if utr.Outcome == "Passed" {
-			detail.Status = TestResultStatusSuccess
+			detail.Status = database.TestResultStatusSuccess
 		} else if utr.Outcome == "Failed" {
-			detail.Status = TestResultStatusFailed
+			detail.Status = database.TestResultStatusFailed
 		} else if utr.Outcome == "NotExecuted" {
-			detail.Status = TestResultStatusSkipped
+			detail.Status = database.TestResultStatusSkipped
 		}
-		if detail.Status != TestResultStatusSuccess {
+		if detail.Status != database.TestResultStatusSuccess {
 			detail.Message.SetValid(fmt.Sprintf("%s\n%s",
 				utr.Output.ErrorInfo.Message.InnerXML,
 				utr.Output.ErrorInfo.StackTrace.InnerXML))
@@ -399,7 +404,7 @@ func getTestSummaryAndDetails(data []byte, artifactID, buildID uint) (TestResult
 	}
 
 	counters := testRun.ResultSummary.Counters
-	summary := TestResultSummary{
+	dbSummary := database.TestResultSummary{
 		ArtifactID: artifactID,
 		BuildID:    buildID,
 		Failed:     counters.Failed,
@@ -408,5 +413,52 @@ func getTestSummaryAndDetails(data []byte, artifactID, buildID uint) (TestResult
 		Total:      counters.Total,
 	}
 
-	return summary, details, nil
+	return dbSummary, dbDetails, nil
+}
+
+func dbTestResultSummaryToResponse(dbSummary database.TestResultSummary) response.TestResultSummary {
+	return response.TestResultSummary{
+		TestResultSummaryID: dbSummary.TestResultSummaryID,
+		FileName:            dbSummary.FileName,
+		ArtifactID:          dbSummary.ArtifactID,
+		BuildID:             dbSummary.BuildID,
+		Total:               dbSummary.Total,
+		Failed:              dbSummary.Failed,
+		Passed:              dbSummary.Passed,
+		Skipped:             dbSummary.Skipped,
+	}
+}
+
+func dbTestResultDetailsToResponses(dbDetails []database.TestResultDetail) []response.TestResultDetail {
+	resDetails := make([]response.TestResultDetail, len(dbDetails))
+	for i, dbDetail := range dbDetails {
+		resDetails[i] = dbTestResultDetailToResponse(dbDetail)
+	}
+	return resDetails
+}
+
+func dbTestResultDetailToResponse(dbDetail database.TestResultDetail) response.TestResultDetail {
+	return response.TestResultDetail{
+		TestResultDetailID: dbDetail.TestResultDetailID,
+		ArtifactID:         dbDetail.ArtifactID,
+		BuildID:            dbDetail.BuildID,
+		Name:               dbDetail.Name,
+		Message:            dbDetail.Message,
+		StartedOn:          dbDetail.StartedOn,
+		CompletedOn:        dbDetail.CompletedOn,
+		Status:             dbTestResultStatusToResponse(dbDetail.Status),
+	}
+}
+
+func dbTestResultStatusToResponse(dbStatus database.TestResultStatus) response.TestResultStatus {
+	switch dbStatus {
+	case database.TestResultStatusSuccess:
+		return response.TestResultStatusSuccess
+	case database.TestResultStatusSkipped:
+		return response.TestResultStatusSkipped
+	case database.TestResultStatusFailed:
+		return response.TestResultStatusFailed
+	default:
+		return response.TestResultStatus(dbStatus)
+	}
 }
