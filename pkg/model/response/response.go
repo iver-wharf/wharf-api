@@ -8,3 +8,16 @@ type Token struct {
 	Token    string `json:"token" format:"password"`
 	UserName string `json:"userName"`
 }
+
+// Branch holds details about a project's branch.
+type Branch struct {
+	BranchID  uint   `json:"branchId"`
+	ProjectID uint   `json:"projectId"`
+	Name      string `json:"name"`
+	Default   bool   `json:"default"`
+	TokenID   uint   `json:"tokenId"`
+}
+
+// Project holds details about a project.
+type Project struct {
+}

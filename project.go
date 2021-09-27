@@ -18,6 +18,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/iver-wharf/messagebus-go"
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
+	"github.com/iver-wharf/wharf-api/pkg/model/response"
 	"github.com/iver-wharf/wharf-api/pkg/orderby"
 	"github.com/iver-wharf/wharf-core/pkg/problem"
 	"gopkg.in/guregu/null.v4"
@@ -735,4 +736,9 @@ func (m projectModule) getBuildsCount(projectID uint) (int64, error) {
 		return 0, err
 	}
 	return count, nil
+}
+
+func dbProjectToResponseProject(dbProject database.Project) response.Project {
+	// TODO
+	return response.Project{}
 }

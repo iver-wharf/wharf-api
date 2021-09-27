@@ -25,3 +25,11 @@ type Token struct {
 	UserName   string `json:"userName" validate:"required"`
 	ProviderID uint   `json:"providerId"`
 }
+
+// Token specifies fields when adding a new branch to a project.
+type Branch struct {
+	ProjectID uint   `json:"projectId" validate:"required"`
+	Name      string `json:"name" validate:"required"`
+	Default   bool   `json:"default"`
+	TokenID   uint   `json:"tokenId"`
+}
