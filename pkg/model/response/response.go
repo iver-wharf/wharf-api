@@ -2,7 +2,11 @@
 // HTTP responses, with Swaggo-specific Go tags.
 package response
 
-import "gopkg.in/guregu/null.v4"
+import (
+	"time"
+
+	"gopkg.in/guregu/null.v4"
+)
 
 // Artifact holds the binary data as well as metadata about that binary such as
 // the file name and which build it belongs to.
@@ -26,6 +30,57 @@ type Branch struct {
 	Name      string `json:"name"`
 	Default   bool   `json:"default"`
 	TokenID   uint   `json:"tokenId"`
+}
+
+// Build holds data about the state of a build. Which parameters was used to
+// start it, what status it holds, et.al.
+type Build struct {
+	BuildID             uint                `json:"buildId"`
+	StatusID            int                 `json:"statusId" enum:"0,1,2,3"`
+	Status              BuildStatus         `json:"status" enum:"Scheduling,Running,Completed,Failed"`
+	ProjectID           uint                `json:"projectId"`
+	ScheduledOn         null.Time           `json:"scheduledOn" format:"date-time"`
+	StartedOn           null.Time           `json:"startedOn" format:"date-time"`
+	CompletedOn         null.Time           `json:"finishedOn" format:"date-time"`
+	GitBranch           string              `json:"gitBranch"`
+	Environment         null.String         `json:"environment" swaggertype:"string"`
+	Stage               string              `json:"stage"`
+	Params              []BuildParam        `json:"params"`
+	IsInvalid           bool                `json:"isInvalid"`
+	TestResultSummaries []TestResultSummary `json:"testResultSummaries"`
+}
+
+// BuildParam holds the name and value of an input parameter fed into a build.
+type BuildParam struct {
+	BuildID uint   `json:"buildId"`
+	Name    string `json:"name"`
+	Value   string `json:"value"`
+}
+
+// BuildStatus is an enum of different states for a build.
+type BuildStatus string
+
+const (
+	// BuildScheduling means the build has been registered, but no code
+	// execution has begun yet. This is usually quite an ephemeral state.
+	BuildScheduling BuildStatus = "Scheduling"
+	// BuildRunning means the build is executing right now. The execution
+	// engine has load in the target code paths and repositories.
+	BuildRunning BuildStatus = "Running"
+	// BuildCompleted means the build has finished execution successfully.
+	BuildCompleted BuildStatus = "Completed"
+	// BuildFailed means that something went wrong with the build. Could be a
+	// misconfiguration in the .wharf-ci.yml file, or perhaps a scripting error
+	// in some build step.
+	BuildFailed BuildStatus = "Failed"
+)
+
+// Log is a single logged line for a build.
+type Log struct {
+	LogID     uint      `json:"logId"`
+	BuildID   uint      `json:"buildId"`
+	Message   string    `json:"message"`
+	Timestamp time.Time `json:"timestamp" format:"date-time"`
 }
 
 // Project holds details about a project.

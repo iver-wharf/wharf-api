@@ -3,6 +3,8 @@
 // Swaggo-specific Go tags.
 package request
 
+import "time"
+
 // Reference doc about the Go tags:
 //  TAG                  SOURCE                   DESCRIPTION
 //  json:"foo"           encoding/json            Serializes field with the name "foo"
@@ -33,3 +35,32 @@ type Branch struct {
 	Default   bool   `json:"default"`
 	TokenID   uint   `json:"tokenId"`
 }
+
+// LogOrStatusUpdate is a single log line, together with its timestamp of when
+// it was logged; or a build status update.
+//
+// The build status field takes precedence, and if set it will update the
+// build's status, while the message and the timestamp is ignored.
+type LogOrStatusUpdate struct {
+	Message   string      `json:"message"`
+	Timestamp time.Time   `json:"timestamp" format:"date-time"`
+	Status    BuildStatus `json:"status" enum:",Scheduling,Running,Completed,Failed"`
+}
+
+// BuildStatus is an enum of different states for a build.
+type BuildStatus string
+
+const (
+	// BuildScheduling means the build has been registered, but no code
+	// execution has begun yet. This is usually quite an ephemeral state.
+	BuildScheduling BuildStatus = "Scheduling"
+	// BuildRunning means the build is executing right now. The execution
+	// engine has load in the target code paths and repositories.
+	BuildRunning BuildStatus = "Running"
+	// BuildCompleted means the build has finished execution successfully.
+	BuildCompleted BuildStatus = "Completed"
+	// BuildFailed means that something went wrong with the build. Could be a
+	// misconfiguration in the .wharf-ci.yml file, or perhaps a scripting error
+	// in some build step.
+	BuildFailed BuildStatus = "Failed"
+)

@@ -416,6 +416,14 @@ func getTestSummaryAndDetails(data []byte, artifactID, buildID uint) (database.T
 	return dbSummary, dbDetails, nil
 }
 
+func dbTestResultSummariesToResponses(dbSummaries []database.TestResultSummary) []response.TestResultSummary {
+	resSummaries := make([]response.TestResultSummary, len(dbSummaries))
+	for i, dbSummary := range dbSummaries {
+		resSummaries[i] = dbTestResultSummaryToResponse(dbSummary)
+	}
+	return resSummaries
+}
+
 func dbTestResultSummaryToResponse(dbSummary database.TestResultSummary) response.TestResultSummary {
 	return response.TestResultSummary{
 		TestResultSummaryID: dbSummary.TestResultSummaryID,

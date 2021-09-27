@@ -6,45 +6,18 @@ import (
 	"io"
 	"time"
 
-	"encoding/json"
 	"net/http"
 
 	"github.com/dustin/go-broadcast"
 	"github.com/gin-gonic/gin"
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
+	"github.com/iver-wharf/wharf-api/pkg/model/request"
+	"github.com/iver-wharf/wharf-api/pkg/model/response"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"gorm.io/gorm"
 
 	"github.com/iver-wharf/messagebus-go"
 )
-
-// BuildLog is a single log line, together with its timestamp of when it was
-// logged.
-type BuildLog struct {
-	Message   string    `json:"message"`
-	Timestamp time.Time `json:"timestamp"`
-	Status    string    `json:"status"`
-	// StatusID is populated when unmarshalled via UnmarshalJSON
-	StatusID BuildStatus `json:"-"`
-}
-
-// UnmarshalJSON implements Unmarshaler interface from encoding/json.
-func (bl *BuildLog) UnmarshalJSON(data []byte) error {
-	type antiInfiniteLoop BuildLog
-	if err := json.Unmarshal(data, (*antiInfiniteLoop)(bl)); err != nil {
-		return err
-	}
-	if bl.Status == "" {
-		bl.StatusID = -1
-	} else {
-		if statusID, ok := parseBuildStatus(bl.Status); ok {
-			bl.StatusID = statusID
-		} else {
-			return fmt.Errorf("invalid build status: %s", bl.Status)
-		}
-	}
-	return nil
-}
 
 type buildModule struct {
 	Database     *gorm.DB
@@ -100,7 +73,7 @@ func build(buildID uint) broadcast.Broadcaster {
 // @summary Finds build by build ID
 // @tags build
 // @param buildId path int true "build id"
-// @success 200 {object} Build
+// @success 200 {object} response.Build
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 404 {object} problem.Response "Build not found"
@@ -112,7 +85,7 @@ func (m buildModule) getBuildHandler(c *gin.Context) {
 		return
 	}
 
-	build, err := m.getBuild(buildID)
+	dbBuild, err := m.getBuild(buildID)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		ginutil.WriteDBNotFound(c, fmt.Sprintf(
 			"Build with ID %d was not found.",
@@ -125,30 +98,31 @@ func (m buildModule) getBuildHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, &build)
+	resBuild := dbBuildToResponse(dbBuild)
+	c.JSON(http.StatusOK, resBuild)
 }
 
-func (m buildModule) getBuild(buildID uint) (Build, error) {
-	var build Build
+func (m buildModule) getBuild(buildID uint) (database.Build, error) {
+	var dbBuild database.Build
 	if err := m.Database.
-		Where(&Build{BuildID: buildID}).
+		Where(&database.Build{BuildID: buildID}).
 		Preload(database.BuildFields.Params).
-		First(&build).
+		First(&dbBuild).
 		Error; err != nil {
-		return Build{}, err
+		return database.Build{}, err
 	}
-	return build, nil
+	return dbBuild, nil
 }
 
-func (m buildModule) getLogs(buildID uint) ([]Log, error) {
-	var logs []Log
+func (m buildModule) getLogs(buildID uint) ([]database.Log, error) {
+	var dbLogs []database.Log
 	if err := m.Database.
-		Where(&Build{BuildID: buildID}).
-		Find(&logs).
+		Where(&database.Build{BuildID: buildID}).
+		Find(&dbLogs).
 		Error; err != nil {
-		return []Log{}, err
+		return []database.Log{}, err
 	}
-	return logs, nil
+	return dbLogs, nil
 }
 
 // searchBuildListHandler godoc
@@ -168,7 +142,7 @@ func (m buildModule) searchBuildListHandler(c *gin.Context) {
 // @summary Finds logs for build with selected build ID
 // @tags build
 // @param buildId path int true "build id"
-// @success 200 {object} []Log "logs from selected build"
+// @success 200 {object} []response.Log "logs from selected build"
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
@@ -179,8 +153,7 @@ func (m buildModule) getBuildLogListHandler(c *gin.Context) {
 		return
 	}
 
-	logs, err := m.getLogs(buildID)
-
+	dbLogs, err := m.getLogs(buildID)
 	if err != nil {
 		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
 			"Failed fetching logs for build with ID %d.",
@@ -188,7 +161,17 @@ func (m buildModule) getBuildLogListHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, logs)
+	resLogs := make([]response.Log, len(dbLogs))
+	for i, dbLog := range dbLogs {
+		resLogs[i] = response.Log{
+			LogID:     dbLog.LogID,
+			BuildID:   dbLog.BuildID,
+			Message:   dbLog.Message,
+			Timestamp: dbLog.Timestamp,
+		}
+	}
+
+	c.JSON(http.StatusOK, resLogs)
 }
 
 // streamBuildLogHandler godoc
@@ -219,7 +202,6 @@ func (m buildModule) streamBuildLogHandler(c *gin.Context) {
 			return true
 		}
 	})
-
 }
 
 // createBuildLogHandler godoc
@@ -227,7 +209,7 @@ func (m buildModule) streamBuildLogHandler(c *gin.Context) {
 // @summary Post a log to selected build
 // @tags build
 // @param buildId path int true "build id"
-// @param data body BuildLog true "data"
+// @param data body request.LogOrStatusUpdate true "data"
 // @success 201 "Created"
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
@@ -239,31 +221,38 @@ func (m buildModule) createBuildLogHandler(c *gin.Context) {
 		return
 	}
 
-	var log BuildLog
-	if err := c.ShouldBindJSON(&log); err != nil {
+	var reqLogOrStatusUpdate request.LogOrStatusUpdate
+	if err := c.ShouldBindJSON(&reqLogOrStatusUpdate); err != nil {
 		ginutil.WriteInvalidBindError(c, err,
 			"One or more parameters failed to parse when reading the request body for log object to post.")
 		return
 	}
 
-	if log.StatusID >= 0 {
-		_, err := m.updateBuildStatus(buildID, log.StatusID)
+	if dbBuildStatus, ok := reqBuildStatusToDatabase(reqLogOrStatusUpdate.Status); ok {
+		_, err := m.updateBuildStatus(buildID, dbBuildStatus)
 		if err != nil {
 			ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
 				"Failed updating status on build with ID %d to status with ID %d.",
-				buildID, log.StatusID))
+				buildID, dbBuildStatus))
 			return
 		}
 	} else {
-		if err := m.saveLog(buildID, log.Message, log.Timestamp); err != nil {
+		dbLog, err := m.saveLog(buildID, reqLogOrStatusUpdate.Message, reqLogOrStatusUpdate.Timestamp)
+		if err != nil {
 			ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
 				"Failed adding log message to build with ID %d.",
 				buildID))
 			return
 		}
+		resLog := response.Log{
+			LogID:     dbLog.LogID,
+			BuildID:   dbLog.BuildID,
+			Message:   dbLog.Message,
+			Timestamp: dbLog.Timestamp,
+		}
+		build(buildID).Submit(resLog)
 	}
 
-	build(buildID).Submit(log)
 	c.Status(http.StatusCreated)
 }
 
@@ -273,7 +262,7 @@ func (m buildModule) createBuildLogHandler(c *gin.Context) {
 // @tags build
 // @param buildId path uint true "build id"
 // @param status query string true "Build status term" Enums(Scheduling, Running, Completed, Failed)
-// @success 200 {object} Build
+// @success 200 {object} response.Build
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 404 {object} problem.Response "Build not found"
@@ -290,14 +279,14 @@ func (m buildModule) updateBuildHandler(c *gin.Context) {
 		return
 	}
 
-	statusID, ok := parseBuildStatus(status)
+	statusID, ok := reqBuildStatusToDatabase(request.BuildStatus(status))
 	if !ok {
 		ginutil.WriteInvalidParamError(c, nil, "status", fmt.Sprintf(
 			"Unable to parse build status from %q", status))
 		return
 	}
 
-	build, err := m.updateBuildStatus(buildID, statusID)
+	dbBuild, err := m.updateBuildStatus(buildID, statusID)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		ginutil.WriteDBNotFound(c, fmt.Sprintf(
 			"Build with ID %d was not found when trying to update status to %q.",
@@ -310,35 +299,36 @@ func (m buildModule) updateBuildHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, build)
+	resBuild := dbBuildToResponse(dbBuild)
+	c.JSON(http.StatusOK, resBuild)
 }
 
-func (m buildModule) updateBuildStatus(buildID uint, statusID BuildStatus) (Build, error) {
-	if statusID < BuildScheduling && statusID > BuildFailed {
-		return Build{}, fmt.Errorf("invalid status ID: %+v", statusID)
+func (m buildModule) updateBuildStatus(buildID uint, statusID database.BuildStatus) (database.Build, error) {
+	if statusID < database.BuildScheduling && statusID > database.BuildFailed {
+		return database.Build{}, fmt.Errorf("invalid status ID: %+v", statusID)
 	}
 
-	build, err := m.getBuild(buildID)
+	dbBuild, err := m.getBuild(buildID)
 	if err != nil {
-		return Build{}, err
+		return database.Build{}, err
 	}
 
 	message := struct {
-		StatusBefore BuildStatus
-		StatusAfter  BuildStatus
-		Build        Build
+		StatusBefore database.BuildStatus
+		StatusAfter  database.BuildStatus
+		Build        database.Build
 	}{
-		StatusBefore: build.StatusID,
+		StatusBefore: dbBuild.StatusID,
 		StatusAfter:  statusID,
 	}
 
-	build.StatusID = statusID
-	setStatusDate(&build, statusID)
+	dbBuild.StatusID = statusID
+	setStatusDate(&dbBuild, statusID)
 
-	message.Build = build
+	message.Build = dbBuild
 
-	if err := m.Database.Save(&build).Error; err != nil {
-		return Build{}, err
+	if err := m.Database.Save(&dbBuild).Error; err != nil {
+		return database.Build{}, err
 	}
 
 	if m.MessageQueue != nil {
@@ -347,23 +337,91 @@ func (m buildModule) updateBuildStatus(buildID uint, statusID BuildStatus) (Buil
 		}
 	}
 
-	return build, nil
+	return dbBuild, nil
 }
 
-func (m buildModule) saveLog(buildID uint, message string, timestamp time.Time) error {
-	return m.Database.Save(&Log{
+func (m buildModule) saveLog(buildID uint, message string, timestamp time.Time) (database.Log, error) {
+	dbLog := database.Log{
 		BuildID:   buildID,
 		Message:   message,
 		Timestamp: timestamp,
-	}).Error
+	}
+	if err := m.Database.Save(&dbLog).Error; err != nil {
+		return database.Log{}, err
+	}
+	return dbLog, nil
 }
 
-func setStatusDate(build *Build, statusID BuildStatus) {
+func setStatusDate(build *database.Build, statusID database.BuildStatus) {
 	now := time.Now().UTC()
 	switch statusID {
-	case BuildRunning:
+	case database.BuildRunning:
 		build.StartedOn.SetValid(now)
-	case BuildCompleted, BuildFailed:
+	case database.BuildCompleted, database.BuildFailed:
 		build.CompletedOn.SetValid(now)
+	}
+}
+
+func dbBuildToResponse(dbBuild database.Build) response.Build {
+	return response.Build{
+		BuildID:             dbBuild.BuildID,
+		StatusID:            int(dbBuild.StatusID),
+		Status:              dbBuildStatusToResponse(dbBuild.StatusID),
+		ProjectID:           dbBuild.ProjectID,
+		ScheduledOn:         dbBuild.ScheduledOn,
+		StartedOn:           dbBuild.StartedOn,
+		CompletedOn:         dbBuild.CompletedOn,
+		GitBranch:           dbBuild.GitBranch,
+		Environment:         dbBuild.Environment,
+		Stage:               dbBuild.Stage,
+		Params:              dbBuildParamsToResponses(dbBuild.Params),
+		IsInvalid:           dbBuild.IsInvalid,
+		TestResultSummaries: dbTestResultSummariesToResponses(dbBuild.TestResultSummaries),
+	}
+}
+
+func dbBuildStatusToResponse(dbStatus database.BuildStatus) response.BuildStatus {
+	switch dbStatus {
+	case database.BuildScheduling:
+		return response.BuildScheduling
+	case database.BuildRunning:
+		return response.BuildRunning
+	case database.BuildCompleted:
+		return response.BuildCompleted
+	case database.BuildFailed:
+		return response.BuildFailed
+	default:
+		return response.BuildScheduling
+	}
+}
+
+func reqBuildStatusToDatabase(reqStatus request.BuildStatus) (database.BuildStatus, bool) {
+	switch reqStatus {
+	case request.BuildScheduling:
+		return database.BuildScheduling, true
+	case request.BuildRunning:
+		return database.BuildRunning, true
+	case request.BuildCompleted:
+		return database.BuildCompleted, true
+	case request.BuildFailed:
+		return database.BuildFailed, true
+	default:
+		return database.BuildScheduling, false
+	}
+}
+
+func dbBuildParamsToResponses(dbParams []database.BuildParam) []response.BuildParam {
+	resParams := make([]response.BuildParam, len(dbParams))
+	for i, dbParam := range dbParams {
+		resParams[i] = dbBuildParamToResponse(dbParam)
+	}
+	return resParams
+}
+
+func dbBuildParamToResponse(dbParam database.BuildParam) response.BuildParam {
+	return response.BuildParam{
+		BuildID: dbParam.BuildID,
+		Name:    dbParam.Name,
+		Value:   dbParam.Value,
 	}
 }
