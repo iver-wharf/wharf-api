@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/iver-wharf/wharf-api/internal/deprecated"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 
@@ -67,7 +68,7 @@ func (m branchModule) createBranchHandler(c *gin.Context) {
 
 	var existingBranch Branch
 	err := m.Database.
-		Where(&branch, branchFieldProjectID, branchFieldTokenID, branchFieldName).
+		Where(&branch, database.BranchFields.ProjectID, database.BranchFields.TokenID, database.BranchFields.Name).
 		First(&existingBranch).
 		Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -124,7 +125,7 @@ func (m branchModule) putBranches(branches []Branch) error {
 		var oldDbBranches []Branch
 		if len(branches) > 0 {
 			var firstBranch = branches[0]
-			if err := tx.Where(&firstBranch, branchFieldProjectID).Find(&oldDbBranches).Error; err != nil {
+			if err := tx.Where(&firstBranch, database.BranchFields.ProjectID).Find(&oldDbBranches).Error; err != nil {
 				return err
 			}
 			defaultBranch = firstBranch
@@ -138,7 +139,7 @@ func (m branchModule) putBranches(branches []Branch) error {
 
 			branchNames = append(branchNames, branch.Name)
 			result := m.Database.
-				Where(&branch, branchFieldProjectID, branchFieldTokenID, branchFieldName).
+				Where(&branch, database.BranchFields.ProjectID, database.BranchFields.TokenID, database.BranchFields.Name).
 				First(&branch)
 			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 				if err := tx.Create(&branch).Error; err != nil {
@@ -151,8 +152,8 @@ func (m branchModule) putBranches(branches []Branch) error {
 		if err := tx.
 			Model(&Branch{}).
 			Where(&Branch{ProjectID: defaultBranch.ProjectID, Default: true}).
-			Where(tx.Not(&defaultBranch, branchFieldName)).
-			Select(branchFieldDefault).
+			Where(tx.Not(&defaultBranch, database.BranchFields.Name)).
+			Select(database.BranchFields.Default).
 			Updates(&Branch{Default: false}).Error; err != nil {
 			return err
 		}
@@ -161,7 +162,7 @@ func (m branchModule) putBranches(branches []Branch) error {
 			if !contains(branchNames, oldDbBranch.Name) {
 				//remove old branch
 				if err := tx.
-					Where(&oldDbBranch, branchFieldProjectID, branchFieldTokenID, branchFieldName).
+					Where(&oldDbBranch, database.BranchFields.ProjectID, database.BranchFields.TokenID, database.BranchFields.Name).
 					Delete(&oldDbBranch).Error; err != nil {
 					return err
 				}
