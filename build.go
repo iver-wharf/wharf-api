@@ -304,7 +304,7 @@ func (m buildModule) updateBuildHandler(c *gin.Context) {
 }
 
 func (m buildModule) updateBuildStatus(buildID uint, statusID database.BuildStatus) (database.Build, error) {
-	if statusID < database.BuildScheduling && statusID > database.BuildFailed {
+	if !statusID.IsValid() {
 		return database.Build{}, fmt.Errorf("invalid status ID: %+v", statusID)
 	}
 

@@ -215,6 +215,10 @@ const (
 	BuildFailed
 )
 
+func (buildStatus BuildStatus) IsValid() bool {
+	return buildStatus >= BuildScheduling && buildStatus <= BuildFailed
+}
+
 // BuildParam holds the name and value of an input parameter fed into a build.
 type BuildParam struct {
 	BuildParamID uint   `gorm:"primaryKey"`
