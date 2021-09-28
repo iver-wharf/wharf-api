@@ -143,7 +143,7 @@ type Project struct {
 	BuildDefinition       string      `json:"buildDefinition"`
 	Branches              []Branch    `json:"branches"`
 	GitURL                string      `json:"gitUrl"`
-	ParsedBuildDefinition interface{} `json:"build"`
+	ParsedBuildDefinition interface{} `json:"build" swaggertype:"object"`
 }
 
 // Provider holds metadata about a connection to a remote provider. Some of
