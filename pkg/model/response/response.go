@@ -59,8 +59,8 @@ var BuildJSONFields = struct {
 // start it, what status it holds, et.al.
 type Build struct {
 	BuildID             uint                `json:"buildId"`
-	StatusID            int                 `json:"statusId" enum:"0,1,2,3"`
-	Status              BuildStatus         `json:"status" enum:"Scheduling,Running,Completed,Failed"`
+	StatusID            int                 `json:"statusId" enums:"0,1,2,3"`
+	Status              BuildStatus         `json:"status" enums:"Scheduling,Running,Completed,Failed"`
 	ProjectID           uint                `json:"projectId"`
 	ScheduledOn         null.Time           `json:"scheduledOn" format:"date-time" extensions:"x-nullable"`
 	StartedOn           null.Time           `json:"startedOn" format:"date-time" extensions:"x-nullable"`
@@ -151,7 +151,7 @@ type Project struct {
 // used to authenticate.
 type Provider struct {
 	ProviderID uint         `json:"providerId"`
-	Name       ProviderName `json:"name" enum:"azuredevops,gitlab,github"`
+	Name       ProviderName `json:"name" enums:"azuredevops,gitlab,github"`
 	URL        string       `json:"url"`
 	UploadURL  string       `json:"uploadUrl"`
 	TokenID    uint         `json:"tokenId"`
@@ -201,7 +201,7 @@ type TestResultDetail struct {
 	Message            null.String      `json:"message" swaggertype:"string" extensions:"x-nullable"`
 	StartedOn          null.Time        `json:"startedOn" format:"date-time" extensions:"x-nullable"`
 	CompletedOn        null.Time        `json:"completedOn" format:"date-time" extensions:"x-nullable"`
-	Status             TestResultStatus `json:"status" enum:"Failed,Passed,Skipped"`
+	Status             TestResultStatus `json:"status" enums:"Failed,Passed,Skipped"`
 }
 
 // TestResultListSummary contains data about several test result files.

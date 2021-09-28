@@ -44,7 +44,7 @@ type Branch struct {
 type LogOrStatusUpdate struct {
 	Message   string      `json:"message"`
 	Timestamp time.Time   `json:"timestamp" format:"date-time"`
-	Status    BuildStatus `json:"status" enum:",Scheduling,Running,Completed,Failed"`
+	Status    BuildStatus `json:"status" enums:",Scheduling,Running,Completed,Failed"`
 }
 
 // BuildStatus is an enum of different states for a build.
@@ -132,7 +132,7 @@ func (name ProviderName) IsValid() bool {
 
 // ProviderSearch holds values used in verbatim searches for providers.
 type ProviderSearch struct {
-	Name      ProviderName `json:"name" enum:"azuredevops,gitlab,github"`
+	Name      ProviderName `json:"name" enums:"azuredevops,gitlab,github"`
 	URL       string       `json:"url"`
 	UploadURL string       `json:"uploadUrl"`
 	TokenID   uint         `json:"tokenId"`
@@ -140,7 +140,7 @@ type ProviderSearch struct {
 
 // Provider specifies fields when creating a new provider.
 type Provider struct {
-	Name      ProviderName `json:"name" enum:"azuredevops,gitlab,github" validate:"required" binding:"required"`
+	Name      ProviderName `json:"name" enums:"azuredevops,gitlab,github" validate:"required" binding:"required"`
 	URL       string       `json:"url" validate:"required" binding:"required"`
 	UploadURL string       `json:"uploadUrl"`
 	TokenID   uint         `json:"tokenId"`
@@ -149,7 +149,7 @@ type Provider struct {
 // ProviderUpdate specifies fields when updating a provider.
 type ProviderUpdate struct {
 	ProviderID uint         `json:"providerId"`
-	Name       ProviderName `json:"name" enum:"azuredevops,gitlab,github" validate:"required" binding:"required"`
+	Name       ProviderName `json:"name" enums:"azuredevops,gitlab,github" validate:"required" binding:"required"`
 	URL        string       `json:"url" validate:"required" binding:"required"`
 	UploadURL  string       `json:"uploadUrl"`
 	TokenID    uint         `json:"tokenId"`
