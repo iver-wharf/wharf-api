@@ -65,6 +65,46 @@ const (
 	BuildFailed BuildStatus = "Failed"
 )
 
+// ProjectSearch holds values used in verbatim searches for providers.
+type ProjectSearch struct {
+	Name            string `json:"name"`
+	GroupName       string `json:"groupName"`
+	Description     string `json:"description"`
+	AvatarURL       string `json:"avatarUrl"`
+	TokenID         uint   `json:"tokenId"`
+	ProviderID      uint   `json:"providerId"`
+	BuildDefinition string `json:"buildDefinition"`
+	GitURL          string `json:"gitUrl"`
+}
+
+// Project specifies fields when creating a new project.
+type Project struct {
+	ProjectID       uint   `json:"projectId"`
+	Name            string `json:"name" validate:"required" binding:"required"`
+	GroupName       string `json:"groupName"`
+	Description     string `json:"description"`
+	AvatarURL       string `json:"avatarUrl"`
+	TokenID         uint   `json:"tokenId"`
+	ProviderID      uint   `json:"providerId"`
+	BuildDefinition string `json:"buildDefinition"`
+	GitURL          string `json:"gitUrl"`
+}
+
+// ProjectUpdate specifies fields when updating a project.
+// If the project ID is unspecified, then the wharf-api will try to match
+// the project on the project's name and group.
+type ProjectUpdate struct {
+	ProjectID       uint   `json:"projectId"`
+	Name            string `json:"name" validate:"required" binding:"required"`
+	GroupName       string `json:"groupName"`
+	Description     string `json:"description"`
+	AvatarURL       string `json:"avatarUrl"`
+	TokenID         uint   `json:"tokenId"`
+	ProviderID      uint   `json:"providerId"`
+	BuildDefinition string `json:"buildDefinition"`
+	GitURL          string `json:"gitUrl"`
+}
+
 // ProviderName is an enum of different providers that are available over at
 // https://github.com/iver-wharf
 type ProviderName string
@@ -106,7 +146,7 @@ type Provider struct {
 	TokenID   uint         `json:"tokenId"`
 }
 
-// ProviderUpdate specifies fields when creating a new provider.
+// ProviderUpdate specifies fields when updating a provider.
 type ProviderUpdate struct {
 	ProviderID uint         `json:"providerId"`
 	Name       ProviderName `json:"name" enum:"azuredevops,gitlab,github" validate:"required" binding:"required"`

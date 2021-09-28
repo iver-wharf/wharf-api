@@ -3,36 +3,37 @@ package main
 import (
 	"testing"
 
+	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestFindDefaultGroupSuccess(t *testing.T) {
 	var (
-		main = Branch{Name: "main", Default: true}
-		b1   = Branch{Name: "b1"}
-		b2   = Branch{Name: "b2"}
-		b3   = Branch{Name: "b3"}
-		b4   = Branch{Name: "b4"}
+		main = database.Branch{Name: "main", Default: true}
+		b1   = database.Branch{Name: "b1"}
+		b2   = database.Branch{Name: "b2"}
+		b3   = database.Branch{Name: "b3"}
+		b4   = database.Branch{Name: "b4"}
 	)
 	tests := []struct {
 		name     string
-		branches []Branch
+		branches []database.Branch
 	}{
 		{
 			name:     "at the beginning",
-			branches: []Branch{main, b1, b2, b3, b4},
+			branches: []database.Branch{main, b1, b2, b3, b4},
 		},
 		{
 			name:     "in the middle",
-			branches: []Branch{b1, b2, main, b3, b4},
+			branches: []database.Branch{b1, b2, main, b3, b4},
 		},
 		{
 			name:     "at the end",
-			branches: []Branch{b1, b2, b3, b4, main},
+			branches: []database.Branch{b1, b2, b3, b4, main},
 		},
 		{
 			name:     "multiple",
-			branches: []Branch{b1, main, main, b4, main},
+			branches: []database.Branch{b1, main, main, b4, main},
 		},
 	}
 
@@ -46,7 +47,7 @@ func TestFindDefaultGroupSuccess(t *testing.T) {
 }
 
 func TestFindDefaultGroupFail(t *testing.T) {
-	branches := []Branch{
+	branches := []database.Branch{
 		{Name: "b1"},
 		{Name: "b2"},
 		{Name: "b3"},

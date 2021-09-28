@@ -32,6 +32,29 @@ type Branch struct {
 	TokenID   uint   `json:"tokenId"`
 }
 
+// BuildJSONFields holds the JSON field names for each field.
+// Useful in ordering statements to map the correct field to the correct
+// database column.
+var BuildJSONFields = struct {
+	BuildID     string
+	Environment string
+	CompletedOn string
+	ScheduledOn string
+	StartedOn   string
+	Stage       string
+	StatusID    string
+	IsInvalid   string
+}{
+	BuildID:     "buildId",
+	Environment: "environment",
+	CompletedOn: "finishedOn",
+	ScheduledOn: "scheduledOn",
+	StartedOn:   "startedOn",
+	Stage:       "stage",
+	StatusID:    "statusId",
+	IsInvalid:   "isInvalid",
+}
+
 // Build holds data about the state of a build. Which parameters was used to
 // start it, what status it holds, et.al.
 type Build struct {
@@ -55,6 +78,12 @@ type BuildParam struct {
 	BuildID uint   `json:"buildId"`
 	Name    string `json:"name"`
 	Value   string `json:"value"`
+}
+
+// BuildReferenceWrapper holds a build reference. A unique identifier to a
+// build.
+type BuildReferenceWrapper struct {
+	BuildReference string `json:"buildRef" example:"123"`
 }
 
 // BuildStatus is an enum of different states for a build.
@@ -90,6 +119,12 @@ type Log struct {
 	Timestamp time.Time `json:"timestamp" format:"date-time"`
 }
 
+// PaginatedBuilds is a list of builds as well as an explicit total count field.
+type PaginatedBuilds struct {
+	Builds     []Build `json:"builds"`
+	TotalCount int64   `json:"totalCount"`
+}
+
 // Ping pongs.
 type Ping struct {
 	Message string `json:"message" example:"pong"`
@@ -97,6 +132,18 @@ type Ping struct {
 
 // Project holds details about a project.
 type Project struct {
+	ProjectID             uint        `json:"projectId"`
+	Name                  string      `json:"name"`
+	GroupName             string      `json:"groupName"`
+	Description           string      `json:"description"`
+	AvatarURL             string      `json:"avatarUrl"`
+	TokenID               uint        `json:"tokenId"`
+	ProviderID            uint        `json:"providerId"`
+	Provider              *Provider   `json:"provider"`
+	BuildDefinition       string      `json:"buildDefinition"`
+	Branches              []Branch    `json:"branches"`
+	GitURL                string      `json:"gitUrl"`
+	ParsedBuildDefinition interface{} `json:"build"`
 }
 
 // Provider holds metadata about a connection to a remote provider. Some of

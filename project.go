@@ -18,6 +18,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/iver-wharf/messagebus-go"
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
+	"github.com/iver-wharf/wharf-api/pkg/model/request"
 	"github.com/iver-wharf/wharf-api/pkg/model/response"
 	"github.com/iver-wharf/wharf-api/pkg/orderby"
 	"github.com/iver-wharf/wharf-core/pkg/problem"
@@ -61,34 +62,34 @@ func (m projectModule) Register(g *gin.RouterGroup) {
 	}
 }
 
-func (m projectModule) FindProjectByID(id uint) (Project, error) {
-	var project Project
+func (m projectModule) FindProjectByID(id uint) (database.Project, error) {
+	var dbProject database.Project
 	err := m.databaseProjectPreloaded().
-		Where(&Project{ProjectID: id}).
-		First(&project).
+		Where(&database.Project{ProjectID: id}).
+		First(&dbProject).
 		Error
-
-	return project, err
+	return dbProject, err
 }
 
 // getProjectListHandler godoc
 // @id getProjectList
 // @summary Returns all projects from database
 // @tags project
-// @success 200 {array} Project
+// @success 200 {object} []response.Project
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @router /projects [get]
 func (m projectModule) getProjectListHandler(c *gin.Context) {
-	var projects []Project
+	var dbProjects []database.Project
 	err := m.databaseProjectPreloaded().
-		Find(&projects).
+		Find(&dbProjects).
 		Error
 	if err != nil {
 		ginutil.WriteDBReadError(c, err, "Failed fetching list of projects from database.")
 		return
 	}
-	c.JSON(http.StatusOK, projects)
+	resProjects := dbProjectsToResponses(dbProjects)
+	c.JSON(http.StatusOK, resProjects)
 }
 
 func (m projectModule) databaseProjectPreloaded() *gorm.DB {
@@ -104,39 +105,50 @@ func (m projectModule) databaseProjectPreloaded() *gorm.DB {
 // @id searchProjectList
 // @summary Search for projects from database
 // @tags project
-// @success 200 {array} Project
+// @param project body request.ProjectSearch _ "Project search criteria"
+// @success 200 {object} []response.Project
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @router /projects/search [post]
 func (m projectModule) searchProjectListHandler(c *gin.Context) {
-	var query Project
-	if err := c.ShouldBindJSON(&query); err != nil {
+	var reqProjectSearch request.ProjectSearch
+	if err := c.ShouldBindJSON(&reqProjectSearch); err != nil {
 		ginutil.WriteInvalidBindError(c, err,
 			"One or more parameters failed to parse when reading the request body for the project object to search with.")
 		return
 	}
-	var projects []Project
+	var dbProjects []database.Project
 	err := m.Database.
-		Where(&query).
+		Where(&database.Project{
+			Name:            reqProjectSearch.Name,
+			GroupName:       reqProjectSearch.GroupName,
+			Description:     reqProjectSearch.Description,
+			AvatarURL:       reqProjectSearch.AvatarURL,
+			TokenID:         reqProjectSearch.TokenID,
+			ProviderID:      reqProjectSearch.ProviderID,
+			BuildDefinition: reqProjectSearch.BuildDefinition,
+			GitURL:          reqProjectSearch.GitURL,
+		}).
 		Preload(database.ProjectFields.Provider).
-		Find(&projects).
+		Find(&dbProjects).
 		Error
 	if err != nil {
 		ginutil.WriteDBReadError(c, err, "Failed searching for projects in database.")
 		return
 	}
-	c.JSON(http.StatusOK, projects)
+	resProjects := dbProjectsToResponses(dbProjects)
+	c.JSON(http.StatusOK, resProjects)
 }
 
 var buildJSONToColumns = map[string]string{
-	"buildId":     database.BuildColumns.BuildID,
-	"environment": database.BuildColumns.Environment,
-	"finishedOn":  database.BuildColumns.CompletedOn,
-	"scheduledOn": database.BuildColumns.ScheduledOn,
-	"startedOn":   database.BuildColumns.StartedOn,
-	"stage":       database.BuildColumns.Stage,
-	"statusId":    database.BuildColumns.StatusID,
-	"isInvalid":   database.BuildColumns.IsInvalid,
+	response.BuildJSONFields.BuildID:     database.BuildColumns.BuildID,
+	response.BuildJSONFields.Environment: database.BuildColumns.Environment,
+	response.BuildJSONFields.CompletedOn: database.BuildColumns.CompletedOn,
+	response.BuildJSONFields.ScheduledOn: database.BuildColumns.ScheduledOn,
+	response.BuildJSONFields.StartedOn:   database.BuildColumns.StartedOn,
+	response.BuildJSONFields.Stage:       database.BuildColumns.Stage,
+	response.BuildJSONFields.StatusID:    database.BuildColumns.StatusID,
+	response.BuildJSONFields.IsInvalid:   database.BuildColumns.IsInvalid,
 }
 
 // getProjectBuildListHandler godoc
@@ -147,7 +159,7 @@ var buildJSONToColumns = map[string]string{
 // @param limit query string true "number of fetched branches"
 // @param offset query string true "PK of last branch taken"
 // @param orderby query []string false "Sorting orders. Takes the property name followed by either 'asc' or 'desc'. Can be specified multiple times for more granular sorting. Defaults to '?orderby=buildId desc'"
-// @success 200 {object} PaginatedBuilds
+// @success 200 {object} response.PaginatedBuilds
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
@@ -176,7 +188,7 @@ func (m projectModule) getProjectBuildListHandler(c *gin.Context) {
 		return
 	}
 
-	builds, err := m.getBuilds(projectID, limit, offset, orderBySlice)
+	dbBuilds, err := m.getBuilds(projectID, limit, offset, orderBySlice)
 	if err != nil {
 		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
 			"Failed fetching builds for project with ID %d from database.",
@@ -192,7 +204,11 @@ func (m projectModule) getProjectBuildListHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, PaginatedBuilds{Builds: &builds, TotalCount: count})
+	resPaginated := response.PaginatedBuilds{
+		Builds:     dbBuildsToResponses(dbBuilds),
+		TotalCount: count,
+	}
+	c.JSON(http.StatusOK, resPaginated)
 }
 
 // getProjectHandler godoc
@@ -200,7 +216,7 @@ func (m projectModule) getProjectBuildListHandler(c *gin.Context) {
 // @summary Returns project with selected project ID
 // @tags project
 // @param projectId path int true "project ID"
-// @success 200 {object} Project
+// @success 200 {object} response.Project
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 404 {object} problem.Response "Project not found"
@@ -211,7 +227,7 @@ func (m projectModule) getProjectHandler(c *gin.Context) {
 	if !ok {
 		return
 	}
-	project, err := m.FindProjectByID(projectID)
+	dbProject, err := m.FindProjectByID(projectID)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		ginutil.WriteDBNotFound(c, fmt.Sprintf("Project with ID %d was not found.", projectID))
 		return
@@ -219,7 +235,8 @@ func (m projectModule) getProjectHandler(c *gin.Context) {
 		ginutil.WriteDBReadError(c, err, fmt.Sprintf("Failed fetching project with ID %d from database.", projectID))
 		return
 	}
-	c.JSON(http.StatusOK, &project)
+	resProject := dbProjectToResponse(dbProject)
+	c.JSON(http.StatusOK, resProject)
 }
 
 // createProjectHandler godoc
@@ -230,69 +247,86 @@ func (m projectModule) getProjectHandler(c *gin.Context) {
 // @tags project
 // @accept json
 // @produce json
-// @param project body Project true "project object"
-// @success 200 {object} Project "Project has been updated"
-// @success 201 {object} Project "Project has been created"
+// @param project body request.Project true "project object"
+// @success 200 {object} response.Project "Project has been updated"
+// @success 201 {object} response.Project "Project has been created"
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 404 {object} problem.Response "Project to update is not found"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /project [post]
 func (m projectModule) createProjectHandler(c *gin.Context) {
-	var project Project
-
-	if err := c.ShouldBindJSON(&project); err != nil {
+	var reqProject request.Project
+	if err := c.ShouldBindJSON(&reqProject); err != nil {
 		ginutil.WriteInvalidBindError(c, err,
 			"One or more parameters failed to parse when reading the request body for the project object to update.")
 		return
 	}
 
-	var existingProject Project
-	if project.ProjectID != 0 {
+	var dbExistingProject database.Project
+	if reqProject.ProjectID != 0 {
 		err := m.Database.
-			Where(&project, database.ProjectFields.ProjectID).
-			First(&existingProject).
+			First(&dbExistingProject, reqProject.ProjectID).
 			Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			ginutil.WriteDBNotFound(c, fmt.Sprintf(
 				"Project with ID %d was not found. Please post a project model with 'projectId' left unset or set to 0 if you wish to create a new project.",
-				project.ProjectID))
+				reqProject.ProjectID))
 			return
 		} else if err != nil {
 			ginutil.WriteDBReadError(c, err, fmt.Sprintf(
 				"Failed fetching project with ID %d from database.",
-				project.ProjectID))
+				reqProject.ProjectID))
 			return
 		}
 	} else {
 		err := m.Database.
-			Where(&project, database.ProjectFields.GroupName, database.ProjectFields.TokenID, database.ProjectFields.Name).
-			First(&existingProject).
+			Where(&database.Project{
+				GroupName: reqProject.GroupName,
+				TokenID:   reqProject.TokenID,
+				Name:      reqProject.Name,
+			},
+				database.ProjectFields.GroupName,
+				database.ProjectFields.TokenID,
+				database.ProjectFields.Name).
+			First(&dbExistingProject).
 			Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			if err := m.Database.Create(&project).Error; err != nil {
+			dbNewProject := database.Project{
+				ProjectID:       reqProject.ProjectID,
+				Name:            reqProject.Name,
+				GroupName:       reqProject.GroupName,
+				Description:     reqProject.Description,
+				AvatarURL:       reqProject.AvatarURL,
+				TokenID:         reqProject.TokenID,
+				ProviderID:      reqProject.ProjectID,
+				BuildDefinition: reqProject.BuildDefinition,
+				GitURL:          reqProject.GitURL,
+			}
+			if err := m.Database.Create(&dbNewProject).Error; err != nil {
 				ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
 					"Failed creating new project with group %q, token ID %d, and name %q in database.",
-					project.GroupName, project.TokenID, project.Name))
+					reqProject.GroupName, reqProject.TokenID, reqProject.Name))
 			} else {
-				c.JSON(http.StatusCreated, project)
+				resProject := dbProjectToResponse(dbNewProject)
+				c.JSON(http.StatusCreated, resProject)
 			}
 			return
 		} else if err != nil {
 			ginutil.WriteDBReadError(c, err, fmt.Sprintf(
 				"Failed to lookup project with group %q, token ID %d, and name %q from database.",
-				project.GroupName, project.TokenID, project.Name))
+				reqProject.GroupName, reqProject.TokenID, reqProject.Name))
 			return
 		}
 	}
 
-	existingProject.BuildDefinition = project.BuildDefinition
-	existingProject.Description = project.Description
-	existingProject.AvatarURL = project.AvatarURL
+	dbExistingProject.BuildDefinition = reqProject.BuildDefinition
+	dbExistingProject.Description = reqProject.Description
+	dbExistingProject.AvatarURL = reqProject.AvatarURL
+	m.Database.Save(dbExistingProject)
 
-	m.Database.Save(existingProject)
-
-	c.JSON(http.StatusOK, existingProject)
+	resProject := dbProjectToResponse(dbExistingProject)
+	c.JSON(http.StatusOK, resProject)
 }
 
 // deleteProjectHandler godoc
@@ -312,7 +346,7 @@ func (m projectModule) deleteProjectHandler(c *gin.Context) {
 		return
 	}
 
-	project, err := m.FindProjectByID(projectID)
+	dbProject, err := m.FindProjectByID(projectID)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		ginutil.WriteDBNotFound(c, fmt.Sprintf("Project with ID %d was not found in the database.", projectID))
 	} else if err != nil {
@@ -320,7 +354,7 @@ func (m projectModule) deleteProjectHandler(c *gin.Context) {
 		return
 	}
 
-	err = m.Database.Delete(&project).Error
+	err = m.Database.Delete(&dbProject).Error
 	if err != nil {
 		ginutil.WriteDBWriteError(c, err, fmt.Sprintf("Failed deleting project with ID %d from database.", projectID))
 		return
@@ -338,60 +372,92 @@ func (m projectModule) deleteProjectHandler(c *gin.Context) {
 // @tags project
 // @accept json
 // @produce json
-// @param project body Project _ "project object"
-// @success 200 {object} Project
+// @param project body request.ProjectUpdate _ "project object"
+// @success 200 {object} response.Project "Project was updated"
+// @success 201 {object} response.Project "A new project was created"
 // @failure 400 {object} problem.Response "Bad request, such as invalid body JSON"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 404 {object} problem.Response "Project to update was not found"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /project [put]
 func (m projectModule) updateProjectHandler(c *gin.Context) {
-	var project Project
-	err := c.ShouldBindJSON(&project)
+	var reqProjectUpdate request.ProjectUpdate
+	err := c.ShouldBindJSON(&reqProjectUpdate)
 	if err != nil {
 		ginutil.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading the request body.")
 		return
 	}
 
-	var existingProject Project
-	if project.ProjectID != 0 {
-		existingProject, err = m.FindProjectByID(project.ProjectID)
+	var dbExistingProject database.Project
+	if reqProjectUpdate.ProjectID != 0 {
+		dbExistingProject, err = m.FindProjectByID(reqProjectUpdate.ProjectID)
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			ginutil.WriteDBNotFound(c, fmt.Sprintf(
 				"Project with ID %d was not found in the database.",
-				project.ProjectID))
+				reqProjectUpdate.ProjectID))
 			return
 		} else if err != nil {
 			ginutil.WriteDBReadError(c, err, fmt.Sprintf(
 				"Failed fetching project by ID %d from database.",
-				project.ProjectID))
+				reqProjectUpdate.ProjectID))
 			return
 		}
 	} else {
 		err := m.Database.
-			Where(&project, database.ProjectFields.Name, database.ProjectFields.GroupName).
-			First(&existingProject).
+			Where(&database.Project{
+				Name:      reqProjectUpdate.Name,
+				GroupName: reqProjectUpdate.GroupName,
+			}, database.ProjectFields.Name, database.ProjectFields.GroupName).
+			First(&dbExistingProject).
 			Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			existingProject = project
+			dbNewProject := database.Project{
+				ProjectID:       reqProjectUpdate.ProjectID,
+				Name:            reqProjectUpdate.Name,
+				GroupName:       reqProjectUpdate.GroupName,
+				Description:     reqProjectUpdate.Description,
+				AvatarURL:       reqProjectUpdate.AvatarURL,
+				TokenID:         reqProjectUpdate.TokenID,
+				ProviderID:      reqProjectUpdate.ProjectID,
+				BuildDefinition: reqProjectUpdate.BuildDefinition,
+				GitURL:          reqProjectUpdate.GitURL,
+			}
+			if err := m.Database.Create(&dbNewProject).Error; err != nil {
+				ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
+					"Failed creating new project with group %q, token ID %d, and name %q in database.",
+					reqProjectUpdate.GroupName, reqProjectUpdate.TokenID, reqProjectUpdate.Name))
+			} else {
+				resProject := dbProjectToResponse(dbNewProject)
+				c.JSON(http.StatusCreated, resProject)
+			}
+			return
 		} else if err != nil {
 			ginutil.WriteDBReadError(c, err, fmt.Sprintf(
 				"Failed fetching project with name %q and group name %q from the database.",
-				project.Name, project.GroupName))
+				reqProjectUpdate.Name, reqProjectUpdate.GroupName))
 			return
 		}
 	}
 
-	project.ProjectID = existingProject.ProjectID
+	dbExistingProject.ProjectID = reqProjectUpdate.ProjectID
+	dbExistingProject.Name = reqProjectUpdate.Name
+	dbExistingProject.GroupName = reqProjectUpdate.GroupName
+	dbExistingProject.Description = reqProjectUpdate.Description
+	dbExistingProject.AvatarURL = reqProjectUpdate.AvatarURL
+	dbExistingProject.TokenID = reqProjectUpdate.TokenID
+	dbExistingProject.ProviderID = reqProjectUpdate.ProviderID
+	dbExistingProject.BuildDefinition = reqProjectUpdate.BuildDefinition
+	dbExistingProject.GitURL = reqProjectUpdate.GitURL
 
-	if err := m.Database.Save(&project).Error; err != nil {
+	if err := m.Database.Save(&dbExistingProject).Error; err != nil {
 		ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
 			"Failed writing project with name %q and group name %q to database.",
-			project.Name, project.GroupName))
+			reqProjectUpdate.Name, reqProjectUpdate.GroupName))
 		return
 	}
 
-	c.JSON(http.StatusOK, project)
+	resProject := dbProjectToResponse(dbExistingProject)
+	c.JSON(http.StatusOK, resProject)
 }
 
 // startProjectBuildHandler godoc
@@ -404,7 +470,7 @@ func (m projectModule) updateProjectHandler(c *gin.Context) {
 // @param branch query string false "branch name, uses default branch if omitted"
 // @param environment query string false "environment name"
 // @param inputs body string _ "user inputs"
-// @success 200 {object} BuildReferenceWrapper "Build scheduled"
+// @success 200 {object} response.BuildReferenceWrapper "Build scheduled"
 // @failure 400 {object} problem.Response "Bad request, such as invalid body JSON"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 404 {object} problem.Response "Project was not found"
@@ -416,7 +482,7 @@ func (m projectModule) startProjectBuildHandler(c *gin.Context) {
 		return
 	}
 
-	project, err := m.FindProjectByID(projectID)
+	dbProject, err := m.FindProjectByID(projectID)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		ginutil.WriteDBNotFound(c, fmt.Sprintf("Project with ID %d was not found in the database.", projectID))
 		return
@@ -438,7 +504,7 @@ func (m projectModule) startProjectBuildHandler(c *gin.Context) {
 	branch, hasBranch := c.GetQuery("branch")
 
 	if !hasBranch {
-		b, ok := findDefaultBranch(project.Branches)
+		b, ok := findDefaultBranch(dbProject.Branches)
 		if !ok {
 			ginutil.WriteDBNotFound(c, fmt.Sprintf(
 				"No branch to build for project with ID %d was specified, and no default branch was found on the project.",
@@ -449,24 +515,24 @@ func (m projectModule) startProjectBuildHandler(c *gin.Context) {
 	}
 
 	now := time.Now().UTC()
-	build := Build{
-		ProjectID:   project.ProjectID,
+	dbBuild := database.Build{
+		ProjectID:   dbProject.ProjectID,
 		ScheduledOn: null.TimeFrom(now),
 		GitBranch:   branch,
 		Environment: null.NewString(env, hasEnv),
 		Stage:       stageName,
 	}
-	if err := m.Database.Create(&build).Error; err != nil {
+	if err := m.Database.Create(&dbBuild).Error; err != nil {
 		ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
 			"Failed creating build on stage %q and branch %q for project with ID %d in database.",
 			stageName, branch, projectID))
 		return
 	}
 
-	buildParams, err := parseBuildParams(build.BuildID, []byte(project.BuildDefinition), body)
+	dbBuildParams, err := parseDBBuildParams(dbBuild.BuildID, []byte(dbProject.BuildDefinition), body)
 	if err != nil {
-		build.IsInvalid = true
-		if saveErr := m.Database.Save(&build).Error; saveErr != nil {
+		dbBuild.IsInvalid = true
+		if saveErr := m.Database.Save(&dbBuild).Error; saveErr != nil {
 			c.Error(saveErr)
 		}
 		ginutil.WriteProblemError(c, err, problem.Response{
@@ -480,10 +546,10 @@ func (m projectModule) startProjectBuildHandler(c *gin.Context) {
 		return
 	}
 
-	err = m.SaveBuildParams(buildParams)
+	err = m.SaveBuildParams(dbBuildParams)
 	if err != nil {
-		build.IsInvalid = true
-		if saveErr := m.Database.Save(&build).Error; saveErr != nil {
+		dbBuild.IsInvalid = true
+		if saveErr := m.Database.Save(&dbBuild).Error; saveErr != nil {
 			c.Error(saveErr)
 		}
 		ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
@@ -492,10 +558,10 @@ func (m projectModule) startProjectBuildHandler(c *gin.Context) {
 		return
 	}
 
-	jobParams, err := getParams(project, build, buildParams, m.Config.InstanceID)
+	dbJobParams, err := getDBJobParams(dbProject, dbBuild, dbBuildParams, m.Config.InstanceID)
 	if err != nil {
-		build.IsInvalid = true
-		if saveErr := m.Database.Save(&build).Error; saveErr != nil {
+		dbBuild.IsInvalid = true
+		if saveErr := m.Database.Save(&dbBuild).Error; saveErr != nil {
 			c.Error(saveErr)
 		}
 		ginutil.WriteProblemError(c, err, problem.Response{
@@ -511,21 +577,21 @@ func (m projectModule) startProjectBuildHandler(c *gin.Context) {
 
 	if m.MessageQueue != nil {
 		if err := m.MessageQueue.PublishMessage(struct {
-			Project    Project
-			Build      Build
-			Parameters []BuildParam
+			Project    response.Project
+			Build      response.Build
+			Parameters []response.BuildParam
 		}{
-			Project:    project,
-			Build:      build,
-			Parameters: buildParams,
+			Project:    dbProjectToResponse(dbProject),
+			Build:      dbBuildToResponse(dbBuild),
+			Parameters: dbBuildParamsToResponses(dbBuildParams),
 		}); err != nil {
 			log.Error().WithError(err).Message("Failed to publish message.")
 			c.Error(err)
-			build.IsInvalid = true
-			if saveErr := m.Database.Save(&build).Error; saveErr != nil {
+			dbBuild.IsInvalid = true
+			if saveErr := m.Database.Save(&dbBuild).Error; saveErr != nil {
 				ginutil.WriteDBWriteError(c, saveErr, fmt.Sprintf(
 					"Failed to marking build with ID %d as invalid after failing to publish event message to message queue.",
-					build.BuildID))
+					dbBuild.BuildID))
 				log.Error().WithError(saveErr).Message("Failed to save build.")
 				return
 			}
@@ -534,14 +600,14 @@ func (m projectModule) startProjectBuildHandler(c *gin.Context) {
 
 	if m.Config.CI.MockTriggerResponse {
 		log.Info().Message("Setting for mocking build triggers was true, mocking CI response.")
-		c.JSON(http.StatusOK, build.buildReferenceWrapper())
+		c.JSON(http.StatusOK, dbBuildToResponseBuildReferenceWrapper(dbBuild))
 		return
 	}
 
-	_, err = triggerBuild(jobParams, m.Config.CI)
+	_, err = triggerBuild(dbJobParams, m.Config.CI)
 	if err != nil {
-		build.IsInvalid = true
-		if saveErr := m.Database.Save(&build).Error; saveErr != nil {
+		dbBuild.IsInvalid = true
+		if saveErr := m.Database.Save(&dbBuild).Error; saveErr != nil {
 			c.Error(saveErr)
 		}
 
@@ -551,16 +617,18 @@ func (m projectModule) startProjectBuildHandler(c *gin.Context) {
 			Status: http.StatusBadGateway,
 			Detail: fmt.Sprintf(
 				"Failed to trigger code execution engine to schedule the build with ID %d on stage %q on branch %q for project with ID %d.",
-				build.BuildID, stageName, branch, projectID),
+				dbBuild.BuildID, stageName, branch, projectID),
 		})
 		return
 	}
 
-	c.JSON(http.StatusOK, build.buildReferenceWrapper())
+	c.JSON(http.StatusOK, dbBuildToResponseBuildReferenceWrapper(dbBuild))
 }
 
-func (b Build) buildReferenceWrapper() BuildReferenceWrapper {
-	return BuildReferenceWrapper{BuildReference: strconv.FormatUint(uint64(b.BuildID), 10)}
+func dbBuildToResponseBuildReferenceWrapper(dbBuild database.Build) response.BuildReferenceWrapper {
+	return response.BuildReferenceWrapper{
+		BuildReference: strconv.FormatUint(uint64(dbBuild.BuildID), 10),
+	}
 }
 
 func (m projectModule) FindBranches(projectID uint) ([]Branch, error) {
@@ -575,16 +643,16 @@ func (m projectModule) FindProvider(providerID uint) (Provider, error) {
 	return provider, nil
 }
 
-func (m projectModule) SaveBuildParams(params []BuildParam) error {
-	for _, p := range params {
-		if err := m.Database.Create(&p).Error; err != nil {
+func (m projectModule) SaveBuildParams(dbParams []database.BuildParam) error {
+	for _, dbParam := range dbParams {
+		if err := m.Database.Create(&dbParam).Error; err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func parseBuildParams(buildID uint, buildDef []byte, vars []byte) ([]BuildParam, error) {
+func parseDBBuildParams(buildID uint, buildDef []byte, vars []byte) ([]database.BuildParam, error) {
 	type BuildDefinition struct {
 		Inputs []struct {
 			Name    string
@@ -597,7 +665,7 @@ func parseBuildParams(buildID uint, buildDef []byte, vars []byte) ([]BuildParam,
 	err := yaml.Unmarshal(buildDef, &def)
 	if err != nil {
 		log.Error().WithError(err).Message("Failed unmarshaling build-def.")
-		return []BuildParam{}, err
+		return nil, err
 	}
 
 	log.Info().
@@ -608,12 +676,12 @@ func parseBuildParams(buildID uint, buildDef []byte, vars []byte) ([]BuildParam,
 	err = json.Unmarshal(vars, &m)
 	if err != nil {
 		log.Error().WithError(err).Message("Failed unmarshaling input variables JSON.")
-		return []BuildParam{}, err
+		return nil, err
 	}
 
-	params := []BuildParam{}
+	var params []database.BuildParam
 	for _, input := range def.Inputs {
-		param := BuildParam{
+		param := database.BuildParam{
 			Name:    input.Name,
 			BuildID: buildID,
 		}
@@ -630,11 +698,11 @@ func parseBuildParams(buildID uint, buildDef []byte, vars []byte) ([]BuildParam,
 	return params, nil
 }
 
-func triggerBuild(params []Param, conf CIConfig) (string, error) {
+func triggerBuild(dbJobParams []database.Param, conf CIConfig) (string, error) {
 	q := ""
-	for _, param := range params {
-		if param.Value != "" {
-			q = fmt.Sprintf("%s&%s=%s", q, url.QueryEscape(param.Name), url.QueryEscape(param.Value))
+	for _, dbJobParam := range dbJobParams {
+		if dbJobParam.Value != "" {
+			q = fmt.Sprintf("%s&%s=%s", q, url.QueryEscape(dbJobParam.Name), url.QueryEscape(dbJobParam.Value))
 		}
 	}
 
@@ -666,64 +734,73 @@ func triggerBuild(params []Param, conf CIConfig) (string, error) {
 	return strBody, err2
 }
 
-func getParams(project Project, build Build, vars []BuildParam, wharfInstanceID string) ([]Param, error) {
+func getDBJobParams(
+	dbProject database.Project,
+	dbBuild database.Build,
+	dbBuildParams []database.BuildParam,
+	wharfInstanceID string,
+) ([]database.Param, error) {
 	var err error
 	var v []byte
-	if len(vars) > 0 {
+	if len(dbBuildParams) > 0 {
 		m := make(map[string]interface{})
 
-		for _, input := range vars {
+		for _, input := range dbBuildParams {
 			m[input.Name] = input.Value
 		}
 
 		v, err = yaml.Marshal(m)
 		if err != nil {
 			log.Error().WithError(err).Message("Failed to marshal input variables YAML for build.")
-			return []Param{}, err
+			return nil, err
 		}
 	} else {
 		log.Debug().Message("Skipping input variables, nothing in body.")
 	}
 
 	token := ""
-	if project.Token != nil {
-		token = project.Token.Token
+	if dbProject.Token != nil {
+		token = dbProject.Token.Token
 	}
 
-	params := []Param{
-		{Type: "string", Name: "REPO_NAME", Value: project.Name},
-		{Type: "string", Name: "REPO_GROUP", Value: strings.ToLower(project.GroupName)},
-		{Type: "string", Name: "REPO_BRANCH", Value: build.GitBranch},
-		{Type: "string", Name: "GIT_BRANCH", Value: build.GitBranch},
-		{Type: "string", Name: "RUN_STAGES", Value: build.Stage},
-		{Type: "string", Name: "BUILD_REF", Value: strconv.FormatUint(uint64(build.BuildID), 10)},
+	dbJobParams := []database.Param{
+		{Type: "string", Name: "REPO_NAME", Value: dbProject.Name},
+		{Type: "string", Name: "REPO_GROUP", Value: strings.ToLower(dbProject.GroupName)},
+		{Type: "string", Name: "REPO_BRANCH", Value: dbBuild.GitBranch},
+		{Type: "string", Name: "GIT_BRANCH", Value: dbBuild.GitBranch},
+		{Type: "string", Name: "RUN_STAGES", Value: dbBuild.Stage},
+		{Type: "string", Name: "BUILD_REF", Value: strconv.FormatUint(uint64(dbBuild.BuildID), 10)},
 		{Type: "string", Name: "VARS", Value: string(v)},
-		{Type: "string", Name: "GIT_FULLURL", Value: project.GitURL},
+		{Type: "string", Name: "GIT_FULLURL", Value: dbProject.GitURL},
 		{Type: "string", Name: "GIT_TOKEN", Value: token},
-		{Type: "string", Name: "WHARF_PROJECT_ID", Value: strconv.FormatUint(uint64(project.ProjectID), 10)},
+		{Type: "string", Name: "WHARF_PROJECT_ID", Value: strconv.FormatUint(uint64(dbProject.ProjectID), 10)},
 		{Type: "string", Name: "WHARF_INSTANCE", Value: wharfInstanceID},
 	}
 
-	if build.Environment.Valid {
-		params = append(params, Param{Type: "string", Name: "ENVIRONMENT", Value: build.Environment.String})
+	if dbBuild.Environment.Valid {
+		dbJobParams = append(dbJobParams, database.Param{
+			Type:  "string",
+			Name:  "ENVIRONMENT",
+			Value: dbBuild.Environment.String,
+		})
 	}
 
-	return params, nil
+	return dbJobParams, nil
 }
 
 var defaultGetBuildsOrderBy = orderby.OrderBy{Column: database.BuildColumns.BuildID, Direction: orderby.Desc}
 
-func (m projectModule) getBuilds(projectID uint, limit int, offset int, orderBySlice []orderby.OrderBy) ([]Build, error) {
-	var builds []Build
+func (m projectModule) getBuilds(projectID uint, limit int, offset int, orderBySlice []orderby.OrderBy) ([]database.Build, error) {
+	var dbBuilds []database.Build
 	var query = m.Database.
-		Where(&Build{ProjectID: projectID}).
+		Where(&database.Build{ProjectID: projectID}).
 		Limit(limit).
 		Offset(offset)
 	query = orderby.ApplyAllToGormQuery(query, orderBySlice, defaultGetBuildsOrderBy)
-	if err := query.Find(&builds).Error; err != nil {
-		return []Build{}, err
+	if err := query.Find(&dbBuilds).Error; err != nil {
+		return nil, err
 	}
-	return builds, nil
+	return dbBuilds, nil
 }
 
 func (m projectModule) getBuildsCount(projectID uint) (int64, error) {
@@ -738,7 +815,51 @@ func (m projectModule) getBuildsCount(projectID uint) (int64, error) {
 	return count, nil
 }
 
-func dbProjectToResponseProject(dbProject database.Project) response.Project {
-	// TODO
-	return response.Project{}
+func dbProjectsToResponses(dbProjects []database.Project) []response.Project {
+	resProjects := make([]response.Project, len(dbProjects))
+	for i, dbProject := range dbProjects {
+		resProjects[i] = dbProjectToResponse(dbProject)
+	}
+	return resProjects
+}
+
+func dbProjectToResponse(dbProject database.Project) response.Project {
+	var resProviderPtr *response.Provider
+	if dbProject.Provider != nil {
+		resProvider := dbProviderToResponse(*dbProject.Provider)
+		resProviderPtr = &resProvider
+	}
+	parsedBuildDef, err := parseBuildDefinition(dbProject.BuildDefinition)
+	if err != nil {
+		log.Warn().
+			WithError(err).
+			WithUint("project", dbProject.ProjectID).
+			Message("Failed to parse build-definition.")
+	}
+	return response.Project{
+		ProjectID:             dbProject.ProjectID,
+		Name:                  dbProject.Name,
+		GroupName:             dbProject.GroupName,
+		Description:           dbProject.Description,
+		AvatarURL:             dbProject.AvatarURL,
+		TokenID:               dbProject.TokenID,
+		ProviderID:            dbProject.ProviderID,
+		Provider:              resProviderPtr,
+		BuildDefinition:       dbProject.BuildDefinition,
+		Branches:              dbBranchesToResponses(dbProject.Branches),
+		GitURL:                dbProject.GitURL,
+		ParsedBuildDefinition: parsedBuildDef,
+	}
+}
+
+func parseBuildDefinition(buildDef string) (interface{}, error) {
+	if buildDef == "" {
+		return nil, nil
+	}
+	var parsed interface{}
+	err := yaml.Unmarshal([]byte(buildDef), &parsed)
+	if err != nil {
+		return nil, err
+	}
+	return parsed, nil
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"testing"
 
+	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/guregu/null.v4"
@@ -16,7 +17,7 @@ func TestParseBuildParams(t *testing.T) {
 		buildID  uint
 		buildDef []byte
 		params   []byte
-		want     []BuildParam
+		want     []database.BuildParam
 	}
 
 	defaultBuildDef := []byte(`
@@ -33,7 +34,7 @@ inputs:
 			buildID:  buildID,
 			buildDef: defaultBuildDef,
 			params:   []byte(`{"message":"test"}`),
-			want: []BuildParam{{
+			want: []database.BuildParam{{
 				BuildParamID: 0,
 				BuildID:      buildID,
 				Name:         "message",
@@ -45,7 +46,7 @@ inputs:
 			buildID:  buildID,
 			buildDef: defaultBuildDef,
 			params:   []byte(`{}`),
-			want: []BuildParam{{
+			want: []database.BuildParam{{
 				BuildParamID: 0,
 				BuildID:      buildID,
 				Name:         "message",
@@ -56,7 +57,7 @@ inputs:
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := parseBuildParams(tc.buildID, tc.buildDef, tc.params)
+			got, err := parseDBBuildParams(tc.buildID, tc.buildDef, tc.params)
 			require.Nil(t, err)
 			assert.Equal(t, len(tc.want), len(got))
 
@@ -74,8 +75,8 @@ func TestGetParamsWithOptionalEnvironment(t *testing.T) {
 		want        bool
 	}
 
-	project := Project{}
-	vars := []BuildParam{}
+	project := database.Project{}
+	vars := []database.BuildParam{}
 
 	tests := []testCase{
 		{
@@ -92,11 +93,11 @@ func TestGetParamsWithOptionalEnvironment(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			build := Build{
+			build := database.Build{
 				Environment: tc.environment,
 			}
 
-			params, err := getParams(project, build, vars, wharfInstanceID)
+			params, err := getDBJobParams(project, build, vars, wharfInstanceID)
 			require.Nil(t, err)
 
 			hasEnv := false

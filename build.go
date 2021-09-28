@@ -362,6 +362,14 @@ func setStatusDate(build *database.Build, statusID database.BuildStatus) {
 	}
 }
 
+func dbBuildsToResponses(dbBuilds []database.Build) []response.Build {
+	resBuilds := make([]response.Build, len(dbBuilds))
+	for i, dbBuild := range dbBuilds {
+		resBuilds[i] = dbBuildToResponse(dbBuild)
+	}
+	return resBuilds
+}
+
 func dbBuildToResponse(dbBuild database.Build) response.Build {
 	return response.Build{
 		BuildID:             dbBuild.BuildID,
