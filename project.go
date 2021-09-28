@@ -32,18 +32,6 @@ type projectModule struct {
 	Config       *Config
 }
 
-// PaginatedBuilds is a list of builds as well as an explicit total count field.
-type PaginatedBuilds struct {
-	Builds     *[]Build `json:"builds"`
-	TotalCount int64    `json:"totalCount"`
-}
-
-// BuildReferenceWrapper holds a build reference. A unique identifier to a
-// build.
-type BuildReferenceWrapper struct {
-	BuildReference string `json:"buildRef"`
-}
-
 func (m projectModule) Register(g *gin.RouterGroup) {
 	projects := g.Group("/projects")
 	{
@@ -631,18 +619,6 @@ func dbBuildToResponseBuildReferenceWrapper(dbBuild database.Build) response.Bui
 	}
 }
 
-func (m projectModule) FindBranches(projectID uint) ([]Branch, error) {
-	var branches []Branch
-	m.Database.Where(&Branch{ProjectID: projectID}).Find(&branches)
-	return branches, nil
-}
-
-func (m projectModule) FindProvider(providerID uint) (Provider, error) {
-	var provider Provider
-	m.Database.Where(&Provider{ProviderID: providerID}).Find(&provider)
-	return provider, nil
-}
-
 func (m projectModule) SaveBuildParams(dbParams []database.BuildParam) error {
 	for _, dbParam := range dbParams {
 		if err := m.Database.Create(&dbParam).Error; err != nil {
@@ -806,8 +782,8 @@ func (m projectModule) getBuilds(projectID uint, limit int, offset int, orderByS
 func (m projectModule) getBuildsCount(projectID uint) (int64, error) {
 	var count int64
 	if err := m.Database.
-		Model(&Build{}).
-		Where(&Build{ProjectID: projectID}).
+		Model(&database.Build{}).
+		Where(&database.Build{ProjectID: projectID}).
 		Count(&count).
 		Error; err != nil {
 		return 0, err

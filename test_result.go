@@ -286,8 +286,8 @@ func (m buildTestResultModule) getBuildAllTestResultListSummaryHandler(c *gin.Co
 	}
 
 	err := m.Database.
-		Model(&TestResultSummary{}).
-		Where(&TestResultSummary{BuildID: buildID}).
+		Model(&database.TestResultSummary{}).
+		Where(&database.TestResultSummary{BuildID: buildID}).
 		Select("sum(failed) as Failed, sum(passed) as Passed, sum(skipped) as Skipped").
 		Scan(&dbListSummary).
 		Error

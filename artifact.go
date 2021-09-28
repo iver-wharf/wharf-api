@@ -168,10 +168,10 @@ func (m artifactModule) getBuildTestResultListHandler(c *gin.Context) {
 		return
 	}
 
-	testRunFiles := []Artifact{}
+	testRunFiles := []database.Artifact{}
 
 	err := m.Database.
-		Where(&Artifact{BuildID: buildID}).
+		Where(&database.Artifact{BuildID: buildID}).
 		Where(database.ArtifactColumns.FileName+" LIKE ?", "%.trx").
 		Find(&testRunFiles).
 		Error
