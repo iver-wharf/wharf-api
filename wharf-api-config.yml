@@ -1,0 +1,25 @@
+# See config.go for reference on all config options
+
+instanceId: local
+
+db:
+  name: wharf
+  host: localhost
+  port: 5432
+  username: postgres
+  # This password correlates to the one used in
+  # https://github.com/iver-wharf/wharf-docker-compose
+  # It is not a leaked password :)
+  password: OL2AEn6lgj6ekajgKJIOanefgegnksngpoetPIEQjhankf7412
+  log: true
+
+mq:
+  enabled: false
+
+ci:
+  mockTriggerResponse: true
+
+http:
+  bindAddress: :5001
+  cors:
+    allowAllOrigins: true
