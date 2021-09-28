@@ -62,11 +62,11 @@ type Build struct {
 	StatusID            int                 `json:"statusId" enum:"0,1,2,3"`
 	Status              BuildStatus         `json:"status" enum:"Scheduling,Running,Completed,Failed"`
 	ProjectID           uint                `json:"projectId"`
-	ScheduledOn         null.Time           `json:"scheduledOn" format:"date-time"`
-	StartedOn           null.Time           `json:"startedOn" format:"date-time"`
-	CompletedOn         null.Time           `json:"finishedOn" format:"date-time"`
+	ScheduledOn         null.Time           `json:"scheduledOn" format:"date-time" extensions:"x-nullable"`
+	StartedOn           null.Time           `json:"startedOn" format:"date-time" extensions:"x-nullable"`
+	CompletedOn         null.Time           `json:"finishedOn" format:"date-time" extensions:"x-nullable"`
 	GitBranch           string              `json:"gitBranch"`
-	Environment         null.String         `json:"environment" swaggertype:"string"`
+	Environment         null.String         `json:"environment" swaggertype:"string" extensions:"x-nullable"`
 	Stage               string              `json:"stage"`
 	Params              []BuildParam        `json:"params"`
 	IsInvalid           bool                `json:"isInvalid"`
@@ -139,11 +139,11 @@ type Project struct {
 	AvatarURL             string      `json:"avatarUrl"`
 	TokenID               uint        `json:"tokenId"`
 	ProviderID            uint        `json:"providerId"`
-	Provider              *Provider   `json:"provider"`
+	Provider              *Provider   `json:"provider" extensions:"x-nullable"`
 	BuildDefinition       string      `json:"buildDefinition"`
 	Branches              []Branch    `json:"branches"`
 	GitURL                string      `json:"gitUrl"`
-	ParsedBuildDefinition interface{} `json:"build" swaggertype:"object"`
+	ParsedBuildDefinition interface{} `json:"build" swaggertype:"object" extensions:"x-nullable"`
 }
 
 // Provider holds metadata about a connection to a remote provider. Some of
@@ -198,9 +198,9 @@ type TestResultDetail struct {
 	ArtifactID         uint             `json:"artifactId"`
 	BuildID            uint             `json:"buildId"`
 	Name               string           `json:"name"`
-	Message            null.String      `json:"message" swaggertype:"string"`
-	StartedOn          null.Time        `json:"startedOn" format:"date-time"`
-	CompletedOn        null.Time        `json:"completedOn" format:"date-time"`
+	Message            null.String      `json:"message" swaggertype:"string" extensions:"x-nullable"`
+	StartedOn          null.Time        `json:"startedOn" format:"date-time" extensions:"x-nullable"`
+	CompletedOn        null.Time        `json:"completedOn" format:"date-time" extensions:"x-nullable"`
 	Status             TestResultStatus `json:"status" enum:"Failed,Passed,Skipped"`
 }
 
