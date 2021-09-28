@@ -159,6 +159,7 @@ func (m branchModule) putBranches(reqBranches []request.Branch) ([]database.Bran
 			branchNamesSet[reqBranch.Name] = struct{}{}
 			var count int64
 			err := m.Database.
+				Model(&database.Branch{}).
 				Where(&database.Branch{
 					ProjectID: reqBranch.ProjectID,
 					TokenID:   reqBranch.TokenID,
