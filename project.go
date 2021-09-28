@@ -427,7 +427,6 @@ func (m projectModule) updateProjectHandler(c *gin.Context) {
 		}
 	}
 
-	dbExistingProject.ProjectID = reqProjectUpdate.ProjectID
 	dbExistingProject.Name = reqProjectUpdate.Name
 	dbExistingProject.GroupName = reqProjectUpdate.GroupName
 	dbExistingProject.Description = reqProjectUpdate.Description
