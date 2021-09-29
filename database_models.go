@@ -86,6 +86,8 @@ type Build struct {
 	Params              []BuildParam        `gorm:"foreignKey:BuildID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"params"`
 	IsInvalid           bool                `gorm:"not null;default:false" json:"isInvalid"`
 	TestResultSummaries []TestResultSummary `gorm:"foreignKey:BuildID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"testResultSummaries"`
+	// TestResultListSummary is populated manually after fetching from the database.
+	TestResultListSummary TestResultListSummary `gorm:"-" json:"testResultListSummary"`
 	// Status is populated when marshalled via MarshalJSON
 	Status string `gorm:"-" json:"status"`
 }
