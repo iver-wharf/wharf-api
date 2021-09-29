@@ -6,12 +6,6 @@ import (
 	"gopkg.in/guregu/null.v4"
 )
 
-// Consts conventions in this file:
-//  - Go struct field name:           {type}Field{FieldName}
-//  - Association struct field names: {type}Assoc{FieldName}
-//  - JSON property names:            {type}JSON{FieldName}
-//  - SQL column names:               {type}Column{FieldName}
-
 // Constraint convention in this file:
 //
 // When applying constraints using gorm tags, like:
@@ -25,13 +19,6 @@ import (
 // One seems to take precedence, but to make sure and to keep the code
 // consistent we add it to both referencing fields.
 
-const (
-	providerFieldName      = "Name"
-	providerFieldURL       = "URL"
-	providerFieldUploadURL = "UploadURL"
-	providerFieldTokenID   = "TokenID"
-)
-
 // Provider holds metadata about a connection to a remote provider. Some of
 // importance are the URL field of where to find the remote, and the token field
 // used to authenticate.
@@ -44,27 +31,12 @@ type Provider struct {
 	Token      *Token `gorm:"foreignKey:TokenID;constraint:OnUpdate:RESTRICT,OnDelete:RESTRICT" json:"-"`
 }
 
-const (
-	tokenFieldToken    = "Token"
-	tokenFieldUserName = "UserName"
-)
-
 // Token holds credentials for a remote provider.
 type Token struct {
 	TokenID  uint   `gorm:"primaryKey" json:"tokenId"`
 	Token    string `gorm:"size:500; not null" json:"token" format:"password"`
 	UserName string `gorm:"size:500" json:"userName"`
 }
-
-const (
-	projectFieldProjectID = "ProjectID"
-	projectFieldTokenID   = "TokenID"
-	projectFieldName      = "Name"
-	projectFieldGroupName = "GroupName"
-	projectAssocProvider  = "Provider"
-	projectAssocBranches  = "Branches"
-	projectAssocToken     = "Token"
-)
 
 // Project holds data about an imported project. A lot of the data is expected
 // to be populated with data from the remote provider, such as the description
@@ -86,13 +58,6 @@ type Project struct {
 	ParsedBuildDefinition interface{} `gorm:"-" json:"build"`
 }
 
-const (
-	branchFieldProjectID = "ProjectID"
-	branchFieldName      = "Name"
-	branchFieldDefault   = "Default"
-	branchFieldTokenID   = "TokenID"
-)
-
 // Branch is a single branch in the VCS that can be targeted during builds.
 // For example a Git branch.
 type Branch struct {
@@ -103,24 +68,6 @@ type Branch struct {
 	Default   bool     `gorm:"not null" json:"default"`
 	TokenID   uint     `gorm:"nullable;default:NULL;index:branch_idx_token_id" json:"tokenId"`
 	Token     Token    `gorm:"foreignKey:TokenID;constraint:OnUpdate:RESTRICT,OnDelete:RESTRICT" json:"-"`
-}
-
-const (
-	buildAssocParams              = "Params"
-	buildAssocTestResultSummaries = "TestResultSummaries"
-	buildColumnBuildID            = "build_id"
-	buildColumnName               = "name"
-)
-
-var buildJSONToColumns = map[string]string{
-	"buildId":     buildColumnBuildID,
-	"environment": "environment",
-	"finishedOn":  "completed_on",
-	"scheduledOn": "scheduled_on",
-	"stage":       "stage",
-	"startedOn":   "started_on",
-	"statusId":    "status_id",
-	"isInvalid":   "is_invalid",
 }
 
 // Build holds data about the state of a build. Which parameters was used to
@@ -171,11 +118,6 @@ type Param struct {
 	Value        string `json:"value"`
 	DefaultValue string `json:"defaultValue"`
 }
-
-const (
-	artifactColumnArtifactID = "artifact_id"
-	artifactColumnFileName   = "file_name"
-)
 
 // Artifact holds the binary data as well as metadata about that binary such as
 // the file name and which build it belongs to.

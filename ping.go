@@ -7,8 +7,8 @@ import (
 type healthModule struct{}
 
 func (m healthModule) Register(g *gin.RouterGroup) {
-	g.GET("/ping", m.ping)
-	g.GET("/health", m.health)
+	g.GET("/ping", m.pingHandler)
+	g.GET("/health", m.healthHandler)
 }
 
 // DeprecatedRegister adds API health-related endpoints to a Gin-Gonic engine.
@@ -16,8 +16,8 @@ func (m healthModule) Register(g *gin.RouterGroup) {
 // Deprecated: Not part of the /api group for endpoints. Tentatively planned
 // for complete removal in v6.
 func (m healthModule) DeprecatedRegister(e *gin.Engine) {
-	e.GET("/", m.ping)
-	e.GET("/health", m.health)
+	e.GET("/", m.pingHandler)
+	e.GET("/health", m.healthHandler)
 }
 
 // Ping pongs.
@@ -25,14 +25,15 @@ type Ping struct {
 	Message string `json:"message"`
 }
 
-// ping godoc
+// pingHandler godoc
+// @id pingHandler
 // @summary Ping
 // @description You guessed it. Pong.
 // @tags health
 // @produce json
 // @success 200 {object} Ping
 // @router /ping [get]
-func (m healthModule) ping(c *gin.Context) {
+func (m healthModule) pingHandler(c *gin.Context) {
 	c.JSON(200, Ping{Message: "pong"})
 }
 
@@ -43,13 +44,14 @@ type HealthStatus struct {
 	IsHealthy bool   `example:"true" json:"isHealthy"`
 }
 
-// health godoc
+// healthHandler godoc
+// @id getHealth
 // @summary Healthcheck for the API
 // @description To be used by Kubernetes or alike.
 // @tags health
 // @produce json
 // @success 200 {object} HealthStatus
 // @router /health [get]
-func (m healthModule) health(c *gin.Context) {
+func (m healthModule) healthHandler(c *gin.Context) {
 	c.JSON(200, HealthStatus{Message: "API is healthy.", IsHealthy: true})
 }
