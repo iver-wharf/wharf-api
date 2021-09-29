@@ -3,15 +3,16 @@ package main
 import (
 	"fmt"
 
+	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"gorm.io/gorm"
 )
 
 func runDatabaseMigrations(db *gorm.DB) error {
 	tables := []interface{}{
-		&Token{}, &Provider{}, &Project{},
-		&Branch{}, &Build{}, &Log{},
-		&Artifact{}, &BuildParam{}, &Param{},
-		&TestResultDetail{}, &TestResultSummary{}}
+		&database.Token{}, &database.Provider{}, &database.Project{},
+		&database.Branch{}, &database.Build{}, &database.Log{},
+		&database.Artifact{}, &database.BuildParam{}, &database.Param{},
+		&database.TestResultDetail{}, &database.TestResultSummary{}}
 
 	db.DisableForeignKeyConstraintWhenMigrating = true
 	if err := db.AutoMigrate(tables...); err != nil {

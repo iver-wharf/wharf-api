@@ -11,6 +11,7 @@ import (
 
 	"github.com/dustin/go-broadcast"
 	"github.com/gin-gonic/gin"
+	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"gorm.io/gorm"
 
@@ -53,15 +54,15 @@ type buildModule struct {
 func (m buildModule) Register(g *gin.RouterGroup) {
 	builds := g.Group("/builds")
 	{
-		builds.POST("/search", m.postBuildSearchHandler)
+		builds.POST("/search", m.searchBuildListHandler)
 	}
 
 	build := g.Group("/build/:buildId")
 	{
 		build.GET("", m.getBuildHandler)
-		build.PUT("", m.putBuildStatus)
-		build.POST("/log", m.postBuildLogHandler)
-		build.GET("/log", m.getLogHandler)
+		build.PUT("", m.updateBuildHandler)
+		build.POST("/log", m.createBuildLogHandler)
+		build.GET("/log", m.getBuildLogListHandler)
 		build.GET("/stream", m.streamBuildLogHandler)
 
 		artifacts := artifactModule{m.Database}
@@ -95,6 +96,7 @@ func build(buildID uint) broadcast.Broadcaster {
 }
 
 // getBuildHandler godoc
+// @id getBuild
 // @summary Finds build by build ID
 // @tags build
 // @param buildId path int true "build id"
@@ -130,11 +132,17 @@ func (m buildModule) getBuild(buildID uint) (Build, error) {
 	var build Build
 	if err := m.Database.
 		Where(&Build{BuildID: buildID}).
-		Preload(buildAssocParams).
+		Preload(database.BuildFields.TestResultSummaries).
+		Preload(database.BuildFields.Params).
 		First(&build).
 		Error; err != nil {
 		return Build{}, err
 	}
+	listSummary, err := getTestResultListSummary(m.Database, buildID)
+	if err != nil {
+		return Build{}, err
+	}
+	build.TestResultListSummary = listSummary
 	return build, nil
 }
 
@@ -149,18 +157,20 @@ func (m buildModule) getLogs(buildID uint) ([]Log, error) {
 	return logs, nil
 }
 
-// postBuildSearchHandler godoc
+// searchBuildListHandler godoc
+// @id searchBuildList
 // @summary NOT IMPLEMENTED YET
 // @tags build
 // @accept json
 // @produce json
 // @success 501 "Not Implemented"
 // @router /builds/search [post]
-func (m buildModule) postBuildSearchHandler(c *gin.Context) {
+func (m buildModule) searchBuildListHandler(c *gin.Context) {
 	c.Status(http.StatusNotImplemented)
 }
 
-// getLogHandler godoc
+// getBuildLogListHandler godoc
+// @id getBuildLogList
 // @summary Finds logs for build with selected build ID
 // @tags build
 // @param buildId path int true "build id"
@@ -169,7 +179,7 @@ func (m buildModule) postBuildSearchHandler(c *gin.Context) {
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildId}/log [get]
-func (m buildModule) getLogHandler(c *gin.Context) {
+func (m buildModule) getBuildLogListHandler(c *gin.Context) {
 	buildID, ok := ginutil.ParseParamUint(c, "buildId")
 	if !ok {
 		return
@@ -188,6 +198,7 @@ func (m buildModule) getLogHandler(c *gin.Context) {
 }
 
 // streamBuildLogHandler godoc
+// @id streamBuildLog
 // @summary Opens stream listener
 // @tags build
 // @param buildId path int true "build id"
@@ -217,7 +228,8 @@ func (m buildModule) streamBuildLogHandler(c *gin.Context) {
 
 }
 
-// postBuildLogHandler godoc
+// createBuildLogHandler godoc
+// @id createBuildLog
 // @summary Post a log to selected build
 // @tags build
 // @param buildId path int true "build id"
@@ -227,7 +239,7 @@ func (m buildModule) streamBuildLogHandler(c *gin.Context) {
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildId}/log [post]
-func (m buildModule) postBuildLogHandler(c *gin.Context) {
+func (m buildModule) createBuildLogHandler(c *gin.Context) {
 	buildID, ok := ginutil.ParseParamUint(c, "buildId")
 	if !ok {
 		return
@@ -261,7 +273,8 @@ func (m buildModule) postBuildLogHandler(c *gin.Context) {
 	c.Status(http.StatusCreated)
 }
 
-// putBuildStatus godoc
+// updateBuildHandler godoc
+// @id updateBuild
 // @summary Partially update specific build
 // @tags build
 // @param buildId path uint true "build id"
@@ -272,7 +285,7 @@ func (m buildModule) postBuildLogHandler(c *gin.Context) {
 // @failure 404 {object} problem.Response "Build not found"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildId} [put]
-func (m buildModule) putBuildStatus(c *gin.Context) {
+func (m buildModule) updateBuildHandler(c *gin.Context) {
 	buildID, ok := ginutil.ParseParamUint(c, "buildId")
 	if !ok {
 		return
@@ -359,4 +372,21 @@ func setStatusDate(build *Build, statusID BuildStatus) {
 	case BuildCompleted, BuildFailed:
 		build.CompletedOn.SetValid(now)
 	}
+}
+
+func getTestResultListSummary(db *gorm.DB, buildID uint) (TestResultListSummary, error) {
+	listSummary := TestResultListSummary{BuildID: buildID}
+	if err := db.
+		Model(&TestResultSummary{}).
+		Select("sum(failed) as Failed, sum(passed) as Passed, sum(skipped) as Skipped").
+		Where(&listSummary).
+		Scan(&listSummary).
+		Error; err != nil {
+		return TestResultListSummary{}, err
+	}
+	listSummary.Total =
+		listSummary.Failed +
+			listSummary.Passed +
+			listSummary.Skipped
+	return listSummary, nil
 }

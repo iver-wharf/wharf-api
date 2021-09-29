@@ -17,6 +17,7 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/gin-gonic/gin"
 	"github.com/iver-wharf/messagebus-go"
+	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/iver-wharf/wharf-api/pkg/orderby"
 	"github.com/iver-wharf/wharf-core/pkg/problem"
 	"gopkg.in/guregu/null.v4"
@@ -44,50 +45,42 @@ type BuildReferenceWrapper struct {
 func (m projectModule) Register(g *gin.RouterGroup) {
 	projects := g.Group("/projects")
 	{
-		projects.GET("", m.getProjectsHandler)
-		projects.POST("/search", m.searchProjectsHandler)
-		projects.GET("/:projectId/builds", m.getBuildsSliceHandler)
+		projects.GET("", m.getProjectListHandler)
+		projects.POST("/search", m.searchProjectListHandler)
+		projects.GET("/:projectId/builds", m.getProjectBuildListHandler)
 	}
 
 	project := g.Group("/project")
 	{
 		project.GET("/:projectId", m.getProjectHandler)
-		project.POST("", m.postProjectHandler)
+		project.POST("", m.createProjectHandler)
 		project.DELETE("/:projectId", m.deleteProjectHandler)
-		project.PUT("", m.putProjectHandler)
-		project.POST("/:projectId/:stage/run", m.runStageHandler)
+		project.PUT("", m.updateProjectHandler)
+		project.POST("/:projectId/:stage/run", m.startProjectBuildHandler)
 	}
 }
 
 func (m projectModule) FindProjectByID(id uint) (Project, error) {
 	var project Project
-	err := m.Database.Set("gorm:auto_preload", false).
+	err := m.databaseProjectPreloaded().
 		Where(&Project{ProjectID: id}).
-		Preload(projectAssocProvider).
-		Preload(projectAssocBranches, func(db *gorm.DB) *gorm.DB {
-			return db.Order(buildColumnName)
-		}).
-		Preload(projectAssocToken).
 		First(&project).
 		Error
 
 	return project, err
 }
 
-// getProjectsHandler godoc
+// getProjectListHandler godoc
+// @id getProjectList
 // @summary Returns all projects from database
 // @tags project
 // @success 200 {array} Project
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @router /projects [get]
-func (m projectModule) getProjectsHandler(c *gin.Context) {
+func (m projectModule) getProjectListHandler(c *gin.Context) {
 	var projects []Project
-	err := m.Database.
-		Preload(projectAssocProvider).
-		Preload(projectAssocBranches, func(db *gorm.DB) *gorm.DB {
-			return db.Order(buildColumnName)
-		}).
+	err := m.databaseProjectPreloaded().
 		Find(&projects).
 		Error
 	if err != nil {
@@ -97,14 +90,24 @@ func (m projectModule) getProjectsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, projects)
 }
 
-// searchProjectsHandler godoc
+func (m projectModule) databaseProjectPreloaded() *gorm.DB {
+	return m.Database.Set("gorm:auto_preload", false).
+		Preload(database.ProjectFields.Provider).
+		Preload(database.ProjectFields.Branches, func(db *gorm.DB) *gorm.DB {
+			return db.Order(database.BranchColumns.BranchID)
+		}).
+		Preload(database.ProjectFields.Token)
+}
+
+// searchProjectListHandler godoc
+// @id searchProjectList
 // @summary Search for projects from database
 // @tags project
 // @success 200 {array} Project
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @router /projects/search [post]
-func (m projectModule) searchProjectsHandler(c *gin.Context) {
+func (m projectModule) searchProjectListHandler(c *gin.Context) {
 	var query Project
 	if err := c.ShouldBindJSON(&query); err != nil {
 		ginutil.WriteInvalidBindError(c, err,
@@ -114,7 +117,7 @@ func (m projectModule) searchProjectsHandler(c *gin.Context) {
 	var projects []Project
 	err := m.Database.
 		Where(&query).
-		Preload(projectAssocProvider).
+		Preload(database.ProjectFields.Provider).
 		Find(&projects).
 		Error
 	if err != nil {
@@ -124,7 +127,19 @@ func (m projectModule) searchProjectsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, projects)
 }
 
-// getBuildsSliceHandler godoc
+var buildJSONToColumns = map[string]string{
+	"buildId":     database.BuildColumns.BuildID,
+	"environment": database.BuildColumns.Environment,
+	"finishedOn":  database.BuildColumns.CompletedOn,
+	"scheduledOn": database.BuildColumns.ScheduledOn,
+	"startedOn":   database.BuildColumns.StartedOn,
+	"stage":       database.BuildColumns.Stage,
+	"statusId":    database.BuildColumns.StatusID,
+	"isInvalid":   database.BuildColumns.IsInvalid,
+}
+
+// getProjectBuildListHandler godoc
+// @id getProjectBuildList
 // @summary Get slice of builds.
 // @tags project
 // @param projectId path int true "project ID"
@@ -136,7 +151,7 @@ func (m projectModule) searchProjectsHandler(c *gin.Context) {
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /projects/{projectId}/builds [get]
-func (m projectModule) getBuildsSliceHandler(c *gin.Context) {
+func (m projectModule) getProjectBuildListHandler(c *gin.Context) {
 	projectID, ok := ginutil.ParseParamUint(c, "projectId")
 	if !ok {
 		return
@@ -180,6 +195,7 @@ func (m projectModule) getBuildsSliceHandler(c *gin.Context) {
 }
 
 // getProjectHandler godoc
+// @id getProject
 // @summary Returns project with selected project ID
 // @tags project
 // @param projectId path int true "project ID"
@@ -205,7 +221,8 @@ func (m projectModule) getProjectHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, &project)
 }
 
-// postProjectHandler godoc
+// createProjectHandler godoc
+// @id createProject
 // @summary Updates project.
 // @description It finds project by ID or if ID is set to 0 it takes group id, token id and name.
 // @description First found project will have updated avatar, description and build definition
@@ -220,7 +237,7 @@ func (m projectModule) getProjectHandler(c *gin.Context) {
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /project [post]
-func (m projectModule) postProjectHandler(c *gin.Context) {
+func (m projectModule) createProjectHandler(c *gin.Context) {
 	var project Project
 
 	if err := c.ShouldBindJSON(&project); err != nil {
@@ -232,7 +249,7 @@ func (m projectModule) postProjectHandler(c *gin.Context) {
 	var existingProject Project
 	if project.ProjectID != 0 {
 		err := m.Database.
-			Where(&project, projectFieldProjectID).
+			Where(&project, database.ProjectFields.ProjectID).
 			First(&existingProject).
 			Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -248,7 +265,7 @@ func (m projectModule) postProjectHandler(c *gin.Context) {
 		}
 	} else {
 		err := m.Database.
-			Where(&project, projectFieldGroupName, projectFieldTokenID, projectFieldName).
+			Where(&project, database.ProjectFields.GroupName, database.ProjectFields.TokenID, database.ProjectFields.Name).
 			First(&existingProject).
 			Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -278,6 +295,7 @@ func (m projectModule) postProjectHandler(c *gin.Context) {
 }
 
 // deleteProjectHandler godoc
+// @id deleteProject
 // @summary Delete project with selected project ID
 // @tags project
 // @param projectId path int true "project ID"
@@ -310,7 +328,8 @@ func (m projectModule) deleteProjectHandler(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-// putProjectHandler godoc
+// updateProjectHandler godoc
+// @id updateProject
 // @summary Adds project when not exists.
 // @description It finds project by ID or if ID is set to 0 it takes group name.
 // @description First found project will be returned. If not found project will be added into database.
@@ -325,7 +344,7 @@ func (m projectModule) deleteProjectHandler(c *gin.Context) {
 // @failure 404 {object} problem.Response "Project to update was not found"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /project [put]
-func (m projectModule) putProjectHandler(c *gin.Context) {
+func (m projectModule) updateProjectHandler(c *gin.Context) {
 	var project Project
 	err := c.ShouldBindJSON(&project)
 	if err != nil {
@@ -349,7 +368,7 @@ func (m projectModule) putProjectHandler(c *gin.Context) {
 		}
 	} else {
 		err := m.Database.
-			Where(&project, projectFieldName, projectFieldGroupName).
+			Where(&project, database.ProjectFields.Name, database.ProjectFields.GroupName).
 			First(&existingProject).
 			Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -374,7 +393,8 @@ func (m projectModule) putProjectHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, project)
 }
 
-// runStageHandler godoc
+// startProjectBuildHandler godoc
+// @id startProjectBuild
 // @summary Responsible for run stage environment for selected project
 // @tags project
 // @accept json
@@ -389,7 +409,7 @@ func (m projectModule) putProjectHandler(c *gin.Context) {
 // @failure 404 {object} problem.Response "Project was not found"
 // @failure 502 {object} problem.Response "Database or code execution engine is unreachable"
 // @router /project/{projectId}/{stage}/run [post]
-func (m projectModule) runStageHandler(c *gin.Context) {
+func (m projectModule) startProjectBuildHandler(c *gin.Context) {
 	projectID, ok := ginutil.ParseParamUint(c, "projectId")
 	if !ok {
 		return
@@ -690,18 +710,28 @@ func getParams(project Project, build Build, vars []BuildParam, wharfInstanceID 
 	return params, nil
 }
 
-var defaultGetBuildsOrderBy = orderby.OrderBy{Column: buildColumnBuildID, Direction: orderby.Desc}
+var defaultGetBuildsOrderBy = orderby.OrderBy{Column: database.BuildColumns.BuildID, Direction: orderby.Desc}
 
 func (m projectModule) getBuilds(projectID uint, limit int, offset int, orderBySlice []orderby.OrderBy) ([]Build, error) {
 	var builds []Build
 	var query = m.Database.
 		Where(&Build{ProjectID: projectID}).
+		Preload(database.BuildFields.TestResultSummaries).
 		Limit(limit).
 		Offset(offset)
 	query = orderby.ApplyAllToGormQuery(query, orderBySlice, defaultGetBuildsOrderBy)
 	if err := query.Find(&builds).Error; err != nil {
 		return []Build{}, err
 	}
+
+	for i := range builds {
+		listSummary, err := getTestResultListSummary(m.Database, builds[i].BuildID)
+		if err != nil {
+			return []Build{}, err
+		}
+		builds[i].TestResultListSummary = listSummary
+	}
+
 	return builds, nil
 }
 

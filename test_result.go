@@ -35,19 +35,20 @@ type TestResultListSummary struct {
 func (m buildTestResultModule) Register(r gin.IRouter) {
 	testResult := r.Group("/test-result")
 	{
-		testResult.POST("/", m.postBuildTestResultDataHandler)
+		testResult.POST("/", m.createBuildTestResultHandler)
 
-		testResult.GET("/detail", m.getBuildAllTestResultDetailsHandler)
+		testResult.GET("/detail", m.getBuildAllTestResultDetailListHandler)
 
-		testResult.GET("/summary", m.getBuildAllTestResultSummariesHandler)
+		testResult.GET("/summary", m.getBuildAllTestResultSummaryListHandler)
 		testResult.GET("/summary/:artifactId", m.getBuildTestResultSummaryHandler)
-		testResult.GET("/summary/:artifactId/detail", m.getBuildTestResultDetailsHandler)
+		testResult.GET("/summary/:artifactId/detail", m.getBuildTestResultDetailListHandler)
 
-		testResult.GET("/list-summary", m.getBuildTestResultListSummaryHandler)
+		testResult.GET("/list-summary", m.getBuildAllTestResultListSummaryHandler)
 	}
 }
 
-// postBuildTestResultDataHandler godoc
+// createBuildTestResultHandler godoc
+// @id createBuildTestResult
 // @summary Post test result data
 // @tags test-result
 // @accept multipart/form-data
@@ -57,7 +58,7 @@ func (m buildTestResultModule) Register(r gin.IRouter) {
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 502 {object} problem.Response "Database unreachable or bad gateway"
 // @router /build/{buildId}/test-result [post]
-func (m buildTestResultModule) postBuildTestResultDataHandler(c *gin.Context) {
+func (m buildTestResultModule) createBuildTestResultHandler(c *gin.Context) {
 	buildID, ok := ginutil.ParseParamUint(c, "buildId")
 	if !ok {
 		return
@@ -132,7 +133,8 @@ func (m buildTestResultModule) postBuildTestResultDataHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, artifactMetadataList)
 }
 
-// getBuildAllTestResultDetailsHandler godoc
+// getBuildAllTestResultDetailListHandler godoc
+// @id getBuildAllTestResultDetailList
 // @summary Get all test result details for specified build
 // @tags test-result
 // @param buildId path int true "Build ID"
@@ -140,7 +142,7 @@ func (m buildTestResultModule) postBuildTestResultDataHandler(c *gin.Context) {
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildId}/test-result/detail [get]
-func (m buildTestResultModule) getBuildAllTestResultDetailsHandler(c *gin.Context) {
+func (m buildTestResultModule) getBuildAllTestResultDetailListHandler(c *gin.Context) {
 	buildID, ok := ginutil.ParseParamUint(c, "buildId")
 	if !ok {
 		return
@@ -162,7 +164,8 @@ func (m buildTestResultModule) getBuildAllTestResultDetailsHandler(c *gin.Contex
 	c.JSON(http.StatusOK, details)
 }
 
-// getBuildAllTestResultSummariesHandler godoc
+// getBuildAllTestResultSummaryListHandler godoc
+// @id getBuildAllTestResultSummaryList
 // @summary Get all test result summaries for specified build
 // @tags test-result
 // @param buildId path int true "Build ID"
@@ -170,7 +173,7 @@ func (m buildTestResultModule) getBuildAllTestResultDetailsHandler(c *gin.Contex
 // @failure 400 {object} problem.Response "Bad Request"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildId}/test-result/summary [get]
-func (m buildTestResultModule) getBuildAllTestResultSummariesHandler(c *gin.Context) {
+func (m buildTestResultModule) getBuildAllTestResultSummaryListHandler(c *gin.Context) {
 	buildID, ok := ginutil.ParseParamUint(c, "buildId")
 	if !ok {
 		return
@@ -193,6 +196,7 @@ func (m buildTestResultModule) getBuildAllTestResultSummariesHandler(c *gin.Cont
 }
 
 // getBuildTestResultSummaryHandler godoc
+// @id getBuildTestResultSummary
 // @summary Get test result summary for specified test
 // @tags test-result
 // @param buildId path int true "Build ID"
@@ -228,7 +232,8 @@ func (m buildTestResultModule) getBuildTestResultSummaryHandler(c *gin.Context) 
 	c.JSON(http.StatusOK, summary)
 }
 
-// getBuildTestResultDetailsHandler godoc
+// getBuildTestResultDetailListHandler godoc
+// @id getBuildTestResultDetailList
 // @summary Get all test result details for specified test
 // @tags test-result
 // @param buildId path int true "Build ID"
@@ -237,7 +242,7 @@ func (m buildTestResultModule) getBuildTestResultSummaryHandler(c *gin.Context) 
 // @failure 400 {object} problem.Response "Bad Request"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildId}/test-result/summary/{artifactId}/detail [get]
-func (m buildTestResultModule) getBuildTestResultDetailsHandler(c *gin.Context) {
+func (m buildTestResultModule) getBuildTestResultDetailListHandler(c *gin.Context) {
 	buildID, ok := ginutil.ParseParamUint(c, "buildId")
 	if !ok {
 		return
@@ -264,7 +269,8 @@ func (m buildTestResultModule) getBuildTestResultDetailsHandler(c *gin.Context) 
 	c.JSON(http.StatusOK, details)
 }
 
-// getBuildTestResultListSummaryHandler godoc
+// getBuildAllTestResultListSummaryHandler godoc
+// @id getBuildAllTestResultListSummary
 // @summary Get test result list summary of all tests for specified build
 // @tags test-result
 // @param buildId path int true "Build ID"
@@ -272,7 +278,7 @@ func (m buildTestResultModule) getBuildTestResultDetailsHandler(c *gin.Context) 
 // @failure 400 {object} problem.Response "Bad Request"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildId}/test-result/list-summary [get]
-func (m buildTestResultModule) getBuildTestResultListSummaryHandler(c *gin.Context) {
+func (m buildTestResultModule) getBuildAllTestResultListSummaryHandler(c *gin.Context) {
 	buildID, ok := ginutil.ParseParamUint(c, "buildId")
 	if !ok {
 		return

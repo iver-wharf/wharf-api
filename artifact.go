@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/iver-wharf/wharf-api/internal/ctxparser"
+	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"gorm.io/gorm"
 )
@@ -48,14 +49,15 @@ type TestsResults struct {
 }
 
 func (m artifactModule) Register(g *gin.RouterGroup) {
-	g.GET("/artifacts", m.getBuildArtifactsHandler)
+	g.GET("/artifacts", m.getBuildArtifactListHandler)
 	g.GET("/artifact/:artifactId", m.getBuildArtifactHandler)
-	g.POST("/artifact", m.postBuildArtifactHandler)
+	g.POST("/artifact", m.createBuildArtifactHandler)
 	// deprecated
-	g.GET("/tests-results", m.getBuildTestsResultsHandler)
+	g.GET("/tests-results", m.getBuildTestResultListHandler)
 }
 
-// getBuildArtifactsHandler godoc
+// getBuildArtifactListHandler godoc
+// @id getBuildArtifactList
 // @summary Get list of build artifacts
 // @tags artifact
 // @param buildId path int true "Build ID"
@@ -64,7 +66,7 @@ func (m artifactModule) Register(g *gin.RouterGroup) {
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildId}/artifacts [get]
-func (m artifactModule) getBuildArtifactsHandler(c *gin.Context) {
+func (m artifactModule) getBuildArtifactListHandler(c *gin.Context) {
 	buildID, ok := ginutil.ParseParamUint(c, "buildId")
 	if !ok {
 		return
@@ -86,6 +88,7 @@ func (m artifactModule) getBuildArtifactsHandler(c *gin.Context) {
 }
 
 // getBuildArtifactHandler godoc
+// @id getBuildArtifact
 // @summary Get build artifact
 // @tags artifact
 // @param buildId path int true "Build ID"
@@ -112,7 +115,7 @@ func (m artifactModule) getBuildArtifactHandler(c *gin.Context) {
 		Where(&Artifact{
 			BuildID:    buildID,
 			ArtifactID: artifactID}).
-		Order(artifactColumnArtifactID + " DESC").
+		Order(database.ArtifactColumns.ArtifactID + " DESC").
 		First(&artifact).
 		Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -135,7 +138,8 @@ func (m artifactModule) getBuildArtifactHandler(c *gin.Context) {
 	c.Data(http.StatusOK, mimeType, artifact.Data)
 }
 
-// postBuildArtifactHandler godoc
+// createBuildArtifactHandler godoc
+// @id createBuildArtifact
 // @summary Post build artifact
 // @tags artifact
 // @accept multipart/form-data
@@ -147,7 +151,7 @@ func (m artifactModule) getBuildArtifactHandler(c *gin.Context) {
 // @failure 404 {object} problem.Response "Artifact not found"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildId}/artifact [post]
-func (m artifactModule) postBuildArtifactHandler(c *gin.Context) {
+func (m artifactModule) createBuildArtifactHandler(c *gin.Context) {
 	buildID, ok := ginutil.ParseParamUint(c, "buildId")
 	if !ok {
 		return
@@ -169,7 +173,8 @@ func (m artifactModule) postBuildArtifactHandler(c *gin.Context) {
 	c.Status(http.StatusCreated)
 }
 
-// getBuildTestsResultsHandler godoc
+// getBuildTestResultListHandler godoc
+// @id getBuildTestResultList
 // @deprecated
 // @summary Get build tests results from .trx files.
 // @description Deprecated, /build/{buildid}/test-result/list-summary should be used instead.
@@ -180,7 +185,7 @@ func (m artifactModule) postBuildArtifactHandler(c *gin.Context) {
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildId}/tests-results [get]
-func (m artifactModule) getBuildTestsResultsHandler(c *gin.Context) {
+func (m artifactModule) getBuildTestResultListHandler(c *gin.Context) {
 	buildID, ok := ginutil.ParseParamUint(c, "buildId")
 	if !ok {
 		return
@@ -190,7 +195,7 @@ func (m artifactModule) getBuildTestsResultsHandler(c *gin.Context) {
 
 	err := m.Database.
 		Where(&Artifact{BuildID: buildID}).
-		Where(artifactColumnFileName+" LIKE ?", "%.trx").
+		Where(database.ArtifactColumns.FileName+" LIKE ?", "%.trx").
 		Find(&testRunFiles).
 		Error
 	if err != nil {
