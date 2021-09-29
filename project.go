@@ -716,7 +716,7 @@ func (m projectModule) getBuilds(projectID uint, limit int, offset int, orderByS
 	var builds []Build
 	var query = m.Database.
 		Where(&Build{ProjectID: projectID}).
-		Preload(buildAssocTestResultSummaries).
+		Preload(database.BuildFields.TestResultSummaries).
 		Limit(limit).
 		Offset(offset)
 	query = orderby.ApplyAllToGormQuery(query, orderBySlice, defaultGetBuildsOrderBy)
