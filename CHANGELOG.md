@@ -12,7 +12,7 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 	https://changelog.md/
 -->
 
-## v4.3.0 (WIP)
+## v5.0.0 (WIP)
 
 - Fixed bug where unable to delete a Project without first deleting all child
   objects. (#64)
@@ -63,6 +63,10 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Deprecated endpoint `GET /branch/{branchId}`. Getting a single branch by its
   ID has not been shown to have any benefits. Please refer to the
   `GET /project/{projectId}` endpoint instead. (#75)
+
+- Removed `Provider.UploadURL` and all references to it, as it was unused. (#82)
+
+- Removed DB column `provider.upload_url`, as it was unused. (#82)
 
 - Added `TestResultListSummary` field to `Build` database model. This allows you
   to avoid `N+1` HTTP requests when listing builds to show test summaries. (#80)

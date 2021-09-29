@@ -26,7 +26,6 @@ type Provider struct {
 	ProviderID uint   `gorm:"primaryKey" json:"providerId"`
 	Name       string `gorm:"size:20;not null" json:"name" enum:"azuredevops,gitlab,github"`
 	URL        string `gorm:"size:500;not null" json:"url"`
-	UploadURL  string `gorm:"size:500" json:"uploadUrl"`
 	TokenID    uint   `gorm:"nullable;default:NULL;index:provider_idx_token_id" json:"tokenId"`
 	Token      *Token `gorm:"foreignKey:TokenID;constraint:OnUpdate:RESTRICT,OnDelete:RESTRICT" json:"-"`
 }

@@ -117,7 +117,7 @@ func (m providerModule) getProviderHandler(c *gin.Context) {
 // @id searchProviderList
 // @summary Returns arrays of providers that match to search criteria.
 // @description Returns arrays of providers that match to search criteria.
-// @description It takes into consideration name, URL, UploadURL and token ID.
+// @description It takes into consideration name, URL and token ID.
 // @tags provider
 // @accept json
 // @produce json
@@ -138,24 +138,24 @@ func (m providerModule) searchProviderListHandler(c *gin.Context) {
 	var providers []Provider
 	if provider.TokenID != 0 {
 		err := m.Database.
-			Where(&provider, database.ProviderFields.Name, database.ProviderFields.URL, database.ProviderFields.UploadURL, database.ProviderFields.TokenID).
+			Where(&provider, database.ProviderFields.Name, database.ProviderFields.URL, database.ProviderFields.TokenID).
 			Find(&providers).
 			Error
 		if err != nil {
 			ginutil.WriteDBReadError(c, err, fmt.Sprintf(
-				"Failed fetching list of providers with name %q, URL %q, upload URL %q, and with token ID %d from database.",
-				provider.Name, provider.URL, provider.UploadURL, provider.TokenID))
+				"Failed fetching list of providers with name %q, URL %q, and token ID %d from database.",
+				provider.Name, provider.URL, provider.TokenID))
 			return
 		}
 	} else {
 		err := m.Database.
-			Where(&provider, database.ProviderFields.Name, database.ProviderFields.URL, database.ProviderFields.UploadURL).
+			Where(&provider, database.ProviderFields.Name, database.ProviderFields.URL).
 			Find(&providers).
 			Error
 		if err != nil {
 			ginutil.WriteDBReadError(c, err, fmt.Sprintf(
-				"Failed fetching list of providers with name %q, URL %q, and with upload URL %q from database.",
-				provider.Name, provider.URL, provider.UploadURL))
+				"Failed fetching list of providers with name %q, and URL %q from database.",
+				provider.Name, provider.URL))
 			return
 		}
 	}
