@@ -132,7 +132,7 @@ func (m buildModule) getBuild(buildID uint) (Build, error) {
 	var build Build
 	if err := m.Database.
 		Where(&Build{BuildID: buildID}).
-    Preload(database.BuildFields.TestResultSummaries).
+		Preload(database.BuildFields.TestResultSummaries).
 		Preload(database.BuildFields.Params).
 		First(&build).
 		Error; err != nil {
