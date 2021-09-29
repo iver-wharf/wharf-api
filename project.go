@@ -705,9 +705,11 @@ func (m projectModule) getBuilds(projectID uint, limit int, offset int, orderByS
 	}
 
 	for i := range builds {
-		if err := populateTestResultListSummary(m.Database, builds[i].BuildID, &builds[i].TestResultListSummary); err != nil {
+		listSummary, err := getTestResultListSummary(m.Database, builds[i].BuildID)
+		if err != nil {
 			return []Build{}, err
 		}
+		builds[i].TestResultListSummary = listSummary
 	}
 
 	return builds, nil

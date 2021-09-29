@@ -136,9 +136,11 @@ func (m buildModule) getBuild(buildID uint) (Build, error) {
 		Error; err != nil {
 		return Build{}, err
 	}
-	if err := populateTestResultListSummary(m.Database, buildID, &build.TestResultListSummary); err != nil {
+	listSummary, err := getTestResultListSummary(m.Database, buildID)
+	if err != nil {
 		return Build{}, err
 	}
+	build.TestResultListSummary = listSummary
 	return build, nil
 }
 
@@ -365,19 +367,19 @@ func setStatusDate(build *Build, statusID BuildStatus) {
 	}
 }
 
-func populateTestResultListSummary(db *gorm.DB, buildID uint, listSummaryPtr *TestResultListSummary) error {
-	listSummaryPtr.BuildID = buildID
+func getTestResultListSummary(db *gorm.DB, buildID uint) (TestResultListSummary, error) {
+	listSummary := TestResultListSummary{BuildID: buildID}
 	if err := db.
 		Model(&TestResultSummary{}).
 		Select("sum(failed) as Failed, sum(passed) as Passed, sum(skipped) as Skipped").
-		Where(listSummaryPtr).
-		Scan(listSummaryPtr).
+		Where(&listSummary).
+		Scan(&listSummary).
 		Error; err != nil {
-		return err
+		return TestResultListSummary{}, err
 	}
-	listSummaryPtr.Total =
-		listSummaryPtr.Failed +
-			listSummaryPtr.Passed +
-			listSummaryPtr.Skipped
-	return nil
+	listSummary.Total =
+		listSummary.Failed +
+			listSummary.Passed +
+			listSummary.Skipped
+	return listSummary, nil
 }
