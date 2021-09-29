@@ -132,18 +132,16 @@ func (name ProviderName) IsValid() bool {
 
 // ProviderSearch holds values used in verbatim searches for providers.
 type ProviderSearch struct {
-	Name      ProviderName `json:"name" enums:"azuredevops,gitlab,github"`
-	URL       string       `json:"url"`
-	UploadURL string       `json:"uploadUrl"`
-	TokenID   uint         `json:"tokenId"`
+	Name    ProviderName `json:"name" enums:"azuredevops,gitlab,github"`
+	URL     string       `json:"url"`
+	TokenID uint         `json:"tokenId"`
 }
 
 // Provider specifies fields when creating a new provider.
 type Provider struct {
-	Name      ProviderName `json:"name" enums:"azuredevops,gitlab,github" validate:"required" binding:"required"`
-	URL       string       `json:"url" validate:"required" binding:"required"`
-	UploadURL string       `json:"uploadUrl"`
-	TokenID   uint         `json:"tokenId"`
+	Name    ProviderName `json:"name" enums:"azuredevops,gitlab,github" validate:"required" binding:"required"`
+	URL     string       `json:"url" validate:"required" binding:"required"`
+	TokenID uint         `json:"tokenId"`
 }
 
 // ProviderUpdate specifies fields when updating a provider.
@@ -151,6 +149,5 @@ type ProviderUpdate struct {
 	ProviderID uint         `json:"providerId"`
 	Name       ProviderName `json:"name" enums:"azuredevops,gitlab,github" validate:"required" binding:"required"`
 	URL        string       `json:"url" validate:"required" binding:"required"`
-	UploadURL  string       `json:"uploadUrl"`
 	TokenID    uint         `json:"tokenId"`
 }

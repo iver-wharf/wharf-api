@@ -31,15 +31,13 @@ import (
 // Useful in GORM .Where() statements to only select certain fields or in GORM
 // Preload statements to select the correct field to preload.
 var ProviderFields = struct {
-	Name      string
-	URL       string
-	UploadURL string
-	TokenID   string
+	Name    string
+	URL     string
+	TokenID string
 }{
-	Name:      "Name",
-	URL:       "URL",
-	UploadURL: "UploadURL",
-	TokenID:   "TokenID",
+	Name:    "Name",
+	URL:     "URL",
+	TokenID: "TokenID",
 }
 
 // Provider holds metadata about a connection to a remote provider. Some of
@@ -49,7 +47,6 @@ type Provider struct {
 	ProviderID uint   `gorm:"primaryKey"`
 	Name       string `gorm:"size:20;not null"`
 	URL        string `gorm:"size:500;not null"`
-	UploadURL  string `gorm:"size:500"`
 	TokenID    uint   `gorm:"nullable;default:NULL;index:provider_idx_token_id"`
 	Token      *Token `gorm:"foreignKey:TokenID;constraint:OnUpdate:RESTRICT,OnDelete:RESTRICT"`
 }
@@ -151,9 +148,11 @@ type Branch struct {
 // Useful in GORM .Where() statements to only select certain fields or in GORM
 // Preload statements to select the correct field to preload.
 var BuildFields = struct {
-	Params string
+	Params              string
+	TestResultSummaries string
 }{
-	Params: "Params",
+	Params:              "Params",
+	TestResultSummaries: "TestResultSummaries",
 }
 
 // BuildColumns holds the DB column names for each field.
@@ -190,7 +189,7 @@ type Build struct {
 	StartedOn           null.Time           `gorm:"nullable;default:NULL"`
 	CompletedOn         null.Time           `gorm:"nullable;default:NULL"`
 	GitBranch           string              `gorm:"size:300;default:'';not null"`
-	Environment         null.String         `gorm:"nullable;size:40"swaggertype:"string"`
+	Environment         null.String         `gorm:"nullable;size:40" swaggertype:"string"`
 	Stage               string              `gorm:"size:40;default:'';not null"`
 	Params              []BuildParam        `gorm:"foreignKey:BuildID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	IsInvalid           bool                `gorm:"not null;default:false"`

@@ -121,7 +121,7 @@ func (m providerModule) getProviderHandler(c *gin.Context) {
 // @id searchProviderList
 // @summary Returns arrays of providers that match to search criteria.
 // @description Returns arrays of providers that match to search criteria.
-// @description It takes into consideration name, URL, UploadURL and token ID.
+// @description It takes into consideration name, URL and token ID.
 // @tags provider
 // @accept json
 // @produce json
@@ -149,39 +149,35 @@ func (m providerModule) searchProviderListHandler(c *gin.Context) {
 	if reqProvider.TokenID != 0 {
 		err := m.Database.
 			Where(&database.Provider{
-				Name:      validName,
-				URL:       reqProvider.URL,
-				UploadURL: reqProvider.UploadURL,
-				TokenID:   reqProvider.TokenID,
+				Name:    validName,
+				URL:     reqProvider.URL,
+				TokenID: reqProvider.TokenID,
 			},
 				database.ProviderFields.Name,
 				database.ProviderFields.URL,
-				database.ProviderFields.UploadURL,
 				database.ProviderFields.TokenID).
 			Find(&dbProviders).
 			Error
 		if err != nil {
 			ginutil.WriteDBReadError(c, err, fmt.Sprintf(
-				"Failed fetching list of providers with name %q, URL %q, upload URL %q, and with token ID %d from database.",
-				reqProvider.Name, reqProvider.URL, reqProvider.UploadURL, reqProvider.TokenID))
+				"Failed fetching list of providers with name %q, URL %q, and with token ID %d from database.",
+				reqProvider.Name, reqProvider.URL, reqProvider.TokenID))
 			return
 		}
 	} else {
 		err := m.Database.
 			Where(&database.Provider{
-				Name:      validName,
-				URL:       reqProvider.URL,
-				UploadURL: reqProvider.UploadURL,
+				Name: validName,
+				URL:  reqProvider.URL,
 			},
 				database.ProviderFields.Name,
-				database.ProviderFields.URL,
-				database.ProviderFields.UploadURL).
+				database.ProviderFields.URL).
 			Find(&dbProviders).
 			Error
 		if err != nil {
 			ginutil.WriteDBReadError(c, err, fmt.Sprintf(
-				"Failed fetching list of providers with name %q, URL %q, and with upload URL %q from database.",
-				reqProvider.Name, reqProvider.URL, reqProvider.UploadURL))
+				"Failed fetching list of providers with name %q and URL %q from database.",
+				reqProvider.Name, reqProvider.URL))
 			return
 		}
 	}
@@ -219,10 +215,9 @@ func (m providerModule) createProviderHandler(c *gin.Context) {
 	}
 
 	dbProvider := database.Provider{
-		Name:      validName,
-		URL:       reqProvider.URL,
-		UploadURL: reqProvider.UploadURL,
-		TokenID:   reqProvider.TokenID,
+		Name:    validName,
+		URL:     reqProvider.URL,
+		TokenID: reqProvider.TokenID,
 	}
 	// Sets provider.TokenID through association
 	if err := m.Database.Create(&dbProvider).Error; err != nil {
@@ -264,7 +259,6 @@ func (m providerModule) updateProviderHandler(c *gin.Context) {
 		ProviderID: reqProviderUpdate.ProviderID,
 		Name:       validName,
 		URL:        reqProviderUpdate.URL,
-		UploadURL:  reqProviderUpdate.UploadURL,
 		TokenID:    reqProviderUpdate.TokenID,
 	}
 	if err := m.Database.Where(dbProvider).FirstOrCreate(&dbProvider).Error; err != nil {
@@ -309,7 +303,6 @@ func dbProviderToResponse(dbProvider database.Provider) response.Provider {
 		ProviderID: dbProvider.ProviderID,
 		Name:       response.ProviderName(dbProvider.Name),
 		URL:        dbProvider.URL,
-		UploadURL:  dbProvider.UploadURL,
 		TokenID:    dbProvider.TokenID,
 	}
 }

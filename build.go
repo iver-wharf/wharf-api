@@ -106,6 +106,7 @@ func (m buildModule) getBuild(buildID uint) (database.Build, error) {
 	var dbBuild database.Build
 	if err := m.Database.
 		Where(&database.Build{BuildID: buildID}).
+		Preload(database.BuildFields.TestResultSummaries).
 		Preload(database.BuildFields.Params).
 		First(&dbBuild).
 		Error; err != nil {
@@ -371,20 +372,38 @@ func dbBuildsToResponses(dbBuilds []database.Build) []response.Build {
 }
 
 func dbBuildToResponse(dbBuild database.Build) response.Build {
+	var (
+		failed  uint
+		passed  uint
+		skipped uint
+	)
+	for _, summary := range dbBuild.TestResultSummaries {
+		failed += summary.Failed
+		passed += summary.Passed
+		skipped += summary.Skipped
+	}
+	resListSummary := response.TestResultListSummary{
+		BuildID: dbBuild.BuildID,
+		Total:   failed + passed + skipped,
+		Passed:  passed,
+		Skipped: skipped,
+		Failed:  failed,
+	}
 	return response.Build{
-		BuildID:             dbBuild.BuildID,
-		StatusID:            int(dbBuild.StatusID),
-		Status:              dbBuildStatusToResponse(dbBuild.StatusID),
-		ProjectID:           dbBuild.ProjectID,
-		ScheduledOn:         dbBuild.ScheduledOn,
-		StartedOn:           dbBuild.StartedOn,
-		CompletedOn:         dbBuild.CompletedOn,
-		GitBranch:           dbBuild.GitBranch,
-		Environment:         dbBuild.Environment,
-		Stage:               dbBuild.Stage,
-		Params:              dbBuildParamsToResponses(dbBuild.Params),
-		IsInvalid:           dbBuild.IsInvalid,
-		TestResultSummaries: dbTestResultSummariesToResponses(dbBuild.TestResultSummaries),
+		BuildID:               dbBuild.BuildID,
+		StatusID:              int(dbBuild.StatusID),
+		Status:                dbBuildStatusToResponse(dbBuild.StatusID),
+		ProjectID:             dbBuild.ProjectID,
+		ScheduledOn:           dbBuild.ScheduledOn,
+		StartedOn:             dbBuild.StartedOn,
+		CompletedOn:           dbBuild.CompletedOn,
+		GitBranch:             dbBuild.GitBranch,
+		Environment:           dbBuild.Environment,
+		Stage:                 dbBuild.Stage,
+		Params:                dbBuildParamsToResponses(dbBuild.Params),
+		IsInvalid:             dbBuild.IsInvalid,
+		TestResultSummaries:   dbTestResultSummariesToResponses(dbBuild.TestResultSummaries),
+		TestResultListSummary: resListSummary,
 	}
 }
 

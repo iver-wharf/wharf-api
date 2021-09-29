@@ -58,19 +58,20 @@ var BuildJSONFields = struct {
 // Build holds data about the state of a build. Which parameters was used to
 // start it, what status it holds, et.al.
 type Build struct {
-	BuildID             uint                `json:"buildId"`
-	StatusID            int                 `json:"statusId" enums:"0,1,2,3"`
-	Status              BuildStatus         `json:"status" enums:"Scheduling,Running,Completed,Failed"`
-	ProjectID           uint                `json:"projectId"`
-	ScheduledOn         null.Time           `json:"scheduledOn" format:"date-time" extensions:"x-nullable"`
-	StartedOn           null.Time           `json:"startedOn" format:"date-time" extensions:"x-nullable"`
-	CompletedOn         null.Time           `json:"finishedOn" format:"date-time" extensions:"x-nullable"`
-	GitBranch           string              `json:"gitBranch"`
-	Environment         null.String         `json:"environment" swaggertype:"string" extensions:"x-nullable"`
-	Stage               string              `json:"stage"`
-	Params              []BuildParam        `json:"params"`
-	IsInvalid           bool                `json:"isInvalid"`
-	TestResultSummaries []TestResultSummary `json:"testResultSummaries"`
+	BuildID               uint                  `json:"buildId"`
+	StatusID              int                   `json:"statusId" enums:"0,1,2,3"`
+	Status                BuildStatus           `json:"status" enums:"Scheduling,Running,Completed,Failed"`
+	ProjectID             uint                  `json:"projectId"`
+	ScheduledOn           null.Time             `json:"scheduledOn" format:"date-time" extensions:"x-nullable"`
+	StartedOn             null.Time             `json:"startedOn" format:"date-time" extensions:"x-nullable"`
+	CompletedOn           null.Time             `json:"finishedOn" format:"date-time" extensions:"x-nullable"`
+	GitBranch             string                `json:"gitBranch"`
+	Environment           null.String           `json:"environment" swaggertype:"string" extensions:"x-nullable"`
+	Stage                 string                `json:"stage"`
+	Params                []BuildParam          `json:"params"`
+	IsInvalid             bool                  `json:"isInvalid"`
+	TestResultSummaries   []TestResultSummary   `json:"testResultSummaries"`
+	TestResultListSummary TestResultListSummary `json:"testResultListSummary"`
 }
 
 // BuildParam holds the name and value of an input parameter fed into a build.
@@ -153,7 +154,6 @@ type Provider struct {
 	ProviderID uint         `json:"providerId"`
 	Name       ProviderName `json:"name" enums:"azuredevops,gitlab,github"`
 	URL        string       `json:"url"`
-	UploadURL  string       `json:"uploadUrl"`
 	TokenID    uint         `json:"tokenId"`
 }
 

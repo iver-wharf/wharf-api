@@ -769,12 +769,14 @@ func (m projectModule) getBuilds(projectID uint, limit int, offset int, orderByS
 	var dbBuilds []database.Build
 	var query = m.Database.
 		Where(&database.Build{ProjectID: projectID}).
+		Preload(database.BuildFields.TestResultSummaries).
 		Limit(limit).
 		Offset(offset)
 	query = orderby.ApplyAllToGormQuery(query, orderBySlice, defaultGetBuildsOrderBy)
 	if err := query.Find(&dbBuilds).Error; err != nil {
 		return nil, err
 	}
+
 	return dbBuilds, nil
 }
 
