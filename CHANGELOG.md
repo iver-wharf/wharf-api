@@ -64,8 +64,8 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   ID has not been shown to have any benefits. Please refer to the
   `GET /project/{projectId}` endpoint instead. (#75)
 
-- Added `TestResultListSummary` field to `Build` database model. This should
-  allow us to avoid `N+1 Select` in wharf-api. (#80)
+- Added `TestResultListSummary` field to `Build` database model. This allows you
+  to avoid `N+1` HTTP requests when listing builds to show test summaries. (#80)
 
 - Changed to preload `TestResultSummaries` field of `Build` database
   model. (#80)
