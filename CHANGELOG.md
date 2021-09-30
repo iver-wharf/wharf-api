@@ -14,6 +14,25 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
 ## v5.0.0 (WIP)
 
+- Added support for Sqlite. Default database driver is still Postgres.
+
+  Note: wharf-api must be compiled with `GCO_ENABLED=1` (which is the default
+  for Go builds) but our Docker build is compiled with `CGO_ENABLED=0`. If you
+  need Sqlite support in our Docker image, then please file a new issue over
+  at <https://github.com/iver-wharf/wharf-api/issues/new>, and we will take a
+  look at it. (#86)
+
+- Added configuration for selecting database driver, environment variable
+  `WHARF_DB_DRIVER` or the YAML key `db.driver`. Valid values: (#86)
+
+  - `postgres` (default)
+  - `sqlite`
+
+- Added configuration for Sqlite file path, environment variable `WHARF_DB_PATH`
+  or the YAML key `db.path`. Defaults to `wharf-api.db`. (#86)
+
+- Added dependency on `gorm.io/driver/sqlite`. (#86)
+
 - Fixed bug where unable to delete a Project without first deleting all child
   objects. (#64)
 
