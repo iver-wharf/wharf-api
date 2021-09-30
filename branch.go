@@ -207,11 +207,7 @@ func (m branchModule) putBranches(reqBranches []request.Branch) ([]database.Bran
 			}
 		}
 
-		if err := m.Database.Find(&dbNewBranches).Error; err != nil {
-			return err
-		}
-
-		return nil
+		return m.Database.Find(&dbNewBranches).Error
 	})
 
 	if err != nil {

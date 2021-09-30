@@ -28,7 +28,7 @@ type Token struct {
 	ProviderID uint   `json:"providerId"`
 }
 
-// Token specifies fields when adding a new branch to a project.
+// Branch specifies fields when adding a new branch to a project.
 type Branch struct {
 	ProjectID uint   `json:"projectId" validate:"required"`
 	Name      string `json:"name" validate:"required"`
@@ -124,6 +124,9 @@ const (
 	ProviderNameValues = ProviderAzureDevOps + ", " + ProviderGitLab + ", " + ProviderGitHub
 )
 
+// IsValid returns false if the underlying type is an unknown enum value.
+// 	ProviderGitHub.IsValid()     // => true
+// 	(ProviderName("")).IsValid() // => false
 func (name ProviderName) IsValid() bool {
 	return name == ProviderAzureDevOps ||
 		name == ProviderGitLab ||

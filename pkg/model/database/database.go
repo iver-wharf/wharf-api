@@ -214,6 +214,9 @@ const (
 	BuildFailed
 )
 
+// IsValid returns false if the underlying type is an unknown enum value.
+// 	BuildScheduling.IsValid()   // => true
+// 	(BuildStatus(-1)).IsValid() // => false
 func (buildStatus BuildStatus) IsValid() bool {
 	return buildStatus >= BuildScheduling && buildStatus <= BuildFailed
 }
