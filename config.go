@@ -147,10 +147,52 @@ type CertConfig struct {
 	CertsFile string
 }
 
+// DBDriver is an enum of different supported database drivers.
+type DBDriver string
+
+const (
+	// DBDriverPostgres specifies usage of Postgres for persistance.
+	//
+	// Added in v5.0.0. Before v5.0.0, the database driver was assumed to be
+	// Postgres, no matter what config you provided to wharf-api.
+	DBDriverPostgres DBDriver = "postgres"
+
+	// DBDriverSqlite specifies usage of Sqlite.
+	//
+	// Current limitation is that wharf-api must be compiled with CGO_ENABLED=1,
+	// which by default the wharf-api Docker image is not.
+	//
+	// Added in v5.0.0.
+	DBDriverSqlite DBDriver = "sqlite"
+)
+
 // DBConfig holds settings for connecting to a database, such as credentials and
 // hostnames.
 type DBConfig struct {
-	// Host is the network hostname wharf-api will connect to.
+	// Driver sets what database engine to use for persistence. See the
+	// DBDriver constants for the different supported values.
+	//
+	// The value is case sensitive.
+	//
+	// Added in v5.0.0.
+	Driver DBDriver
+
+	// Path defines where the database is located. Only applicable when the
+	// driver is set to "sqlite", and is ignored otherwise.
+	//
+	// Non-existing directories in the path will be created, given the process
+	// has write access in the regarded containing directories.
+	//
+	// The path is not dereferenced, so specifying "~/.local/share/wharf-api.db"
+	// will result in a new directory named "~" to be created in the current
+	// working directory, meaning it would be equivalent to
+	// "./~/.local/share/wharf-api.db".
+	//
+	// Added in v5.0.0.
+	Path string
+
+	// Host is the network hostname wharf-api will connect to. Ignored when
+	// the driver is set to "sqlite".
 	//
 	// For backward compatibility, that may be removed in the next major release
 	// (v5.0.0), the environment variable DBHOST, which was added in v0.5.5,
@@ -159,7 +201,8 @@ type DBConfig struct {
 	// Added in v4.2.0.
 	Host string
 
-	// Port is the network port wharf-api will connect to.
+	// Port is the network port wharf-api will connect to. Ignored when
+	// the driver is set to "sqlite".
 	//
 	// For backward compatibility, that may be removed in the next major release
 	// (v5.0.0), the environment variable DBPORT, which was added in v0.5.5,
@@ -169,7 +212,7 @@ type DBConfig struct {
 	Port int
 
 	// Username is the username part of credentials used when connecting to the
-	// database.
+	// database. Ignored when the driver is set to "sqlite".
 	//
 	// For backward compatibility, that may be removed in the next major release
 	// (v5.0.0), the environment variable DBUSER, which was added in v0.5.5,
@@ -179,7 +222,7 @@ type DBConfig struct {
 	Username string
 
 	// Password is the username part of credentials used when connecting to the
-	// database.
+	// database. Ignored when the driver is set to "sqlite".
 	//
 	// For backward compatibility, that may be removed in the next major release
 	// (v5.0.0), the environment variable DBPASS, which was added in v0.5.5,
@@ -336,6 +379,8 @@ var DefaultConfig = Config{
 		BindAddress: "0.0.0.0:8080",
 	},
 	DB: DBConfig{
+		Driver: DBDriverPostgres,
+		Path:   "wharf-api.db",
 		// Current default in sql package according to docs
 		// https://golang.org/pkg/database/sql/#DB.SetMaxIdleConns
 		MaxIdleConns: 2,

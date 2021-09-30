@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func runDatabaseMigrations(db *gorm.DB) error {
+func runDatabaseMigrations(db *gorm.DB, driver DBDriver) error {
 	tables := []interface{}{
 		&database.Token{}, &database.Provider{}, &database.Project{},
 		&database.Branch{}, &database.Build{}, &database.Log{},
@@ -19,6 +19,38 @@ func runDatabaseMigrations(db *gorm.DB) error {
 		return fmt.Errorf("migrating without constraints: %w", err)
 	}
 
+	if dbDriverSupportsForeignKeyConstraints(driver) {
+		migrateConstraints(db, tables)
+	} else {
+		log.Info().
+			WithString("driver", string(driver)).
+			Message("Skipping foreign key constraints, as chosen DB does not support it.")
+	}
+
+	oldColumns := []columnToDrop{
+		// since v3.1.0, the token.provider_id column was removed as it induced a
+		// circular dependency between the token and provider tables
+		{&Token{}, "provider_id"},
+		// Since v5.0.0, the Provider.upload_url column was removed as it was
+		// unused.
+		{&Provider{}, "upload_url"},
+	}
+
+	if err := dropOldColumns(db, oldColumns); err != nil {
+		return err
+	}
+
+	// In v4.2.0 the index param_idx_build_id for artifact was
+	// changed to artifact_idx_build_id to match the name of the
+	// table.
+	oldIndices := []indexToDrop{
+		{"artifact", "param_idx_build_id"},
+	}
+
+	return dropOldIndices(db, oldIndices)
+}
+
+func migrateConstraints(db *gorm.DB, tables []interface{}) error {
 	if err := db.Transaction(func(tx *gorm.DB) error {
 		// since v4.2.1, drop these constraints to refresh the constraint behavior.
 		// Previously it was RESTRICT, now it's CASCADE.
@@ -57,31 +89,7 @@ func runDatabaseMigrations(db *gorm.DB) error {
 		{"provider", "provider_token_id_token_token_id_foreign"},
 		{"token", "token_provider_id_provider_provider_id_foreign"},
 	}
-	if err := dropOldConstraints(db, oldConstraints); err != nil {
-		return err
-	}
-
-	oldColumns := []columnToDrop{
-		// since v3.1.0, the token.provider_id column was removed as it induced a
-		// circular dependency between the token and provider tables
-		{&Token{}, "provider_id"},
-		// Since v5.0.0, the Provider.upload_url column was removed as it was
-		// unused.
-		{&Provider{}, "upload_url"},
-	}
-
-	if err := dropOldColumns(db, oldColumns); err != nil {
-		return err
-	}
-
-	// In v4.2.0 the index param_idx_build_id for artifact was
-	// changed to artifact_idx_build_id to match the name of the
-	// table.
-	oldIndices := []indexToDrop{
-		{"artifact", "param_idx_build_id"},
-	}
-
-	return dropOldIndices(db, oldIndices)
+	return dropOldConstraints(db, oldConstraints)
 }
 
 type constraintToDrop struct {
