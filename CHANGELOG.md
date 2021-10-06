@@ -14,6 +14,10 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
 ## v5.0.0 (WIP)
 
+- BREAKING: Removed all deprecated environment variable configs, which were
+  marked as deprecated in v4.2.0/#38. Now all environment variables require the
+  `WHARF_` prefix. (#87)
+
 - Fixed bug where unable to delete a Project without first deleting all child
   objects. (#64)
 
