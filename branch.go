@@ -165,7 +165,6 @@ func (m branchModule) putBranches(reqBranches []request.Branch) ([]database.Bran
 					TokenID:   reqBranch.TokenID,
 					Name:      reqBranch.Name,
 				}, database.BranchFields.ProjectID, database.BranchFields.TokenID, database.BranchFields.Name).
-				Limit(1).
 				Count(&count).
 				Error
 			if err != nil {
