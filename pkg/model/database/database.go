@@ -45,7 +45,7 @@ var ProviderFields = struct {
 // used to authenticate.
 type Provider struct {
 	ProviderID uint   `gorm:"primaryKey"`
-	Name       string `gorm:"size:20;not null" enum:"azuredevops,gitlab,github"`
+	Name       string `gorm:"size:20;not null"`
 	URL        string `gorm:"size:500;not null"`
 	TokenID    uint   `gorm:"nullable;default:NULL;index:provider_idx_token_id"`
 	Token      *Token `gorm:"foreignKey:TokenID;constraint:OnUpdate:RESTRICT,OnDelete:RESTRICT"`
@@ -213,6 +213,13 @@ const (
 	// in some build step.
 	BuildFailed
 )
+
+// IsValid returns false if the underlying type is an unknown enum value.
+// 	BuildScheduling.IsValid()   // => true
+// 	(BuildStatus(-1)).IsValid() // => false
+func (buildStatus BuildStatus) IsValid() bool {
+	return buildStatus >= BuildScheduling && buildStatus <= BuildFailed
+}
 
 // BuildParam holds the name and value of an input parameter fed into a build.
 type BuildParam struct {

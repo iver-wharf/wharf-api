@@ -1,6 +1,8 @@
 package main
 
-import "strconv"
+import (
+	"strconv"
+)
 
 // BuildStatus is an enum of different states for a build.
 type BuildStatus int
@@ -33,16 +35,4 @@ func (bs BuildStatus) String() string {
 	default:
 		return strconv.Itoa(int(bs))
 	}
-}
-
-var toID = map[string]BuildStatus{
-	"Scheduling": BuildScheduling,
-	"Running":    BuildRunning,
-	"Completed":  BuildCompleted,
-	"Failed":     BuildFailed,
-}
-
-func parseBuildStatus(name string) (status BuildStatus, ok bool) {
-	status, ok = toID[name]
-	return
 }

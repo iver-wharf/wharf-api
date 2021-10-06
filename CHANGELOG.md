@@ -78,11 +78,14 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   between database, HTTP request, and HTTP response models.
   The Swagger documentation is affected by this, and some unused fields have
   been removed from certain endpoints, such as the `tokenId` in `POST /token`.
-  The new packages are: (#78)
+  The new packages are: (#78, #83)
 
   - `pkg/model/database`
   - `pkg/model/request`
   - `pkg/model/response`
+
+- Added more backend validation on some endpoints, such as enforcing `name`
+  field to be set when creating a new project. (#83)
 
 - Fixed `PUT /token` where it did not use the `providerId` value from the HTTP
   request body. It now sets the provider's token if the field is supplied and
