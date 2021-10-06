@@ -213,7 +213,7 @@ func (m branchModule) putBranches(reqBranches []request.Branch) ([]database.Bran
 	if err != nil {
 		log.Error().
 			WithError(err).
-			Message("Failed to replace branch list. Transaction reverted.")
+			Message("Failed to replace branch list. Transaction rolled back.")
 		return nil, err
 	}
 
