@@ -26,6 +26,7 @@ type TokenModule struct {
 	Database *gorm.DB
 }
 
+// Register adds all deprecated endpoints to a given Gin router group.
 func (m TokenModule) Register(g *gin.RouterGroup) {
 	token := g.Group("/token")
 	{

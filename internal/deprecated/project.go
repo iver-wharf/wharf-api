@@ -7,7 +7,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
-	"github.com/iver-wharf/wharf-api/pkg/model/request"
 	"github.com/iver-wharf/wharf-api/pkg/modelconv"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"gorm.io/gorm"
@@ -33,6 +32,7 @@ type ProjectModule struct {
 	Database *gorm.DB
 }
 
+// Register adds all deprecated endpoints to a given Gin router group.
 func (m ProjectModule) Register(g *gin.RouterGroup) {
 	project := g.Group("/project")
 	{
@@ -61,7 +61,7 @@ func (m ProjectModule) Register(g *gin.RouterGroup) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /project [put]
 func (m ProjectModule) updateProjectHandler(c *gin.Context) {
-	var reqProjectUpdate request.ProjectUpdate
+	var reqProjectUpdate ProjectUpdate
 	err := c.ShouldBindJSON(&reqProjectUpdate)
 	if err != nil {
 		ginutil.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading the request body.")
@@ -70,7 +70,7 @@ func (m ProjectModule) updateProjectHandler(c *gin.Context) {
 
 	var dbExistingProject database.Project
 	if reqProjectUpdate.ProjectID != 0 {
-		dbExistingProject, err = m.FindProjectByID(reqProjectUpdate.ProjectID)
+		dbExistingProject, err = m.findProjectByID(reqProjectUpdate.ProjectID)
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			ginutil.WriteDBNotFound(c, fmt.Sprintf(
 				"Project with ID %d was not found in the database.",
@@ -139,7 +139,7 @@ func (m ProjectModule) updateProjectHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, resProject)
 }
 
-func (m ProjectModule) FindProjectByID(id uint) (database.Project, error) {
+func (m ProjectModule) findProjectByID(id uint) (database.Project, error) {
 	var dbProject database.Project
 	err := m.databaseProjectPreloaded().
 		Where(&database.Project{ProjectID: id}).

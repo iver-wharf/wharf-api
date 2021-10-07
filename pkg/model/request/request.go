@@ -30,7 +30,7 @@ type Token struct {
 	ProviderID uint   `json:"providerId"`
 }
 
-// Token specifies fields when creating a new token.
+// TokenUpdate specifies fields when updating a token.
 type TokenUpdate struct {
 	Token    string `json:"token" format:"password" validate:"required"`
 	UserName string `json:"userName" validate:"required"`

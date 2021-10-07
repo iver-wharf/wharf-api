@@ -28,6 +28,7 @@ type ProviderModule struct {
 	Database *gorm.DB
 }
 
+// Register adds all deprecated endpoints to a given Gin router group.
 func (m ProviderModule) Register(g *gin.RouterGroup) {
 	provider := g.Group("/provider")
 	{
