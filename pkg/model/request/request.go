@@ -3,7 +3,11 @@
 // Swaggo-specific Go tags.
 package request
 
-import "time"
+import (
+	"time"
+
+	"gopkg.in/guregu/null.v4"
+)
 
 // Reference doc about the Go tags:
 //  TAG                  SOURCE                   DESCRIPTION
@@ -23,9 +27,15 @@ type TokenSearch struct {
 
 // Token specifies fields when creating a new token.
 type Token struct {
-	Token      string `json:"token" format:"password" validate:"required"`
-	UserName   string `json:"userName" validate:"required"`
-	ProviderID uint   `json:"providerId"`
+	Token      string   `json:"token" format:"password" validate:"required"`
+	UserName   string   `json:"userName" validate:"required"`
+	ProviderID null.Int `json:"providerId" swaggertype:"integer" extensions:"x-nullable"`
+}
+
+// Token specifies fields when creating a new token.
+type TokenUpdate struct {
+	Token    string `json:"token" format:"password" validate:"required"`
+	UserName string `json:"userName" validate:"required"`
 }
 
 // Branch specifies fields when adding a new branch to a project.
