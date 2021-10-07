@@ -1,6 +1,15 @@
 package main
 
-import "github.com/iver-wharf/wharf-api/pkg/model/database"
+import (
+	"errors"
+	"fmt"
+	"strings"
+
+	"github.com/gin-gonic/gin"
+	"github.com/iver-wharf/wharf-api/pkg/model/database"
+	"github.com/iver-wharf/wharf-core/pkg/ginutil"
+	"gorm.io/gorm"
+)
 
 func contains(items []string, value string) bool {
 	for _, item := range items {
@@ -19,4 +28,24 @@ func findDefaultBranch(branches []database.Branch) (database.Branch, bool) {
 	}
 
 	return database.Branch{}, false
+}
+
+func fetchDatabaseObjByID(c *gin.Context, db *gorm.DB, modelPtr interface{}, id uint, name, whenMsg string) bool {
+	var spacedWhenMsg string
+	if whenMsg != "" {
+		spacedWhenMsg = " " + whenMsg
+	}
+	if err := db.Find(modelPtr, id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			ginutil.WriteDBNotFound(c, fmt.Sprintf(
+				"%s with ID %d was not found when creating token%s.",
+				strings.ToTitle(name), id, spacedWhenMsg))
+		} else {
+			ginutil.WriteDBReadError(c, err, fmt.Sprintf(
+				"Failed fetching %s with ID %d from database%s.",
+				strings.ToLower(name), id, spacedWhenMsg))
+		}
+		return false
+	}
+	return true
 }

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 
 	"net/http"
@@ -70,17 +69,8 @@ func (m providerModule) getProviderHandler(c *gin.Context) {
 		return
 	}
 
-	var dbProvider database.Provider
-	err := m.Database.First(&dbProvider, providerID).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		ginutil.WriteDBNotFound(c, fmt.Sprintf(
-			"Provider with ID %d was not found.",
-			providerID))
-		return
-	} else if err != nil {
-		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
-			"Failed fetching provider with ID %d from database.",
-			providerID))
+	dbProvider, ok := fetchProviderByID(c, m.Database, providerID)
+	if !ok {
 		return
 	}
 
@@ -165,7 +155,7 @@ func (m providerModule) searchProviderListHandler(c *gin.Context) {
 // @tags provider
 // @accept json
 // @produce json
-// @param provider body request.Provider _ "provider object"
+// @param provider body request.Provider _ "Provider to create"
 // @success 201 {object} response.Provider
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
@@ -204,18 +194,24 @@ func (m providerModule) createProviderHandler(c *gin.Context) {
 
 // updateProviderHandler godoc
 // @id updateProvider
-// @summary Put provider in database.
-// @description Creates a new provider if a match is not found.
+// @summary Update provider in database.
+// @description Updates a provider by replacing all of its fields.
 // @tags provider
 // @accept json
 // @produce json
-// @param provider body request.ProviderUpdate _ "provider object"
+// @param providerId path uint _ "ID of provider to update"
+// @param provider body request.ProviderUpdate _ "New provider values"
 // @success 200 {object} response.Provider
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 404 {object} problem.Response "Provider or token not found"
 // @failure 502 {object} problem.Response "Database is unreachable"
-// @router /provider [put]
+// @router /provider/{providerId} [put]
 func (m providerModule) updateProviderHandler(c *gin.Context) {
+	providerID, ok := ginutil.ParseParamUint(c, "providerId")
+	if !ok {
+		return
+	}
 	var reqProviderUpdate request.ProviderUpdate
 	if err := c.ShouldBindJSON(&reqProviderUpdate); err != nil {
 		ginutil.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading the request body.")
@@ -226,37 +222,37 @@ func (m providerModule) updateProviderHandler(c *gin.Context) {
 		writeInvalidProviderNameProblem(c, reqProviderUpdate.Name)
 		return
 	}
-	dbProvider := database.Provider{
-		ProviderID: reqProviderUpdate.ProviderID,
-		Name:       validName,
-		URL:        reqProviderUpdate.URL,
-		TokenID:    reqProviderUpdate.TokenID,
-	}
-	if err := m.Database.Where(dbProvider).FirstOrCreate(&dbProvider).Error; err != nil {
-		ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
-			"Failed fetch or create on inputProvider with name %q.",
-			reqProviderUpdate.Name))
+	dbProvider, ok := fetchProviderByID(c, m.Database, providerID, "when updating provider")
+	if !ok {
 		return
 	}
+	if reqProviderUpdate.TokenID != 0 {
+		// Only called to validate the TokenID field
+		_, ok := fetchTokenByID(c, m.Database, reqProviderUpdate.TokenID, "when updating provider")
+		if !ok {
+			return
+		}
+	}
+
+	dbProvider.Name = validName
+	dbProvider.URL = reqProviderUpdate.URL
+	dbProvider.TokenID = reqProviderUpdate.TokenID
+
+	if err := m.Database.Save(&dbProvider).Error; err != nil {
+		ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
+			"Failed to update provider by ID %d.",
+			providerID))
+		return
+	}
+
 	resProvider := dbProviderToResponse(dbProvider)
 	c.JSON(http.StatusOK, resProvider)
 }
 
-func fetchProviderByID(c *gin.Context, db *gorm.DB, providerID uint) (database.Provider, bool) {
+func fetchProviderByID(c *gin.Context, db *gorm.DB, providerID uint, whenMsg string) (database.Provider, bool) {
 	var dbProvider database.Provider
-	if err := db.Find(&dbProvider, providerID).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			ginutil.WriteDBNotFound(c, fmt.Sprintf(
-				"Provider with ID %d was not found when creating token.",
-				providerID))
-		} else {
-			ginutil.WriteDBReadError(c, err, fmt.Sprintf(
-				"Failed fetching project with ID %d from database when creating token.",
-				providerID))
-		}
-		return database.Provider{}, false
-	}
-	return dbProvider, true
+	ok := fetchDatabaseObjByID(c, db, &dbProvider, providerID, "provider", whenMsg)
+	return dbProvider, ok
 }
 
 func writeInvalidProviderNameProblem(c *gin.Context, actual request.ProviderName) {

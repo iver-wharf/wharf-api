@@ -157,8 +157,7 @@ type Provider struct {
 
 // ProviderUpdate specifies fields when updating a provider.
 type ProviderUpdate struct {
-	ProviderID uint         `json:"providerId"`
-	Name       ProviderName `json:"name" enums:"azuredevops,gitlab,github" validate:"required" binding:"required"`
-	URL        string       `json:"url" validate:"required" binding:"required"`
-	TokenID    uint         `json:"tokenId"`
+	Name    ProviderName `json:"name" enums:"azuredevops,gitlab,github" validate:"required" binding:"required"`
+	URL     string       `json:"url" validate:"required" binding:"required"`
+	TokenID uint         `json:"tokenId"`
 }

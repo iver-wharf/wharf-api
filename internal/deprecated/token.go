@@ -7,17 +7,26 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
-	"github.com/iver-wharf/wharf-api/pkg/model/request"
 	"github.com/iver-wharf/wharf-api/pkg/model/response"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"gorm.io/gorm"
 )
 
-type tokenModule struct {
+// Token specifies fields when creating a new token using the deprecated
+// endpoint
+// 	PUT /token
+type Token struct {
+	Token      string `json:"token" format:"password" validate:"required"`
+	UserName   string `json:"userName" validate:"required"`
+	ProviderID uint   `json:"providerId"`
+}
+
+// TokenModule holds deprecated endpoint handlers for /token
+type TokenModule struct {
 	Database *gorm.DB
 }
 
-func (m tokenModule) Register(g *gin.RouterGroup) {
+func (m TokenModule) Register(g *gin.RouterGroup) {
 	token := g.Group("/token")
 	{
 		token.PUT("", m.updateTokenHandler)
@@ -40,8 +49,8 @@ func (m tokenModule) Register(g *gin.RouterGroup) {
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /token [put]
-func (m tokenModule) updateTokenHandler(c *gin.Context) {
-	var reqToken request.Token
+func (m TokenModule) updateTokenHandler(c *gin.Context) {
+	var reqToken Token
 	if err := c.ShouldBindJSON(&reqToken); err != nil {
 		ginutil.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading the request body.")
 		return
