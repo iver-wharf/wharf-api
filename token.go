@@ -29,7 +29,7 @@ func (m tokenModule) Register(g *gin.RouterGroup) {
 	{
 		token.GET("/:tokenId", m.getTokenHandler)
 		token.POST("", m.createTokenHandler)
-		token.PUT("", m.updateTokenHandler)
+		token.PUT("/:tokenId", m.updateTokenHandler)
 	}
 }
 

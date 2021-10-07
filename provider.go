@@ -29,7 +29,7 @@ func (m providerModule) Register(g *gin.RouterGroup) {
 	{
 		provider.GET("/:providerId", m.getProviderHandler)
 		provider.POST("", m.createProviderHandler)
-		provider.PUT("", m.updateProviderHandler)
+		provider.PUT("/:providerId", m.updateProviderHandler)
 	}
 }
 
