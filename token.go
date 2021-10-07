@@ -5,7 +5,7 @@ import (
 
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/iver-wharf/wharf-api/pkg/model/request"
-	"github.com/iver-wharf/wharf-api/pkg/model/response"
+	"github.com/iver-wharf/wharf-api/pkg/modelconv"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 
 	"net/http"
@@ -49,7 +49,7 @@ func (m tokenModule) getTokenListHandler(c *gin.Context) {
 		return
 	}
 
-	resTokens := dbTokensToResponseTokens(dbTokens)
+	resTokens := modelconv.DBTokensToResponses(dbTokens)
 	c.JSON(http.StatusOK, resTokens)
 }
 
@@ -74,7 +74,7 @@ func (m tokenModule) getTokenHandler(c *gin.Context) {
 		return
 	}
 
-	resToken := dbTokenToResponseToken(dbToken)
+	resToken := modelconv.DBTokenToResponse(dbToken)
 	c.JSON(http.StatusOK, resToken)
 }
 
@@ -115,7 +115,7 @@ func (m tokenModule) searchTokenListHandler(c *gin.Context) {
 		return
 	}
 
-	resTokens := dbTokensToResponseTokens(dbTokens)
+	resTokens := modelconv.DBTokensToResponses(dbTokens)
 	c.JSON(http.StatusOK, resTokens)
 }
 
@@ -165,7 +165,7 @@ func (m tokenModule) createTokenHandler(c *gin.Context) {
 		}
 	}
 
-	resToken := dbTokenToResponseToken(dbToken)
+	resToken := modelconv.DBTokenToResponse(dbToken)
 	c.JSON(http.StatusCreated, resToken)
 }
 
@@ -208,7 +208,7 @@ func (m tokenModule) updateTokenHandler(c *gin.Context) {
 			tokenID))
 	}
 
-	resToken := dbTokenToResponseToken(dbToken)
+	resToken := modelconv.DBTokenToResponse(dbToken)
 	c.JSON(http.StatusOK, resToken)
 }
 
@@ -216,20 +216,4 @@ func fetchTokenByID(c *gin.Context, db *gorm.DB, tokenID uint, whenMsg string) (
 	var dbToken database.Token
 	ok := fetchDatabaseObjByID(c, db, &dbToken, tokenID, "token", whenMsg)
 	return dbToken, ok
-}
-
-func dbTokensToResponseTokens(dbTokens []database.Token) []response.Token {
-	resTokens := make([]response.Token, len(dbTokens))
-	for i, dbToken := range dbTokens {
-		resTokens[i] = dbTokenToResponseToken(dbToken)
-	}
-	return resTokens
-}
-
-func dbTokenToResponseToken(dbToken database.Token) response.Token {
-	return response.Token{
-		TokenID:  dbToken.TokenID,
-		Token:    dbToken.Token,
-		UserName: dbToken.UserName,
-	}
 }

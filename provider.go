@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/iver-wharf/wharf-api/pkg/model/request"
-	"github.com/iver-wharf/wharf-api/pkg/model/response"
+	"github.com/iver-wharf/wharf-api/pkg/modelconv"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"github.com/iver-wharf/wharf-core/pkg/problem"
 	"gorm.io/gorm"
@@ -48,7 +48,7 @@ func (m providerModule) getProviderListHandler(c *gin.Context) {
 		ginutil.WriteDBReadError(c, err, "Failed fetching list of projects from database.")
 		return
 	}
-	resProviders := dbProvidersToResponses(dbProviders)
+	resProviders := modelconv.DBProvidersToResponses(dbProviders)
 	c.JSON(http.StatusOK, resProviders)
 }
 
@@ -74,7 +74,7 @@ func (m providerModule) getProviderHandler(c *gin.Context) {
 		return
 	}
 
-	resProvider := dbProviderToResponse(dbProvider)
+	resProvider := modelconv.DBProviderToResponse(dbProvider)
 	c.JSON(http.StatusOK, resProvider)
 }
 
@@ -143,7 +143,7 @@ func (m providerModule) searchProviderListHandler(c *gin.Context) {
 		}
 	}
 
-	resProviders := dbProvidersToResponses(dbProviders)
+	resProviders := modelconv.DBProvidersToResponses(dbProviders)
 	c.JSON(http.StatusOK, resProviders)
 }
 
@@ -188,7 +188,7 @@ func (m providerModule) createProviderHandler(c *gin.Context) {
 		return
 	}
 
-	resProvider := dbProviderToResponse(dbProvider)
+	resProvider := modelconv.DBProviderToResponse(dbProvider)
 	c.JSON(http.StatusCreated, resProvider)
 }
 
@@ -245,7 +245,7 @@ func (m providerModule) updateProviderHandler(c *gin.Context) {
 		return
 	}
 
-	resProvider := dbProviderToResponse(dbProvider)
+	resProvider := modelconv.DBProviderToResponse(dbProvider)
 	c.JSON(http.StatusOK, resProvider)
 }
 
@@ -272,21 +272,4 @@ func validateRequestProviderName(name request.ProviderName) (string, bool) {
 		return "", false
 	}
 	return string(name), true
-}
-
-func dbProvidersToResponses(dbProviders []database.Provider) []response.Provider {
-	resProviders := make([]response.Provider, len(dbProviders))
-	for i, dbProvider := range dbProviders {
-		resProviders[i] = dbProviderToResponse(dbProvider)
-	}
-	return resProviders
-}
-
-func dbProviderToResponse(dbProvider database.Provider) response.Provider {
-	return response.Provider{
-		ProviderID: dbProvider.ProviderID,
-		Name:       response.ProviderName(dbProvider.Name),
-		URL:        dbProvider.URL,
-		TokenID:    dbProvider.TokenID,
-	}
 }

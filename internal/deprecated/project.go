@@ -9,6 +9,7 @@ import (
 	"github.com/iver-wharf/messagebus-go"
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/iver-wharf/wharf-api/pkg/model/request"
+	"github.com/iver-wharf/wharf-api/pkg/modelconv"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"gorm.io/gorm"
 )
@@ -106,7 +107,7 @@ func (m ProjectModule) updateProjectHandler(c *gin.Context) {
 					"Failed creating new project with group %q, token ID %d, and name %q in database.",
 					reqProjectUpdate.GroupName, reqProjectUpdate.TokenID, reqProjectUpdate.Name))
 			} else {
-				resProject := dbProjectToResponse(dbNewProject)
+				resProject := modelconv.DBProjectToResponse(dbNewProject)
 				c.JSON(http.StatusCreated, resProject)
 			}
 			return
@@ -134,7 +135,7 @@ func (m ProjectModule) updateProjectHandler(c *gin.Context) {
 		return
 	}
 
-	resProject := dbProjectToResponse(dbExistingProject)
+	resProject := modelconv.DBProjectToResponse(dbExistingProject)
 	c.JSON(http.StatusOK, resProject)
 }
 

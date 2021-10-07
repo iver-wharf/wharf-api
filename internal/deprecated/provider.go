@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/iver-wharf/wharf-api/pkg/model/request"
-	"github.com/iver-wharf/wharf-api/pkg/model/response"
+	"github.com/iver-wharf/wharf-api/pkg/modelconv"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"github.com/iver-wharf/wharf-core/pkg/problem"
 	"gorm.io/gorm"
@@ -73,7 +73,7 @@ func (m ProviderModule) updateProviderHandler(c *gin.Context) {
 			reqProviderUpdate.Name))
 		return
 	}
-	resProvider := dbProviderToResponse(dbProvider)
+	resProvider := modelconv.DBProviderToResponse(dbProvider)
 	c.JSON(http.StatusOK, resProvider)
 }
 
@@ -94,13 +94,4 @@ func validateRequestProviderName(name request.ProviderName) (string, bool) {
 		return "", false
 	}
 	return string(name), true
-}
-
-func dbProviderToResponse(dbProvider database.Provider) response.Provider {
-	return response.Provider{
-		ProviderID: dbProvider.ProviderID,
-		Name:       response.ProviderName(dbProvider.Name),
-		URL:        dbProvider.URL,
-		TokenID:    dbProvider.TokenID,
-	}
 }

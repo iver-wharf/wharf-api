@@ -20,6 +20,7 @@ import (
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/iver-wharf/wharf-api/pkg/model/request"
 	"github.com/iver-wharf/wharf-api/pkg/model/response"
+	"github.com/iver-wharf/wharf-api/pkg/modelconv"
 	"github.com/iver-wharf/wharf-api/pkg/orderby"
 	"github.com/iver-wharf/wharf-core/pkg/problem"
 	"gopkg.in/guregu/null.v4"
@@ -67,7 +68,7 @@ func (m projectModule) getProjectListHandler(c *gin.Context) {
 		ginutil.WriteDBReadError(c, err, "Failed fetching list of projects from database.")
 		return
 	}
-	resProjects := dbProjectsToResponses(dbProjects)
+	resProjects := modelconv.DBProjectsToResponses(dbProjects)
 	c.JSON(http.StatusOK, resProjects)
 }
 
@@ -106,7 +107,7 @@ func (m projectModule) searchProjectListHandler(c *gin.Context) {
 		ginutil.WriteDBReadError(c, err, "Failed searching for projects in database.")
 		return
 	}
-	resProjects := dbProjectsToResponses(dbProjects)
+	resProjects := modelconv.DBProjectsToResponses(dbProjects)
 	c.JSON(http.StatusOK, resProjects)
 }
 
@@ -175,7 +176,7 @@ func (m projectModule) getProjectBuildListHandler(c *gin.Context) {
 	}
 
 	resPaginated := response.PaginatedBuilds{
-		Builds:     dbBuildsToResponses(dbBuilds),
+		Builds:     modelconv.DBBuildsToResponses(dbBuilds),
 		TotalCount: count,
 	}
 	c.JSON(http.StatusOK, resPaginated)
@@ -201,7 +202,7 @@ func (m projectModule) getProjectHandler(c *gin.Context) {
 	if !ok {
 		return
 	}
-	resProject := dbProjectToResponse(dbProject)
+	resProject := modelconv.DBProjectToResponse(dbProject)
 	c.JSON(http.StatusOK, resProject)
 }
 
@@ -274,7 +275,7 @@ func (m projectModule) createProjectHandler(c *gin.Context) {
 					"Failed creating new project with group %q, token ID %d, and name %q in database.",
 					reqProject.GroupName, reqProject.TokenID, reqProject.Name))
 			} else {
-				resProject := dbProjectToResponse(dbNewProject)
+				resProject := modelconv.DBProjectToResponse(dbNewProject)
 				c.JSON(http.StatusCreated, resProject)
 			}
 			return
@@ -291,7 +292,7 @@ func (m projectModule) createProjectHandler(c *gin.Context) {
 	dbExistingProject.AvatarURL = reqProject.AvatarURL
 	m.Database.Save(dbExistingProject)
 
-	resProject := dbProjectToResponse(dbExistingProject)
+	resProject := modelconv.DBProjectToResponse(dbExistingProject)
 	c.JSON(http.StatusOK, resProject)
 }
 
@@ -387,7 +388,7 @@ func (m projectModule) updateProjectHandler(c *gin.Context) {
 					"Failed creating new project with group %q, token ID %d, and name %q in database.",
 					reqProjectUpdate.GroupName, reqProjectUpdate.TokenID, reqProjectUpdate.Name))
 			} else {
-				resProject := dbProjectToResponse(dbNewProject)
+				resProject := modelconv.DBProjectToResponse(dbNewProject)
 				c.JSON(http.StatusCreated, resProject)
 			}
 			return
@@ -415,7 +416,7 @@ func (m projectModule) updateProjectHandler(c *gin.Context) {
 		return
 	}
 
-	resProject := dbProjectToResponse(dbExistingProject)
+	resProject := modelconv.DBProjectToResponse(dbExistingProject)
 	c.JSON(http.StatusOK, resProject)
 }
 
@@ -540,9 +541,9 @@ func (m projectModule) startProjectBuildHandler(c *gin.Context) {
 			Build      response.Build
 			Parameters []response.BuildParam
 		}{
-			Project:    dbProjectToResponse(dbProject),
-			Build:      dbBuildToResponse(dbBuild),
-			Parameters: dbBuildParamsToResponses(dbBuildParams),
+			Project:    modelconv.DBProjectToResponse(dbProject),
+			Build:      modelconv.DBBuildToResponse(dbBuild),
+			Parameters: modelconv.DBBuildParamsToResponses(dbBuildParams),
 		}); err != nil {
 			log.Error().WithError(err).Message("Failed to publish message.")
 			c.Error(err)
@@ -559,7 +560,7 @@ func (m projectModule) startProjectBuildHandler(c *gin.Context) {
 
 	if m.Config.CI.MockTriggerResponse {
 		log.Info().Message("Setting for mocking build triggers was true, mocking CI response.")
-		c.JSON(http.StatusOK, dbBuildToResponseBuildReferenceWrapper(dbBuild))
+		c.JSON(http.StatusOK, modelconv.DBBuildToResponseBuildReferenceWrapper(dbBuild))
 		return
 	}
 
@@ -581,7 +582,7 @@ func (m projectModule) startProjectBuildHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dbBuildToResponseBuildReferenceWrapper(dbBuild))
+	c.JSON(http.StatusOK, modelconv.DBBuildToResponseBuildReferenceWrapper(dbBuild))
 }
 
 func fetchProjectByID(c *gin.Context, db *gorm.DB, projectID uint, whenMsg string) (database.Project, bool) {
@@ -597,12 +598,6 @@ func databaseProjectPreloaded(db *gorm.DB) *gorm.DB {
 			return db.Order(database.BranchColumns.BranchID)
 		}).
 		Preload(database.ProjectFields.Token)
-}
-
-func dbBuildToResponseBuildReferenceWrapper(dbBuild database.Build) response.BuildReferenceWrapper {
-	return response.BuildReferenceWrapper{
-		BuildReference: strconv.FormatUint(uint64(dbBuild.BuildID), 10),
-	}
 }
 
 func (m projectModule) SaveBuildParams(dbParams []database.BuildParam) error {
@@ -777,53 +772,4 @@ func (m projectModule) getBuildsCount(projectID uint) (int64, error) {
 		return 0, err
 	}
 	return count, nil
-}
-
-func dbProjectsToResponses(dbProjects []database.Project) []response.Project {
-	resProjects := make([]response.Project, len(dbProjects))
-	for i, dbProject := range dbProjects {
-		resProjects[i] = dbProjectToResponse(dbProject)
-	}
-	return resProjects
-}
-
-func dbProjectToResponse(dbProject database.Project) response.Project {
-	var resProviderPtr *response.Provider
-	if dbProject.Provider != nil {
-		resProvider := dbProviderToResponse(*dbProject.Provider)
-		resProviderPtr = &resProvider
-	}
-	parsedBuildDef, err := parseBuildDefinition(dbProject.BuildDefinition)
-	if err != nil {
-		log.Warn().
-			WithError(err).
-			WithUint("project", dbProject.ProjectID).
-			Message("Failed to parse build-definition.")
-	}
-	return response.Project{
-		ProjectID:             dbProject.ProjectID,
-		Name:                  dbProject.Name,
-		GroupName:             dbProject.GroupName,
-		Description:           dbProject.Description,
-		AvatarURL:             dbProject.AvatarURL,
-		TokenID:               dbProject.TokenID,
-		ProviderID:            dbProject.ProviderID,
-		Provider:              resProviderPtr,
-		BuildDefinition:       dbProject.BuildDefinition,
-		Branches:              dbBranchesToResponses(dbProject.Branches),
-		GitURL:                dbProject.GitURL,
-		ParsedBuildDefinition: parsedBuildDef,
-	}
-}
-
-func parseBuildDefinition(buildDef string) (interface{}, error) {
-	if buildDef == "" {
-		return nil, nil
-	}
-	var parsed interface{}
-	err := yaml.Unmarshal([]byte(buildDef), &parsed)
-	if err != nil {
-		return nil, err
-	}
-	return parsed, nil
 }

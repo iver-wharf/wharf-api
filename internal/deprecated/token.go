@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
-	"github.com/iver-wharf/wharf-api/pkg/model/response"
+	"github.com/iver-wharf/wharf-api/pkg/modelconv"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"gorm.io/gorm"
 )
@@ -92,14 +92,6 @@ func (m TokenModule) updateTokenHandler(c *gin.Context) {
 			reqToken.UserName))
 	}
 
-	resToken := dbTokenToResponseToken(dbToken)
+	resToken := modelconv.DBTokenToResponse(dbToken)
 	c.JSON(http.StatusOK, resToken)
-}
-
-func dbTokenToResponseToken(dbToken database.Token) response.Token {
-	return response.Token{
-		TokenID:  dbToken.TokenID,
-		Token:    dbToken.Token,
-		UserName: dbToken.UserName,
-	}
 }
