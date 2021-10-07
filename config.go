@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/iver-wharf/wharf-core/pkg/config"
-	"github.com/iver-wharf/wharf-core/pkg/env"
 )
 
 // Config holds all configurable settings for wharf-api.
@@ -40,9 +39,8 @@ type Config struct {
 	// namespace or the same Jenkins instance, to let Wharf know which builds
 	// belong to which Wharf installation.
 	//
-	// For backward compatibility, that may be removed in the next major release
-	// (v5.0.0), the environment variable WHARF_INSTANCE, which was added in
-	// v0.7.9, also sets this value.
+	// This corresponds to the deprecated (and unsupported since v5.0.0)
+	// environment variable WHARF_INSTANCE, which was added back in v0.7.9.
 	//
 	// Added in v4.2.0.
 	InstanceID string
@@ -55,9 +53,8 @@ type CIConfig struct {
 	// the "Generic Webhook Trigger":
 	// https://plugins.jenkins.io/generic-webhook-trigger
 	//
-	// For backward compatibility, that may be removed in the next major release
-	// (v5.0.0), the environment variable CI_URL, which was added in v0.6.0,
-	// also sets this value.
+	// This corresponds to the deprecated (and unsupported since v5.0.0)
+	// environment variable CI_URL, which was added back in v0.6.0.
 	//
 	// Added in v4.2.0.
 	TriggerURL string
@@ -67,9 +64,8 @@ type CIConfig struct {
 	// (https://plugins.jenkins.io/generic-webhook-trigger) then this token is
 	// configured in the webhook settings.
 	//
-	// For backward compatibility, that may be removed in the next major release
-	// (v5.0.0), the environment variable CI_URL, which was added in v0.6.0,
-	// also sets this value.
+	// This corresponds to the deprecated (and unsupported since v5.0.0)
+	// environment variable CI_TOKEN, which was added back in v0.6.0.
 	//
 	// Added in v4.2.0.
 	TriggerToken string
@@ -81,9 +77,8 @@ type CIConfig struct {
 	// Useful when running Wharf locally and you want to test the behavior of
 	// starting a new build, without actually needing a local Jenkins set up.
 	//
-	// For backward compatibility, that may be removed in the next major release
-	// (v5.0.0), the environment variable MOCK_LOCAL_CI_RESPONSE, which was
-	// added in v0.6.0, also sets this value.
+	// This corresponds to the deprecated (and unsupported since v5.0.0)
+	// environment variable MOCK_LOCAL_CI_RESPONSE, which was added back in v0.6.0.
 	//
 	// Added in v4.2.0.
 	MockTriggerResponse bool
@@ -97,9 +92,8 @@ type HTTPConfig struct {
 	// the HTTP server to. An IP-address of 0.0.0.0 will bind to all
 	// IP-addresses.
 	//
-	// For backward compatibility, that may be removed in the next major release
-	// (v5.0.0), the environment variable BIND_ADDRESS, which was added in
-	// v4.1.0, also sets this value.
+	// This corresponds to the deprecated (and unsupported since v5.0.0)
+	// environment variable BIND_ADDRESS, which was added back in v4.1.0.
 	//
 	// Added in v4.2.0.
 	BindAddress string
@@ -110,9 +104,8 @@ type HTTPConfig struct {
 	// "john" with the password "secretpass":
 	// 	BasicAuth="admin:1234,john:secretpass"
 	//
-	// For backward compatibility, that may be removed in the next major release
-	// (v5.0.0), the environment variable BASIC_AUTH, which was added in v0.5.5,
-	// also sets this value.
+	// This corresponds to the deprecated (and unsupported since v5.0.0)
+	// environment variable BASIC_AUTH, which was added back in v0.5.5.
 	//
 	// Added in v4.2.0.
 	BasicAuth string
@@ -124,9 +117,8 @@ type CORSConfig struct {
 	// HTTP request origins when set to true. Practically speaking, this
 	// results in the HTTP header "Access-Control-Allow-Origin" set to "*".
 	//
-	// For backward compatibility, that may be removed in the next major release
-	// (v5.0.0), the environment variable ALLOW_CORS, which was added in v0.5.5,
-	// when set to "YES" will then set this value to true.
+	// This corresponds to the deprecated (and unsupported since v5.0.0)
+	// environment variable ALLOW_CORS, which was added back in v0.5.5.
 	//
 	// Added in v4.2.0.
 	AllowAllOrigins bool
@@ -139,9 +131,8 @@ type CertConfig struct {
 	// use in addition to the certificates from the system
 	// (such as from /etc/ssl/certs/).
 	//
-	// For backward compatibility, that may be removed in the next major release
-	// (v5.0.0), the environment variable CA_CERTS, which was added in v0.7.5,
-	// also sets this value.
+	// This corresponds to the deprecated (and unsupported since v5.0.0)
+	// environment variable CA_CERTS, which was added back in v0.7.5.
 	//
 	// Added in v4.2.0.
 	CertsFile string
@@ -194,9 +185,8 @@ type DBConfig struct {
 	// Host is the network hostname wharf-api will connect to. Ignored when
 	// the driver is set to "sqlite".
 	//
-	// For backward compatibility, that may be removed in the next major release
-	// (v5.0.0), the environment variable DBHOST, which was added in v0.5.5,
-	// also sets this value.
+	// This corresponds to the deprecated (and unsupported since v5.0.0)
+	// environment variable DBHOST, which was added back in v0.5.5.
 	//
 	// Added in v4.2.0.
 	Host string
@@ -204,9 +194,8 @@ type DBConfig struct {
 	// Port is the network port wharf-api will connect to. Ignored when
 	// the driver is set to "sqlite".
 	//
-	// For backward compatibility, that may be removed in the next major release
-	// (v5.0.0), the environment variable DBPORT, which was added in v0.5.5,
-	// also sets this value.
+	// This corresponds to the deprecated (and unsupported since v5.0.0)
+	// environment variable DBPORT, which was added back in v0.5.5.
 	//
 	// Added in v4.2.0.
 	Port int
@@ -214,9 +203,8 @@ type DBConfig struct {
 	// Username is the username part of credentials used when connecting to the
 	// database. Ignored when the driver is set to "sqlite".
 	//
-	// For backward compatibility, that may be removed in the next major release
-	// (v5.0.0), the environment variable DBUSER, which was added in v0.5.5,
-	// also sets this value.
+	// This corresponds to the deprecated (and unsupported since v5.0.0)
+	// environment variable DBUSER, which was added back in v0.5.5.
 	//
 	// Added in v4.2.0.
 	Username string
@@ -224,9 +212,8 @@ type DBConfig struct {
 	// Password is the username part of credentials used when connecting to the
 	// database. Ignored when the driver is set to "sqlite".
 	//
-	// For backward compatibility, that may be removed in the next major release
-	// (v5.0.0), the environment variable DBPASS, which was added in v0.5.5,
-	// also sets this value.
+	// This corresponds to the deprecated (and unsupported since v5.0.0)
+	// environment variable DBPASS, which was added back in v0.5.5.
 	//
 	// Added in v4.2.0.
 	Password string
@@ -234,9 +221,8 @@ type DBConfig struct {
 	// Name is the database name that wharf-api will store its data in. Some
 	// databases also call this the "schema" name.
 	//
-	// For backward compatibility, that may be removed in the next major release
-	// (v5.0.0), the environment variable DBNAME, which was added in v0.5.5,
-	// also sets this value.
+	// This corresponds to the deprecated (and unsupported since v5.0.0)
+	// environment variable DBNAME, which was added back in v0.5.5.
 	//
 	// Added in v4.2.0.
 	Name string
@@ -244,9 +230,8 @@ type DBConfig struct {
 	// MaxIdleConns is the maximum number of idle connections that wharf-api
 	// will keep alive.
 	//
-	// For backward compatibility, that may be removed in the next major release
-	// (v5.0.0), the environment variable DBMAXIDLECONNS, which was added in
-	// v0.5.5, also sets this value.
+	// This corresponds to the deprecated (and unsupported since v5.0.0)
+	// environment variable DBMAXIDLECONNS, which was added back in v0.5.5.
 	//
 	// Added in v4.2.0.
 	MaxIdleConns int
@@ -254,9 +239,8 @@ type DBConfig struct {
 	// MaxOpenConns is the maximum number of open connections that wharf-api
 	// will use at a single point in time.
 	//
-	// For backward compatibility, that may be removed in the next major release
-	// (v5.0.0), the environment variable DBMAXOPENCONNS, which was added in
-	// v0.5.5, also sets this value.
+	// This corresponds to the deprecated (and unsupported since v5.0.0)
+	// environment variable DBMAXOPENCONNS, which was added back in v0.5.5.
 	//
 	// Added in v4.2.0.
 	MaxOpenConns int
@@ -265,18 +249,16 @@ type DBConfig struct {
 	// any connection exceeds this limit, while not in use, it will be
 	// disconnected.
 	//
-	// For backward compatibility, that may be removed in the next major release
-	// (v5.0.0), the environment variable DBMAXCONNLIFETIME, which was added in
-	// v0.5.5, also sets this value.
+	// This corresponds to the deprecated (and unsupported since v5.0.0)
+	// environment variable DBMAXCONNLIFETIME, which was added back in v0.5.5.
 	//
 	// Added in v4.2.0.
 	MaxConnLifetime time.Duration
 
 	// Log enables/disables database SQL query logging.
 	//
-	// For backward compatibility, that may be removed in the next major release
-	// (v5.0.0), the environment variable DBLOG, which was added in v0.5.5,
-	// also sets this value.
+	// This corresponds to the deprecated (and unsupported since v5.0.0)
+	// environment variable DBLOG, which was added back in v0.5.5.
 	//
 	// Added in v4.2.0.
 	Log bool
@@ -288,27 +270,24 @@ type MQConfig struct {
 	// Enabled controls whether the message queue integration is turned
 	// on or off.
 	//
-	// For backward compatibility, that may be removed in the next major release
-	// (v5.0.0), the environment variable RABBITMQENABLED, which was added in
-	// v3.0.0, also sets this value.
+	// This corresponds to the deprecated (and unsupported since v5.0.0)
+	// environment variable RABBITMQENABLED, which was added back in v3.0.0.
 	//
 	// Added in v4.2.0
 	Enabled bool
 
 	// Host is the network hostname wharf-api will connect to.
 	//
-	// For backward compatibility, that may be removed in the next major release
-	// (v5.0.0), the environment variable RABBITMQHOST, which was added in
-	// v0.7.9, also sets this value.
+	// This corresponds to the deprecated (and unsupported since v5.0.0)
+	// environment variable RABBITMQHOST, which was added back in v0.7.9.
 	//
 	// Added in v4.2.0
 	Host string
 
 	// Host is the network port wharf-api will connect to.
 	//
-	// For backward compatibility, that may be removed in the next major release
-	// (v5.0.0), the environment variable RABBITMQPORT, which was added in
-	// v0.7.9, also sets this value.
+	// This corresponds to the deprecated (and unsupported since v5.0.0)
+	// environment variable RABBITMQPORT, which was added back in v0.7.9.
 	//
 	// Added in v4.2.0
 	Port string
@@ -316,9 +295,8 @@ type MQConfig struct {
 	// Username is the username part of credentials used when connecting to the
 	// message queue instance (usually RabbitMQ).
 	//
-	// For backward compatibility, that may be removed in the next major release
-	// (v5.0.0), the environment variable RABBITMQUSER, which was added in
-	// v0.7.9, also sets this value.
+	// This corresponds to the deprecated (and unsupported since v5.0.0)
+	// environment variable RABBITMQUSER, which was added back in v0.7.9.
 	//
 	// Added in v4.2.0.
 	Username string
@@ -326,27 +304,24 @@ type MQConfig struct {
 	// Password is the password part of credentials used when connecting to the
 	// message queue instance (usually RabbitMQ).
 	//
-	// For backward compatibility, that may be removed in the next major release
-	// (v5.0.0), the environment variable RABBITMQPASS, which was added in
-	// v0.7.9, also sets this value.
+	// This corresponds to the deprecated (and unsupported since v5.0.0)
+	// environment variable RABBITMQPASS, which was added back in v0.7.9.
 	//
 	// Added in v4.2.0.
 	Password string
 
 	// QueueName is the name of the AMQP message queue that wharf-api will use.
 	//
-	// For backward compatibility, that may be removed in the next major release
-	// (v5.0.0), the environment variable RABBITMQNAME, which was added in
-	// v0.7.9, also sets this value.
+	// This corresponds to the deprecated (and unsupported since v5.0.0)
+	// environment variable RABBITMQNAME, which was added back in v0.7.9.
 	//
 	// Added in v4.2.0.
 	QueueName string
 
 	// VHost is the name of the AMQP virtual host that wharf-api will use.
 	//
-	// For backward compatibility, that may be removed in the next major release
-	// (v5.0.0), the environment variable RABBITMQVHOST, which was added in
-	// v0.7.9, also sets this value.
+	// This corresponds to the deprecated (and unsupported since v5.0.0)
+	// environment variable RABBITMQVHOST, which was added back in v0.7.9.
 	//
 	// Added in v4.2.0.
 	VHost string
@@ -354,9 +329,8 @@ type MQConfig struct {
 	// DisableSSL will make wharf-api connect to the message queue service via
 	// AMQP when set to true, and AMQPS when set to false.
 	//
-	// For backward compatibility, that may be removed in the next major release
-	// (v5.0.0), the environment variable RABBITMQDISABLESSL, which was added in
-	// v0.7.9, also sets this value.
+	// This corresponds to the deprecated (and unsupported since v5.0.0)
+	// environment variable RABBITMQDISABLESSL, which was added back in v0.7.9.
 	//
 	// Added in v4.2.0.
 	DisableSSL bool
@@ -365,9 +339,8 @@ type MQConfig struct {
 	// initial AMQP connection. If all those attempts fail, then the wharf-api
 	// application will exit.
 	//
-	// For backward compatibility, that may be removed in the next major release
-	// (v5.0.0), the environment variable RABBITMQCONNATTEMPTS, which was added
-	// in v0.7.9, also sets this value.
+	// This corresponds to the deprecated (and unsupported since v5.0.0)
+	// environment variable RABBITMQCONNATTEMPTS, which was added back in v0.7.9.
 	//
 	// Added in v4.2.0.
 	ConnAttempts uint64
@@ -409,41 +382,6 @@ func loadConfig() (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
-	if err := cfg.addBackwardCompatibleConfigs(); err != nil {
-		return Config{}, err
-	}
 	return cfg, err
 }
 
-func (cfg *Config) addBackwardCompatibleConfigs() error {
-	if value, ok := os.LookupEnv("ALLOW_CORS"); ok && value == "YES" {
-		cfg.HTTP.CORS.AllowAllOrigins = true
-	}
-	return env.BindMultiple(map[interface{}]string{
-		&cfg.CI.MockTriggerResponse: "MOCK_LOCAL_CI_RESPONSE",
-		&cfg.CI.TriggerToken:        "CI_TOKEN",
-		&cfg.CI.TriggerURL:          "CI_URL",
-		&cfg.HTTP.BasicAuth:         "BASIC_AUTH",
-		&cfg.HTTP.BindAddress:       "BIND_ADDRESS",
-		&cfg.CA.CertsFile:           "CA_CERTS",
-		&cfg.DB.Host:                "DBHOST",
-		&cfg.DB.Log:                 "DBLOG",
-		&cfg.DB.MaxConnLifetime:     "DBMAXCONNLIFETIME",
-		&cfg.DB.MaxIdleConns:        "DBMAXIDLECONNS",
-		&cfg.DB.MaxOpenConns:        "DBMAXOPENCONNS",
-		&cfg.DB.Name:                "DBNAME",
-		&cfg.DB.Password:            "DBPASS",
-		&cfg.DB.Port:                "DBPORT",
-		&cfg.DB.Username:            "DBUSER",
-		&cfg.MQ.ConnAttempts:        "RABBITMQCONNATTEMPTS",
-		&cfg.MQ.DisableSSL:          "RABBITMQDISABLESSL",
-		&cfg.MQ.Enabled:             "RABBITMQENABLED",
-		&cfg.MQ.Host:                "RABBITMQHOST",
-		&cfg.MQ.Password:            "RABBITMQPASS",
-		&cfg.MQ.Port:                "RABBITMQPORT",
-		&cfg.MQ.QueueName:           "RABBITMQNAME",
-		&cfg.MQ.Username:            "RABBITMQUSER",
-		&cfg.MQ.VHost:               "RABBITMQVHOST",
-		&cfg.InstanceID:             "WHARF_INSTANCE",
-	})
-}

@@ -14,6 +14,10 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
 ## v5.0.0 (WIP)
 
+- BREAKING: Removed all deprecated environment variable configs, which were
+  marked as deprecated in v4.2.0/#38. Now all environment variables require the
+  `WHARF_` prefix. (#87)
+
 - Added support for Sqlite. Default database driver is still Postgres.
 
   Note: wharf-api must be compiled with `CGO_ENABLED=1` (which is the default
