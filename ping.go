@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/iver-wharf/wharf-api/pkg/model/response"
 )
 
 type healthModule struct{}
@@ -20,28 +21,16 @@ func (m healthModule) DeprecatedRegister(e *gin.Engine) {
 	e.GET("/health", m.healthHandler)
 }
 
-// Ping pongs.
-type Ping struct {
-	Message string `json:"message"`
-}
-
 // pingHandler godoc
 // @id pingHandler
 // @summary Ping
 // @description You guessed it. Pong.
 // @tags health
 // @produce json
-// @success 200 {object} Ping
+// @success 200 {object} response.Ping
 // @router /ping [get]
 func (m healthModule) pingHandler(c *gin.Context) {
-	c.JSON(200, Ping{Message: "pong"})
-}
-
-// HealthStatus holds a human-readable string stating the health of the API and
-// its integrations, as well as a boolean for easy machine-readability.
-type HealthStatus struct {
-	Message   string `example:"API is healthy." json:"message"`
-	IsHealthy bool   `example:"true" json:"isHealthy"`
+	c.JSON(200, response.Ping{Message: "pong"})
 }
 
 // healthHandler godoc
@@ -50,8 +39,8 @@ type HealthStatus struct {
 // @description To be used by Kubernetes or alike.
 // @tags health
 // @produce json
-// @success 200 {object} HealthStatus
+// @success 200 {object} response.HealthStatus
 // @router /health [get]
 func (m healthModule) healthHandler(c *gin.Context) {
-	c.JSON(200, HealthStatus{Message: "API is healthy.", IsHealthy: true})
+	c.JSON(200, response.HealthStatus{Message: "API is healthy.", IsHealthy: true})
 }

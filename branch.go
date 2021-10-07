@@ -7,6 +7,8 @@ import (
 
 	"github.com/iver-wharf/wharf-api/internal/deprecated"
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
+	"github.com/iver-wharf/wharf-api/pkg/model/request"
+	"github.com/iver-wharf/wharf-api/pkg/model/response"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 
 	"github.com/gin-gonic/gin"
@@ -51,45 +53,52 @@ func (m branchModule) getBranchListHandler(c *gin.Context) {
 // @tags branch
 // @accept json
 // @produce json
-// @param branch body Branch true "branch object"
-// @success 200 {object} Branch "Updated branch"
-// @success 201 {object} Branch "Added new branch"
+// @param branch body request.Branch true "branch object"
+// @success 200 {object} response.Branch "Updated branch"
+// @success 201 {object} response.Branch "Added new branch"
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /branch [post]
 func (m branchModule) createBranchHandler(c *gin.Context) {
-	var branch Branch
-	if err := c.ShouldBindJSON(&branch); err != nil {
+	var reqBranch request.Branch
+	if err := c.ShouldBindJSON(&reqBranch); err != nil {
 		ginutil.WriteInvalidBindError(c, err,
 			"One or more parameters failed to parse when reading the request body for branch object to update.")
 		return
 	}
 
-	var existingBranch Branch
+	dbBranch := database.Branch{
+		ProjectID: reqBranch.ProjectID,
+		TokenID:   reqBranch.TokenID,
+		Name:      reqBranch.Name,
+		Default:   reqBranch.Default,
+	}
+
+	var dbExistingBranch database.Branch
 	err := m.Database.
-		Where(&branch, database.BranchFields.ProjectID, database.BranchFields.TokenID, database.BranchFields.Name).
-		First(&existingBranch).
+		Where(&dbBranch, database.BranchFields.ProjectID, database.BranchFields.TokenID, database.BranchFields.Name).
+		First(&dbExistingBranch).
 		Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		if err := m.Database.Create(&branch).Error; err != nil {
+		if err := m.Database.Create(&dbBranch).Error; err != nil {
 			ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
 				"Failed creating branch with name %q for token with ID %d and for project with ID %d in database.",
-				branch.Name, branch.TokenID, branch.ProjectID))
+				dbBranch.Name, dbBranch.TokenID, dbBranch.ProjectID))
 			return
 		}
-		c.JSON(http.StatusCreated, branch)
+		c.JSON(http.StatusCreated, dbBranchToResponse(dbBranch))
 		return
 	} else if err != nil {
 		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
 			"Failed fetching branch with name %q for token with ID %d and for project with ID %d in database.",
-			branch.Name, branch.TokenID, branch.ProjectID))
+			reqBranch.Name, reqBranch.TokenID, reqBranch.ProjectID))
 		return
 	}
 
-	existingBranch.Default = branch.Default
-	m.Database.Save(existingBranch)
-	c.JSON(http.StatusOK, existingBranch)
+	dbExistingBranch.Default = reqBranch.Default
+	m.Database.Save(dbExistingBranch)
+	c.JSON(http.StatusOK, dbBranchToResponse(dbExistingBranch))
 }
 
 // updateProjectBranchListHandler godoc
@@ -99,50 +108,74 @@ func (m branchModule) createBranchHandler(c *gin.Context) {
 // @tags branches
 // @accept json
 // @produce json
-// @param branches body []Branch true "branch array"
-// @success 200 {object} []Branch "Updated branches"
+// @param branches body []request.Branch true "branch array"
+// @success 200 {object} []response.Branch "Updated branches"
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /branches [put]
 func (m branchModule) updateProjectBranchListHandler(c *gin.Context) {
-	var branches []Branch
-	if err := c.ShouldBindJSON(&branches); err != nil {
+	var reqBranches []request.Branch
+	if err := c.ShouldBindJSON(&reqBranches); err != nil {
 		ginutil.WriteInvalidBindError(c, err,
 			"One or more parameters failed to parse when reading the request body for branch object array to update.")
 		return
 	}
-	if err := m.putBranches(branches); err != nil {
+	dbBranches, err := m.putBranches(reqBranches)
+	if err != nil {
 		ginutil.WriteDBWriteError(c, err, "Failed to update branches in database.")
 		return
 	}
-	c.JSON(http.StatusOK, branches)
+	resBranches := dbBranchesToResponses(dbBranches)
+	c.JSON(http.StatusOK, resBranches)
 }
 
-func (m branchModule) putBranches(branches []Branch) error {
-	return m.Database.Transaction(func(tx *gorm.DB) error {
-		var defaultBranch Branch
-		var oldDbBranches []Branch
-		if len(branches) > 0 {
-			var firstBranch = branches[0]
-			if err := tx.Where(&firstBranch, database.BranchFields.ProjectID).Find(&oldDbBranches).Error; err != nil {
+func (m branchModule) putBranches(reqBranches []request.Branch) ([]database.Branch, error) {
+	var dbNewBranches []database.Branch
+
+	err := m.Database.Transaction(func(tx *gorm.DB) error {
+		var projectID uint
+		var defaultBranchName string
+
+		var dbOldBranches []database.Branch
+		if len(reqBranches) > 0 {
+			var reqFirstBranch = reqBranches[0]
+			if err := tx.
+				Where(&database.Branch{ProjectID: reqFirstBranch.ProjectID}, database.BranchFields.ProjectID).
+				Find(&dbOldBranches).Error; err != nil {
 				return err
 			}
-			defaultBranch = firstBranch
+			projectID = reqFirstBranch.ProjectID
+			defaultBranchName = reqFirstBranch.Name
 		}
 
-		var branchNames []string
-		for _, branch := range branches {
-			if branch.Default {
-				defaultBranch = branch
+		branchNamesSet := map[string]struct{}{}
+
+		for _, reqBranch := range reqBranches {
+			if reqBranch.Default {
+				defaultBranchName = reqBranch.Name
 			}
 
-			branchNames = append(branchNames, branch.Name)
-			result := m.Database.
-				Where(&branch, database.BranchFields.ProjectID, database.BranchFields.TokenID, database.BranchFields.Name).
-				First(&branch)
-			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-				if err := tx.Create(&branch).Error; err != nil {
+			branchNamesSet[reqBranch.Name] = struct{}{}
+			var count int64
+			err := m.Database.
+				Model(&database.Branch{}).
+				Where(&database.Branch{
+					ProjectID: reqBranch.ProjectID,
+					TokenID:   reqBranch.TokenID,
+					Name:      reqBranch.Name,
+				}, database.BranchFields.ProjectID, database.BranchFields.TokenID, database.BranchFields.Name).
+				Count(&count).
+				Error
+			if err != nil {
+				return err
+			}
+			if count == 0 {
+				if err := tx.Create(&database.Branch{
+					ProjectID: reqBranch.ProjectID,
+					TokenID:   reqBranch.TokenID,
+					Name:      reqBranch.Name,
+				}).Error; err != nil {
 					return err
 				}
 			}
@@ -150,29 +183,56 @@ func (m branchModule) putBranches(branches []Branch) error {
 
 		//set single default branch in project
 		if err := tx.
-			Model(&Branch{}).
-			Where(&Branch{ProjectID: defaultBranch.ProjectID, Default: true}).
-			Where(tx.Not(&defaultBranch, database.BranchFields.Name)).
+			Model(&database.Branch{}).
+			Where(&database.Branch{ProjectID: projectID, Default: true}).
+			Where(tx.Not(&database.Branch{Name: defaultBranchName}, database.BranchFields.Name)).
 			Select(database.BranchFields.Default).
-			Updates(&Branch{Default: false}).Error; err != nil {
+			Updates(&database.Branch{Default: false}).Error; err != nil {
 			return err
 		}
 
-		for _, oldDbBranch := range oldDbBranches {
-			if !contains(branchNames, oldDbBranch.Name) {
+		for _, dbOldBranch := range dbOldBranches {
+			if _, ok := branchNamesSet[dbOldBranch.Name]; !ok {
 				//remove old branch
 				if err := tx.
-					Where(&oldDbBranch, database.BranchFields.ProjectID, database.BranchFields.TokenID, database.BranchFields.Name).
-					Delete(&oldDbBranch).Error; err != nil {
+					Where(&dbOldBranch, database.BranchFields.ProjectID, database.BranchFields.TokenID, database.BranchFields.Name).
+					Delete(&dbOldBranch).Error; err != nil {
 					return err
 				}
 				log.Info().
-					WithString("branch", oldDbBranch.Name).
-					WithUint("project", oldDbBranch.ProjectID).
+					WithString("branch", dbOldBranch.Name).
+					WithUint("project", dbOldBranch.ProjectID).
 					Message("Deleted branch from project.")
 			}
 		}
 
-		return nil
+		return m.Database.Find(&dbNewBranches).Error
 	})
+
+	if err != nil {
+		log.Error().
+			WithError(err).
+			Message("Failed to replace branch list. Transaction rolled back.")
+		return nil, err
+	}
+
+	return dbNewBranches, nil
+}
+
+func dbBranchesToResponses(dbBranches []database.Branch) []response.Branch {
+	resBranches := make([]response.Branch, len(dbBranches))
+	for i, dbBranch := range dbBranches {
+		resBranches[i] = dbBranchToResponse(dbBranch)
+	}
+	return resBranches
+}
+
+func dbBranchToResponse(dbBranch database.Branch) response.Branch {
+	return response.Branch{
+		BranchID:  dbBranch.BranchID,
+		ProjectID: dbBranch.ProjectID,
+		Name:      dbBranch.Name,
+		Default:   dbBranch.Default,
+		TokenID:   dbBranch.TokenID,
+	}
 }
