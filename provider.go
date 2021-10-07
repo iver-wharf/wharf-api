@@ -69,7 +69,7 @@ func (m providerModule) getProviderHandler(c *gin.Context) {
 		return
 	}
 
-	dbProvider, ok := fetchProviderByID(c, m.Database, providerID)
+	dbProvider, ok := fetchProviderByID(c, m.Database, providerID, "")
 	if !ok {
 		return
 	}
