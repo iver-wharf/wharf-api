@@ -18,6 +18,23 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   marked as deprecated in v4.2.0/#38. Now all environment variables require the
   `WHARF_` prefix. (#87)
 
+- BREAKING: Changed the following POST creation endpoints to solely create,
+  instead of the previous behavior where it instead could update if it found an
+  existing database object that matched the HTTP request data: (#88)
+
+  - `POST /project`
+  - `POST /provider`
+  - `POST /token`
+
+- Deprecated PUT endpoints that took the object ID from the HTTP request body.
+  They are still supported, but may be removed in the next major release
+  (v6.0.0). Please refer to the new endpoints that takes the ID from the URL
+  path. (#88)
+
+  - Use `PUT /project/{projectId}` instead of `PUT /project`
+  - Use `PUT /provider/{providerId}` instead of `PUT /provider`
+  - Use `PUT /token/{tokenId}` instead of `PUT /token`
+
 - Fixed bug where unable to delete a Project without first deleting all child
   objects. (#64)
 
