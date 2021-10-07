@@ -137,6 +137,17 @@ func (name ProviderName) IsValid() bool {
 		name == ProviderGitHub
 }
 
+// ValidString returns the name as a string if valid, as well as the boolean
+// value true, or false if the name is invalid.
+// 	ProviderGitHub.ValidString()     // => "github", true
+// 	(ProviderName("")).ValidString() // => "", false
+func (name ProviderName) ValidString() (string, bool) {
+	if name.IsValid() {
+		return string(name), true
+	}
+	return "", false
+}
+
 // ProviderSearch holds values used in verbatim searches for providers.
 type ProviderSearch struct {
 	Name    ProviderName `json:"name" enums:"azuredevops,gitlab,github"`

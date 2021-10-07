@@ -100,7 +100,7 @@ func (m providerModule) searchProviderListHandler(c *gin.Context) {
 		return
 	}
 
-	validName, isValid := validateRequestProviderName(reqProvider.Name)
+	validName, isValid := reqProvider.Name.ValidString()
 	if !isValid {
 		writeInvalidProviderNameProblem(c, reqProvider.Name)
 		return
@@ -169,7 +169,7 @@ func (m providerModule) createProviderHandler(c *gin.Context) {
 		return
 	}
 
-	validName, isValid := validateRequestProviderName(reqProvider.Name)
+	validName, isValid := reqProvider.Name.ValidString()
 	if !isValid {
 		writeInvalidProviderNameProblem(c, reqProvider.Name)
 		return
@@ -217,7 +217,7 @@ func (m providerModule) updateProviderHandler(c *gin.Context) {
 		ginutil.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading the request body.")
 		return
 	}
-	validName, isValid := validateRequestProviderName(reqProviderUpdate.Name)
+	validName, isValid := reqProviderUpdate.Name.ValidString()
 	if !isValid {
 		writeInvalidProviderNameProblem(c, reqProviderUpdate.Name)
 		return
@@ -265,11 +265,4 @@ func writeInvalidProviderNameProblem(c *gin.Context, actual request.ProviderName
 			actual, request.ProviderNameValues),
 		Instance: c.Request.RequestURI + "#name",
 	})
-}
-
-func validateRequestProviderName(name request.ProviderName) (string, bool) {
-	if !name.IsValid() {
-		return "", false
-	}
-	return string(name), true
 }

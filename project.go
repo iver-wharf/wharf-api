@@ -347,7 +347,6 @@ func (m projectModule) startProjectBuildHandler(c *gin.Context) {
 	if !ok {
 		return
 	}
-
 	dbProject, ok := fetchProjectByID(c, m.Database, projectID, "when starting a new build")
 	if !ok {
 		return
