@@ -17,6 +17,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/iver-wharf/wharf-api/docs"
+	"github.com/iver-wharf/wharf-api/internal/deprecated"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/swaggo/gin-swagger/swaggerFiles"
 )
@@ -123,7 +124,12 @@ func main() {
 		buildModule{Database: db, MessageQueue: mq},
 		tokenModule{Database: db},
 		branchModule{Database: db},
-		providerModule{Database: db}}
+		providerModule{Database: db},
+		deprecated.ProjectModule{Database: db},
+		deprecated.TokenModule{Database: db},
+		deprecated.BranchModule{},
+		deprecated.ProviderModule{Database: db},
+	}
 
 	api := r.Group("/api")
 	for _, module := range modules {
