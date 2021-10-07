@@ -70,17 +70,7 @@ func (m tokenModule) getTokenHandler(c *gin.Context) {
 		return
 	}
 
-	var dbToken database.Token
-	err := m.Database.First(&dbToken, tokenID).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		ginutil.WriteDBNotFound(c, fmt.Sprintf(
-			"Token with ID %d was not found.", tokenID))
-		return
-	} else if err != nil {
-		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
-			"Failed fetching token by ID %d from database.", tokenID))
-		return
-	}
+	dbToken, ok := fetchTokenByID(c, m.Database, tokenID)
 
 	resToken := dbTokenToResponseToken(dbToken)
 	c.JSON(http.StatusOK, resToken)
@@ -154,25 +144,16 @@ func (m tokenModule) createTokenHandler(c *gin.Context) {
 		UserName: reqToken.UserName,
 	}
 
-	if reqToken.ProviderID.Valid && reqToken.ProviderID.Int64 != 0 {
-		var provider database.Provider
-		err := m.Database.Find(&provider, reqToken.ProviderID).Error
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			ginutil.WriteDBNotFound(c, fmt.Sprintf(
-				"Provider with ID %d was not found when creating token.",
-				reqToken.ProviderID.Int64))
-			return
-		} else if err != nil {
-			ginutil.WriteDBReadError(c, err, fmt.Sprintf(
-				"Failed fetching project with ID %d from database when creating token.",
-				reqToken.ProviderID.Int64))
+	if reqToken.ProviderID != 0 {
+		dbProvider, ok := fetchProviderByID(c, m.Database, reqToken.ProviderID)
+		if !ok {
 			return
 		}
-		provider.Token = &dbToken
-		if err := m.Database.Save(&provider).Error; err != nil {
+		dbProvider.Token = &dbToken
+		if err := m.Database.Save(&dbProvider).Error; err != nil {
 			ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
 				"Failed updating provider with ID %d with a new token.",
-				reqToken.ProviderID.Int64))
+				reqToken.ProviderID))
 			return
 		}
 	} else {
@@ -201,7 +182,7 @@ func (m tokenModule) createTokenHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /token/{tokenId} [put]
 func (m tokenModule) updateTokenHandler(c *gin.Context) {
-	tokenId, ok := ginutil.ParseParamInt(c, "tokenId")
+	tokenID, ok := ginutil.ParseParamUint(c, "tokenId")
 	if !ok {
 		return
 	}
@@ -210,13 +191,8 @@ func (m tokenModule) updateTokenHandler(c *gin.Context) {
 		ginutil.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading the request body.")
 		return
 	}
-	var dbToken database.Token
-	if err := m.Database.First(&dbToken, tokenId).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			ginutil.WriteDBNotFound(c, fmt.Sprintf("No token was found by ID %d.", tokenId))
-		} else {
-			ginutil.WriteDBReadError(c, err, fmt.Sprintf("Failed to find token by ID %d.", tokenId))
-		}
+	dbToken, ok := fetchTokenByID(c, m.Database, tokenID)
+	if !ok {
 		return
 	}
 
@@ -226,11 +202,24 @@ func (m tokenModule) updateTokenHandler(c *gin.Context) {
 	if err := m.Database.Save(&dbToken).Error; err != nil {
 		ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
 			"Failed to update token by ID %d.",
-			tokenId))
+			tokenID))
 	}
 
 	resToken := dbTokenToResponseToken(dbToken)
 	c.JSON(http.StatusOK, resToken)
+}
+
+func fetchTokenByID(c *gin.Context, db *gorm.DB, tokenID uint) (database.Token, bool) {
+	var dbToken database.Token
+	if err := db.First(&dbToken, tokenID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			ginutil.WriteDBNotFound(c, fmt.Sprintf("No token was found by ID %d.", tokenID))
+		} else {
+			ginutil.WriteDBReadError(c, err, fmt.Sprintf("Failed to find token by ID %d.", tokenID))
+		}
+		return database.Token{}, false
+	}
+	return dbToken, true
 }
 
 func dbTokensToResponseTokens(dbTokens []database.Token) []response.Token {

@@ -5,8 +5,6 @@ package request
 
 import (
 	"time"
-
-	"gopkg.in/guregu/null.v4"
 )
 
 // Reference doc about the Go tags:
@@ -27,9 +25,9 @@ type TokenSearch struct {
 
 // Token specifies fields when creating a new token.
 type Token struct {
-	Token      string   `json:"token" format:"password" validate:"required"`
-	UserName   string   `json:"userName" validate:"required"`
-	ProviderID null.Int `json:"providerId" swaggertype:"integer" extensions:"x-nullable"`
+	Token      string `json:"token" format:"password" validate:"required"`
+	UserName   string `json:"userName" validate:"required"`
+	ProviderID uint   `json:"providerId"`
 }
 
 // Token specifies fields when creating a new token.

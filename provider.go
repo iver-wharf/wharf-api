@@ -15,35 +15,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// ProviderName is an enum of different providers that are available over at
-// https://github.com/iver-wharf
-type ProviderName byte
-
-const (
-	// ProviderAzureDevOps refers to the Azure DevOps provider plugin,
-	// https://github.com/iver-wharf/wharf-provider-azuredevops
-	ProviderAzureDevOps ProviderName = iota
-	// ProviderGitLab refers to the GitLab provider plugin,
-	// https://github.com/iver-wharf/wharf-provider-gitlab
-	ProviderGitLab
-	// ProviderGitHub refers to the GitHub provider plugin,
-	// https://github.com/iver-wharf/wharf-provider-github
-	ProviderGitHub
-)
-
-func (provider ProviderName) toString() string {
-	switch provider {
-	case ProviderAzureDevOps:
-		return "azuredevops"
-	case ProviderGitLab:
-		return "gitlab"
-	case ProviderGitHub:
-		return "github"
-	default:
-		return fmt.Sprintf("ProviderName(%d)", byte(provider))
-	}
-}
-
 type providerModule struct {
 	Database *gorm.DB
 }
@@ -269,6 +240,23 @@ func (m providerModule) updateProviderHandler(c *gin.Context) {
 	}
 	resProvider := dbProviderToResponse(dbProvider)
 	c.JSON(http.StatusOK, resProvider)
+}
+
+func fetchProviderByID(c *gin.Context, db *gorm.DB, providerID uint) (database.Provider, bool) {
+	var dbProvider database.Provider
+	if err := db.Find(&dbProvider, providerID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			ginutil.WriteDBNotFound(c, fmt.Sprintf(
+				"Provider with ID %d was not found when creating token.",
+				providerID))
+		} else {
+			ginutil.WriteDBReadError(c, err, fmt.Sprintf(
+				"Failed fetching project with ID %d from database when creating token.",
+				providerID))
+		}
+		return database.Provider{}, false
+	}
+	return dbProvider, true
 }
 
 func writeInvalidProviderNameProblem(c *gin.Context, actual request.ProviderName) {
