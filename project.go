@@ -50,15 +50,6 @@ func (m projectModule) Register(g *gin.RouterGroup) {
 	}
 }
 
-func (m projectModule) FindProjectByID(id uint) (database.Project, error) {
-	var dbProject database.Project
-	err := m.databaseProjectPreloaded().
-		Where(&database.Project{ProjectID: id}).
-		First(&dbProject).
-		Error
-	return dbProject, err
-}
-
 // getProjectListHandler godoc
 // @id getProjectList
 // @summary Returns all projects from database
@@ -69,7 +60,7 @@ func (m projectModule) FindProjectByID(id uint) (database.Project, error) {
 // @router /projects [get]
 func (m projectModule) getProjectListHandler(c *gin.Context) {
 	var dbProjects []database.Project
-	err := m.databaseProjectPreloaded().
+	err := databaseProjectPreloaded(m.Database).
 		Find(&dbProjects).
 		Error
 	if err != nil {
@@ -78,15 +69,6 @@ func (m projectModule) getProjectListHandler(c *gin.Context) {
 	}
 	resProjects := dbProjectsToResponses(dbProjects)
 	c.JSON(http.StatusOK, resProjects)
-}
-
-func (m projectModule) databaseProjectPreloaded() *gorm.DB {
-	return m.Database.Set("gorm:auto_preload", false).
-		Preload(database.ProjectFields.Provider).
-		Preload(database.ProjectFields.Branches, func(db *gorm.DB) *gorm.DB {
-			return db.Order(database.BranchColumns.BranchID)
-		}).
-		Preload(database.ProjectFields.Token)
 }
 
 // searchProjectListHandler godoc
@@ -215,12 +197,8 @@ func (m projectModule) getProjectHandler(c *gin.Context) {
 	if !ok {
 		return
 	}
-	dbProject, err := m.FindProjectByID(projectID)
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		ginutil.WriteDBNotFound(c, fmt.Sprintf("Project with ID %d was not found.", projectID))
-		return
-	} else if err != nil {
-		ginutil.WriteDBReadError(c, err, fmt.Sprintf("Failed fetching project with ID %d from database.", projectID))
+	dbProject, ok := fetchProjectByID(c, m.Database, projectID, "")
+	if !ok {
 		return
 	}
 	resProject := dbProjectToResponse(dbProject)
@@ -333,17 +311,11 @@ func (m projectModule) deleteProjectHandler(c *gin.Context) {
 	if !ok {
 		return
 	}
-
-	dbProject, err := m.FindProjectByID(projectID)
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		ginutil.WriteDBNotFound(c, fmt.Sprintf("Project with ID %d was not found in the database.", projectID))
-	} else if err != nil {
-		ginutil.WriteDBReadError(c, err, fmt.Sprintf("Failed fetching project with ID %d from database.", projectID))
+	dbProject, ok := fetchProjectByID(c, m.Database, projectID, "when deleting project")
+	if !ok {
 		return
 	}
-
-	err = m.Database.Delete(&dbProject).Error
-	if err != nil {
+	if err := m.Database.Delete(&dbProject).Error; err != nil {
 		ginutil.WriteDBWriteError(c, err, fmt.Sprintf("Failed deleting project with ID %d from database.", projectID))
 		return
 	}
@@ -610,6 +582,21 @@ func (m projectModule) startProjectBuildHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dbBuildToResponseBuildReferenceWrapper(dbBuild))
+}
+
+func fetchProjectByID(c *gin.Context, db *gorm.DB, projectID uint, whenMsg string) (database.Project, bool) {
+	var dbProject database.Project
+	ok := fetchDatabaseObjByID(c, databaseProjectPreloaded(db), &dbProject, projectID, "project", whenMsg)
+	return dbProject, ok
+}
+
+func databaseProjectPreloaded(db *gorm.DB) *gorm.DB {
+	return db.Set("gorm:auto_preload", false).
+		Preload(database.ProjectFields.Provider).
+		Preload(database.ProjectFields.Branches, func(db *gorm.DB) *gorm.DB {
+			return db.Order(database.BranchColumns.BranchID)
+		}).
+		Preload(database.ProjectFields.Token)
 }
 
 func dbBuildToResponseBuildReferenceWrapper(dbBuild database.Build) response.BuildReferenceWrapper {
