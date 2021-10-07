@@ -37,6 +37,7 @@ func (m ProviderModule) Register(g *gin.RouterGroup) {
 
 // updateProviderHandler godoc
 // @id updateProvider
+// @deprecated
 // @summary Put provider in database.
 // @description Creates a new provider if a match is not found.
 // @description Deprecated since v5.0.0. Planned for removal in v6.0.0.

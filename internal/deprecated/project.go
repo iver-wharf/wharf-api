@@ -42,10 +42,13 @@ func (m ProjectModule) Register(g *gin.RouterGroup) {
 
 // updateProjectHandler godoc
 // @id updateProject
+// @deprecated
 // @summary Adds project when not exists.
 // @description It finds project by ID or if ID is set to 0 it takes group name.
 // @description First found project will be returned. If not found project will be added into database.
 // @description It ignores branches array, build history and provider params.
+// @description Deprecated since v5.0.0. Planned for removal in v6.0.0.
+// @description Use POST /project to create, or PUT /project/{projectId} to update instead.
 // @tags project
 // @accept json
 // @produce json
