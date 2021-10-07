@@ -38,7 +38,7 @@ func fetchDatabaseObjByID(c *gin.Context, db *gorm.DB, modelPtr interface{}, id 
 	if err := db.Find(modelPtr, id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			ginutil.WriteDBNotFound(c, fmt.Sprintf(
-				"%s with ID %d was not found when creating token%s.",
+				"%s with ID %d was not found%s.",
 				strings.ToTitle(name), id, spacedWhenMsg))
 		} else {
 			ginutil.WriteDBReadError(c, err, fmt.Sprintf(
