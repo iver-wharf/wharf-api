@@ -16,7 +16,7 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
 - Added support for Sqlite. Default database driver is still Postgres.
 
-  Note: wharf-api must be compiled with `GCO_ENABLED=1` (which is the default
+  Note: wharf-api must be compiled with `CGO_ENABLED=1` (which is the default
   for Go builds) but our Docker build is compiled with `CGO_ENABLED=0`. If you
   need Sqlite support in our Docker image, then please file a new issue over
   at <https://github.com/iver-wharf/wharf-api/issues/new>, and we will take a
