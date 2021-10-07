@@ -87,7 +87,6 @@ type ProjectSearch struct {
 
 // Project specifies fields when creating a new project.
 type Project struct {
-	ProjectID       uint   `json:"projectId"`
 	Name            string `json:"name" validate:"required" binding:"required"`
 	GroupName       string `json:"groupName"`
 	Description     string `json:"description"`
@@ -99,10 +98,7 @@ type Project struct {
 }
 
 // ProjectUpdate specifies fields when updating a project.
-// If the project ID is unspecified, then the wharf-api will try to match
-// the project on the project's name and group.
 type ProjectUpdate struct {
-	ProjectID       uint   `json:"projectId"`
 	Name            string `json:"name" validate:"required" binding:"required"`
 	GroupName       string `json:"groupName"`
 	Description     string `json:"description"`
