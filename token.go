@@ -177,7 +177,7 @@ func (m tokenModule) createTokenHandler(c *gin.Context) {
 // @accept json
 // @produce json
 // @param tokenId path uint true "ID of token to update"
-// @param token body request.Token _ "New token values"
+// @param token body request.TokenUpdate _ "New token values"
 // @success 200 {object} response.Token
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
