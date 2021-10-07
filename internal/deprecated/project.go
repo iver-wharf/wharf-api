@@ -52,7 +52,7 @@ func (m ProjectModule) Register(g *gin.RouterGroup) {
 // @tags project
 // @accept json
 // @produce json
-// @param project body request.ProjectUpdate _ "project object"
+// @param project body deprecated.ProjectUpdate _ "project object"
 // @success 200 {object} response.Project "Project was updated"
 // @success 201 {object} response.Project "A new project was created"
 // @failure 400 {object} problem.Response "Bad request, such as invalid body JSON"

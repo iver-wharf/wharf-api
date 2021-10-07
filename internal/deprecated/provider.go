@@ -46,7 +46,7 @@ func (m ProviderModule) Register(g *gin.RouterGroup) {
 // @tags provider
 // @accept json
 // @produce json
-// @param provider body request.ProviderUpdate _ "provider object"
+// @param provider body deprecated.ProviderUpdate _ "provider object"
 // @success 200 {object} response.Provider
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"

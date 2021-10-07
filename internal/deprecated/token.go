@@ -44,7 +44,7 @@ func (m TokenModule) Register(g *gin.RouterGroup) {
 // @tags token
 // @accept json
 // @produce json
-// @param token body request.Token _ "Token to add or update"
+// @param token body deprecated.Token _ "Token to add or update"
 // @success 200 {object} response.Token
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
