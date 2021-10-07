@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/iver-wharf/messagebus-go"
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/iver-wharf/wharf-api/pkg/model/request"
 	"github.com/iver-wharf/wharf-api/pkg/modelconv"
@@ -31,9 +30,7 @@ type ProjectUpdate struct {
 
 // ProjectModule holds deprecated endpoint handlers for /project
 type ProjectModule struct {
-	Database     *gorm.DB
-	MessageQueue *messagebus.MQConnection
-	Config       *Config
+	Database *gorm.DB
 }
 
 func (m ProjectModule) Register(g *gin.RouterGroup) {
