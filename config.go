@@ -142,7 +142,7 @@ type CertConfig struct {
 type DBDriver string
 
 const (
-	// DBDriverPostgres specifies usage of Postgres for persistance.
+	// DBDriverPostgres specifies usage of Postgres for persistence.
 	//
 	// Added in v5.0.0. Before v5.0.0, the database driver was assumed to be
 	// Postgres, no matter what config you provided to wharf-api.
