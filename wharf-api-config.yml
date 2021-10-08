@@ -1,17 +1,26 @@
-# See config.go for reference on all config options
+# This file is used when running a local development instance of Wharf,
+# and is not built into wharf-api nor is it shipped together with the
+# pre-built binaries and Docker images.
+#
+# See config.go for reference on all config options to understand how you
+# can write your own wharf-api-config.yml for your wharf-api instance.
 
 instanceId: local
 
 db:
+  driver: sqlite
   name: wharf
-  host: localhost
-  port: 5432
-  username: postgres
-  # This password correlates to the one used in
-  # https://github.com/iver-wharf/wharf-docker-compose
-  # It is not a leaked password :)
-  password: OL2AEn6lgj6ekajgKJIOanefgegnksngpoetPIEQjhankf7412
   log: true
+
+  ## To connect to DB from iver-wharf/wharf-docker-compose, use this:
+  #driver: postgres
+  #host: localhost
+  #port: 5432
+  #username: postgres
+  ## This password correlates to the one used in
+  ## https://github.com/iver-wharf/wharf-docker-compose
+  ## It is not a leaked password :)
+  #password: OL2AEn6lgj6ekajgKJIOanefgegnksngpoetPIEQjhankf7412
 
 mq:
   enabled: false
