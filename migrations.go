@@ -22,9 +22,10 @@ func runDatabaseMigrations(db *gorm.DB, driver DBDriver) error {
 	if dbDriverSupportsForeignKeyConstraints(driver) {
 		migrateConstraints(db, tables)
 	} else {
-		log.Info().
+		log.Warn().
 			WithString("driver", string(driver)).
-			Message("Skipping foreign key constraints, as chosen DB does not support it.")
+			Message("Skipping foreign key constraints, as chosen DB does not support it." +
+				" We advice against using this driver for production!")
 	}
 
 	oldColumns := []columnToDrop{
