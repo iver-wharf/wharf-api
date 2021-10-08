@@ -1,4 +1,9 @@
-# See config.go for reference on all config options
+# This file is used when running a local development instance of Wharf,
+# and is not built into wharf-api nor is it shipped together with the
+# pre-built binaries and Docker images.
+#
+# See config.go for reference on all config options to understand how you
+# can write your own wharf-api-config.yml for your wharf-api instance.
 
 instanceId: local
 
