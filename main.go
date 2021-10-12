@@ -65,11 +65,14 @@ func main() {
 
 	db, err := openDatabase(config.DB)
 	if err != nil {
-		log.Error().WithError(err).Message("Database error")
+		log.Error().
+			WithString("driver", string(config.DB.Driver)).
+			WithError(err).
+			Message("Database error")
 		os.Exit(2)
 	}
 
-	err = runDatabaseMigrations(db)
+	err = runDatabaseMigrations(db, config.DB.Driver)
 	if err != nil {
 		log.Error().WithError(err).Message("Migration error")
 		os.Exit(3)
