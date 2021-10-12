@@ -5,7 +5,9 @@ import (
 	"github.com/iver-wharf/wharf-api/pkg/model/response"
 )
 
-func DBBranchListToResponse(dbDefaultBranch *database.Branch, dbAllBranches []database.Branch) response.BranchList {
+// DBBranchListToResponse converts a list of branches and an optional default
+// branch to a response list of branches.
+func DBBranchListToResponse(dbAllBranches []database.Branch, dbDefaultBranch *database.Branch) response.BranchList {
 	resBranchList := response.BranchList{
 		Branches: DBBranchesToResponses(dbAllBranches),
 	}

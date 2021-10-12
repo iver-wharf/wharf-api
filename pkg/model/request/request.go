@@ -44,10 +44,12 @@ type Branch struct {
 	TokenID   uint   `json:"tokenId"`
 }
 
+// BranchUpdate specifies fields for a single branch.
 type BranchUpdate struct {
 	Name string `json:"name" validate:"required"`
 }
 
+// BranchListUpdate specifies fields when resetting all branches for a project.
 type BranchListUpdate struct {
 	DefaultBranch string         `json:"defaultBranch" extensions:"x-nullable"`
 	Branches      []BranchUpdate `json:"branches"`

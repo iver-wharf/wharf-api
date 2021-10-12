@@ -138,7 +138,7 @@ func (m branchModule) updateProjectBranchListHandler(c *gin.Context) {
 		ginutil.WriteDBWriteError(c, err, "Failed to update branches in database.")
 		return
 	}
-	resBranchList := modelconv.DBBranchListToResponse(dbBranchList.defaultBranch, dbBranchList.branches)
+	resBranchList := modelconv.DBBranchListToResponse(dbBranchList.branches, dbBranchList.defaultBranch)
 	c.JSON(http.StatusOK, resBranchList)
 }
 
@@ -158,16 +158,16 @@ func replaceBranchList(db *gorm.DB, projectID uint, tokenID uint, reqUpdate requ
 
 		wantBranchNamesSet := set.String{}
 		for _, reqBranchUpdate := range reqUpdate.Branches {
-			wantBranchNamesSet.Add(reqBranchUpdate.Name)
+			wantBranchNamesSet.Set(reqBranchUpdate.Name)
 		}
 
 		hasBranchNamesSet := set.String{}
 		for _, dbOldBranch := range dbOldBranches {
-			hasBranchNamesSet.Add(dbOldBranch.Name)
+			hasBranchNamesSet.Set(dbOldBranch.Name)
 		}
 
-		branchNamesToDelete := hasBranchNamesSet.Subtract(wantBranchNamesSet)
-		branchNamesToAdd := wantBranchNamesSet.Subtract(hasBranchNamesSet)
+		branchNamesToDelete := hasBranchNamesSet.Difference(wantBranchNamesSet)
+		branchNamesToAdd := wantBranchNamesSet.Difference(hasBranchNamesSet)
 
 		var dbBranchesToAdd []database.Branch
 		for branchName := range branchNamesToAdd {
@@ -205,11 +205,7 @@ func replaceBranchList(db *gorm.DB, projectID uint, tokenID uint, reqUpdate requ
 				Message("Deleted branches from project when updating branches.")
 		}
 
-		if err := setDefaultBranch(tx, projectID, reqUpdate.DefaultBranch); err != nil {
-			return err
-		}
-
-		return nil
+		return setDefaultBranch(tx, projectID, reqUpdate.DefaultBranch)
 	})
 
 	if err != nil {
@@ -253,15 +249,12 @@ func setDefaultBranch(db *gorm.DB, projectID uint, defaultBranchName string) err
 			return err
 		}
 		// ensure "default=true" on default branch
-		if err := tx.
+		return tx.
 			Model(&database.Branch{}).
 			Where(&database.Branch{ProjectID: projectID, Name: defaultBranchName},
 				database.BranchFields.ProjectID,
 				database.BranchFields.Name).
 			Select(database.BranchFields.Default).
-			Updates(&database.Branch{Default: true}).Error; err != nil {
-			return err
-		}
-		return nil
+			Updates(&database.Branch{Default: true}).Error
 	})
 }

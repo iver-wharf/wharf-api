@@ -32,6 +32,8 @@ type Branch struct {
 	TokenID   uint   `json:"tokenId"`
 }
 
+// BranchList holds a list of branches, and a separate field for the default
+// branch (if any).
 type BranchList struct {
 	DefaultBranch *Branch  `json:"defaultBranch" extensions:"x-nullable"`
 	Branches      []Branch `json:"branches"`
