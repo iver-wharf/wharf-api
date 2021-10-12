@@ -41,7 +41,7 @@ func (m ProjectModule) Register(g *gin.RouterGroup) {
 }
 
 // updateProjectHandler godoc
-// @id updateProject
+// @id oldUpdateProject
 // @deprecated
 // @summary Adds project when not exists.
 // @description It finds project by ID or if ID is set to 0 it takes group name.
