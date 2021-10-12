@@ -10,6 +10,7 @@ import (
 	"github.com/iver-wharf/wharf-api/internal/ctxparser"
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/iver-wharf/wharf-api/pkg/model/response"
+	"github.com/iver-wharf/wharf-api/pkg/modelconv"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"github.com/iver-wharf/wharf-core/pkg/problem"
 	"gorm.io/gorm"
@@ -148,7 +149,7 @@ func (m buildTestResultModule) getBuildAllTestResultDetailListHandler(c *gin.Con
 		return
 	}
 
-	resDetails := dbTestResultDetailsToResponses(dbDetails)
+	resDetails := modelconv.DBTestResultDetailsToResponses(dbDetails)
 	c.JSON(http.StatusOK, resDetails)
 }
 
@@ -182,7 +183,7 @@ func (m buildTestResultModule) getBuildAllTestResultSummaryListHandler(c *gin.Co
 
 	resSummaries := make([]response.TestResultSummary, len(dbSummaries))
 	for i, dbSummary := range dbSummaries {
-		resSummaries[i] = dbTestResultSummaryToResponse(dbSummary)
+		resSummaries[i] = modelconv.DBTestResultSummaryToResponse(dbSummary)
 	}
 
 	c.JSON(http.StatusOK, resSummaries)
@@ -222,7 +223,7 @@ func (m buildTestResultModule) getBuildTestResultSummaryHandler(c *gin.Context) 
 		return
 	}
 
-	resSummary := dbTestResultSummaryToResponse(dbSummary)
+	resSummary := modelconv.DBTestResultSummaryToResponse(dbSummary)
 	c.JSON(http.StatusOK, resSummary)
 }
 
@@ -260,7 +261,7 @@ func (m buildTestResultModule) getBuildTestResultDetailListHandler(c *gin.Contex
 		return
 	}
 
-	resDetails := dbTestResultDetailsToResponses(dbDetails)
+	resDetails := modelconv.DBTestResultDetailsToResponses(dbDetails)
 	c.JSON(http.StatusOK, resDetails)
 }
 
@@ -414,59 +415,4 @@ func getTestSummaryAndDetails(data []byte, artifactID, buildID uint) (database.T
 	}
 
 	return dbSummary, dbDetails, nil
-}
-
-func dbTestResultSummariesToResponses(dbSummaries []database.TestResultSummary) []response.TestResultSummary {
-	resSummaries := make([]response.TestResultSummary, len(dbSummaries))
-	for i, dbSummary := range dbSummaries {
-		resSummaries[i] = dbTestResultSummaryToResponse(dbSummary)
-	}
-	return resSummaries
-}
-
-func dbTestResultSummaryToResponse(dbSummary database.TestResultSummary) response.TestResultSummary {
-	return response.TestResultSummary{
-		TestResultSummaryID: dbSummary.TestResultSummaryID,
-		FileName:            dbSummary.FileName,
-		ArtifactID:          dbSummary.ArtifactID,
-		BuildID:             dbSummary.BuildID,
-		Total:               dbSummary.Total,
-		Failed:              dbSummary.Failed,
-		Passed:              dbSummary.Passed,
-		Skipped:             dbSummary.Skipped,
-	}
-}
-
-func dbTestResultDetailsToResponses(dbDetails []database.TestResultDetail) []response.TestResultDetail {
-	resDetails := make([]response.TestResultDetail, len(dbDetails))
-	for i, dbDetail := range dbDetails {
-		resDetails[i] = dbTestResultDetailToResponse(dbDetail)
-	}
-	return resDetails
-}
-
-func dbTestResultDetailToResponse(dbDetail database.TestResultDetail) response.TestResultDetail {
-	return response.TestResultDetail{
-		TestResultDetailID: dbDetail.TestResultDetailID,
-		ArtifactID:         dbDetail.ArtifactID,
-		BuildID:            dbDetail.BuildID,
-		Name:               dbDetail.Name,
-		Message:            dbDetail.Message,
-		StartedOn:          dbDetail.StartedOn,
-		CompletedOn:        dbDetail.CompletedOn,
-		Status:             dbTestResultStatusToResponse(dbDetail.Status),
-	}
-}
-
-func dbTestResultStatusToResponse(dbStatus database.TestResultStatus) response.TestResultStatus {
-	switch dbStatus {
-	case database.TestResultStatusSuccess:
-		return response.TestResultStatusSuccess
-	case database.TestResultStatusSkipped:
-		return response.TestResultStatusSkipped
-	case database.TestResultStatusFailed:
-		return response.TestResultStatusFailed
-	default:
-		return response.TestResultStatus(dbStatus)
-	}
 }

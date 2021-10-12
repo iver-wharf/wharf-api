@@ -3,7 +3,9 @@
 // Swaggo-specific Go tags.
 package request
 
-import "time"
+import (
+	"time"
+)
 
 // Reference doc about the Go tags:
 //  TAG                  SOURCE                   DESCRIPTION
@@ -26,6 +28,12 @@ type Token struct {
 	Token      string `json:"token" format:"password" validate:"required"`
 	UserName   string `json:"userName" validate:"required"`
 	ProviderID uint   `json:"providerId"`
+}
+
+// TokenUpdate specifies fields when updating a token.
+type TokenUpdate struct {
+	Token    string `json:"token" format:"password" validate:"required"`
+	UserName string `json:"userName" validate:"required"`
 }
 
 // Branch specifies fields when adding a new branch to a project.
@@ -79,7 +87,6 @@ type ProjectSearch struct {
 
 // Project specifies fields when creating a new project.
 type Project struct {
-	ProjectID       uint   `json:"projectId"`
 	Name            string `json:"name" validate:"required" binding:"required"`
 	GroupName       string `json:"groupName"`
 	Description     string `json:"description"`
@@ -91,10 +98,7 @@ type Project struct {
 }
 
 // ProjectUpdate specifies fields when updating a project.
-// If the project ID is unspecified, then the wharf-api will try to match
-// the project on the project's name and group.
 type ProjectUpdate struct {
-	ProjectID       uint   `json:"projectId"`
 	Name            string `json:"name" validate:"required" binding:"required"`
 	GroupName       string `json:"groupName"`
 	Description     string `json:"description"`
@@ -133,6 +137,17 @@ func (name ProviderName) IsValid() bool {
 		name == ProviderGitHub
 }
 
+// ValidString returns the name as a string if valid, as well as the boolean
+// value true, or false if the name is invalid.
+// 	ProviderGitHub.ValidString()     // => "github", true
+// 	(ProviderName("")).ValidString() // => "", false
+func (name ProviderName) ValidString() (string, bool) {
+	if name.IsValid() {
+		return string(name), true
+	}
+	return "", false
+}
+
 // ProviderSearch holds values used in verbatim searches for providers.
 type ProviderSearch struct {
 	Name    ProviderName `json:"name" enums:"azuredevops,gitlab,github"`
@@ -149,8 +164,7 @@ type Provider struct {
 
 // ProviderUpdate specifies fields when updating a provider.
 type ProviderUpdate struct {
-	ProviderID uint         `json:"providerId"`
-	Name       ProviderName `json:"name" enums:"azuredevops,gitlab,github" validate:"required" binding:"required"`
-	URL        string       `json:"url" validate:"required" binding:"required"`
-	TokenID    uint         `json:"tokenId"`
+	Name    ProviderName `json:"name" enums:"azuredevops,gitlab,github" validate:"required" binding:"required"`
+	URL     string       `json:"url" validate:"required" binding:"required"`
+	TokenID uint         `json:"tokenId"`
 }

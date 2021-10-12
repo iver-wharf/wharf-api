@@ -13,6 +13,7 @@ import (
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/iver-wharf/wharf-api/pkg/model/request"
 	"github.com/iver-wharf/wharf-api/pkg/model/response"
+	"github.com/iver-wharf/wharf-api/pkg/modelconv"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"gorm.io/gorm"
 
@@ -98,7 +99,7 @@ func (m buildModule) getBuildHandler(c *gin.Context) {
 		return
 	}
 
-	resBuild := dbBuildToResponse(dbBuild)
+	resBuild := modelconv.DBBuildToResponse(dbBuild)
 	c.JSON(http.StatusOK, resBuild)
 }
 
@@ -229,7 +230,7 @@ func (m buildModule) createBuildLogHandler(c *gin.Context) {
 		return
 	}
 
-	if dbBuildStatus, ok := reqBuildStatusToDatabase(reqLogOrStatusUpdate.Status); ok {
+	if dbBuildStatus, ok := modelconv.ReqBuildStatusToDatabase(reqLogOrStatusUpdate.Status); ok {
 		_, err := m.updateBuildStatus(buildID, dbBuildStatus)
 		if err != nil {
 			ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
@@ -280,7 +281,7 @@ func (m buildModule) updateBuildHandler(c *gin.Context) {
 		return
 	}
 
-	statusID, ok := reqBuildStatusToDatabase(request.BuildStatus(status))
+	statusID, ok := modelconv.ReqBuildStatusToDatabase(request.BuildStatus(status))
 	if !ok {
 		ginutil.WriteInvalidParamError(c, nil, "status", fmt.Sprintf(
 			"Unable to parse build status from %q", status))
@@ -300,7 +301,7 @@ func (m buildModule) updateBuildHandler(c *gin.Context) {
 		return
 	}
 
-	resBuild := dbBuildToResponse(dbBuild)
+	resBuild := modelconv.DBBuildToResponse(dbBuild)
 	c.JSON(http.StatusOK, resBuild)
 }
 
@@ -360,95 +361,5 @@ func setStatusDate(build *database.Build, statusID database.BuildStatus) {
 		build.StartedOn.SetValid(now)
 	case database.BuildCompleted, database.BuildFailed:
 		build.CompletedOn.SetValid(now)
-	}
-}
-
-func dbBuildsToResponses(dbBuilds []database.Build) []response.Build {
-	resBuilds := make([]response.Build, len(dbBuilds))
-	for i, dbBuild := range dbBuilds {
-		resBuilds[i] = dbBuildToResponse(dbBuild)
-	}
-	return resBuilds
-}
-
-func dbBuildToResponse(dbBuild database.Build) response.Build {
-	var (
-		failed  uint
-		passed  uint
-		skipped uint
-	)
-	for _, summary := range dbBuild.TestResultSummaries {
-		failed += summary.Failed
-		passed += summary.Passed
-		skipped += summary.Skipped
-	}
-	resListSummary := response.TestResultListSummary{
-		BuildID: dbBuild.BuildID,
-		Total:   failed + passed + skipped,
-		Passed:  passed,
-		Skipped: skipped,
-		Failed:  failed,
-	}
-	return response.Build{
-		BuildID:               dbBuild.BuildID,
-		StatusID:              int(dbBuild.StatusID),
-		Status:                dbBuildStatusToResponse(dbBuild.StatusID),
-		ProjectID:             dbBuild.ProjectID,
-		ScheduledOn:           dbBuild.ScheduledOn,
-		StartedOn:             dbBuild.StartedOn,
-		CompletedOn:           dbBuild.CompletedOn,
-		GitBranch:             dbBuild.GitBranch,
-		Environment:           dbBuild.Environment,
-		Stage:                 dbBuild.Stage,
-		Params:                dbBuildParamsToResponses(dbBuild.Params),
-		IsInvalid:             dbBuild.IsInvalid,
-		TestResultSummaries:   dbTestResultSummariesToResponses(dbBuild.TestResultSummaries),
-		TestResultListSummary: resListSummary,
-	}
-}
-
-func dbBuildStatusToResponse(dbStatus database.BuildStatus) response.BuildStatus {
-	switch dbStatus {
-	case database.BuildScheduling:
-		return response.BuildScheduling
-	case database.BuildRunning:
-		return response.BuildRunning
-	case database.BuildCompleted:
-		return response.BuildCompleted
-	case database.BuildFailed:
-		return response.BuildFailed
-	default:
-		return response.BuildScheduling
-	}
-}
-
-func reqBuildStatusToDatabase(reqStatus request.BuildStatus) (database.BuildStatus, bool) {
-	switch reqStatus {
-	case request.BuildScheduling:
-		return database.BuildScheduling, true
-	case request.BuildRunning:
-		return database.BuildRunning, true
-	case request.BuildCompleted:
-		return database.BuildCompleted, true
-	case request.BuildFailed:
-		return database.BuildFailed, true
-	default:
-		return database.BuildScheduling, false
-	}
-}
-
-func dbBuildParamsToResponses(dbParams []database.BuildParam) []response.BuildParam {
-	resParams := make([]response.BuildParam, len(dbParams))
-	for i, dbParam := range dbParams {
-		resParams[i] = dbBuildParamToResponse(dbParam)
-	}
-	return resParams
-}
-
-func dbBuildParamToResponse(dbParam database.BuildParam) response.BuildParam {
-	return response.BuildParam{
-		BuildID: dbParam.BuildID,
-		Name:    dbParam.Name,
-		Value:   dbParam.Value,
 	}
 }

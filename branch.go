@@ -5,10 +5,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/iver-wharf/wharf-api/internal/deprecated"
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/iver-wharf/wharf-api/pkg/model/request"
-	"github.com/iver-wharf/wharf-api/pkg/model/response"
+	"github.com/iver-wharf/wharf-api/pkg/modelconv"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 
 	"github.com/gin-gonic/gin"
@@ -30,8 +29,6 @@ func (m branchModule) Register(g *gin.RouterGroup) {
 	{
 		branch.POST("", m.createBranchHandler)
 	}
-
-	deprecated.BranchModule{}.Register(g)
 }
 
 // getBranchListHandler godoc
@@ -87,7 +84,7 @@ func (m branchModule) createBranchHandler(c *gin.Context) {
 				dbBranch.Name, dbBranch.TokenID, dbBranch.ProjectID))
 			return
 		}
-		c.JSON(http.StatusCreated, dbBranchToResponse(dbBranch))
+		c.JSON(http.StatusCreated, modelconv.DBBranchToResponse(dbBranch))
 		return
 	} else if err != nil {
 		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
@@ -98,7 +95,7 @@ func (m branchModule) createBranchHandler(c *gin.Context) {
 
 	dbExistingBranch.Default = reqBranch.Default
 	m.Database.Save(dbExistingBranch)
-	c.JSON(http.StatusOK, dbBranchToResponse(dbExistingBranch))
+	c.JSON(http.StatusOK, modelconv.DBBranchToResponse(dbExistingBranch))
 }
 
 // updateProjectBranchListHandler godoc
@@ -126,7 +123,7 @@ func (m branchModule) updateProjectBranchListHandler(c *gin.Context) {
 		ginutil.WriteDBWriteError(c, err, "Failed to update branches in database.")
 		return
 	}
-	resBranches := dbBranchesToResponses(dbBranches)
+	resBranches := modelconv.DBBranchesToResponses(dbBranches)
 	c.JSON(http.StatusOK, resBranches)
 }
 
@@ -217,22 +214,4 @@ func (m branchModule) putBranches(reqBranches []request.Branch) ([]database.Bran
 	}
 
 	return dbNewBranches, nil
-}
-
-func dbBranchesToResponses(dbBranches []database.Branch) []response.Branch {
-	resBranches := make([]response.Branch, len(dbBranches))
-	for i, dbBranch := range dbBranches {
-		resBranches[i] = dbBranchToResponse(dbBranch)
-	}
-	return resBranches
-}
-
-func dbBranchToResponse(dbBranch database.Branch) response.Branch {
-	return response.Branch{
-		BranchID:  dbBranch.BranchID,
-		ProjectID: dbBranch.ProjectID,
-		Name:      dbBranch.Name,
-		Default:   dbBranch.Default,
-		TokenID:   dbBranch.TokenID,
-	}
 }

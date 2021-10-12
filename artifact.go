@@ -12,6 +12,7 @@ import (
 	"github.com/iver-wharf/wharf-api/internal/ctxparser"
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/iver-wharf/wharf-api/pkg/model/response"
+	"github.com/iver-wharf/wharf-api/pkg/modelconv"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"gorm.io/gorm"
 )
@@ -58,7 +59,7 @@ func (m artifactModule) getBuildArtifactListHandler(c *gin.Context) {
 
 	resArtifacts := make([]response.Artifact, len(dbArtifacts))
 	for i, dbArtifact := range dbArtifacts {
-		resArtifacts[i] = dbArtifactToResponseArtifact(dbArtifact)
+		resArtifacts[i] = modelconv.DBArtifactToResponse(dbArtifact)
 	}
 
 	c.JSON(http.StatusOK, resArtifacts)
@@ -226,13 +227,4 @@ func createArtifacts(c *gin.Context, db *gorm.DB, files []ctxparser.File, buildI
 			Message("File saved as artifact")
 	}
 	return dbArtifacts, true
-}
-
-func dbArtifactToResponseArtifact(dbArtifact database.Artifact) response.Artifact {
-	return response.Artifact{
-		ArtifactID: dbArtifact.ArtifactID,
-		BuildID:    dbArtifact.BuildID,
-		Name:       dbArtifact.Name,
-		FileName:   dbArtifact.FileName,
-	}
 }
