@@ -44,6 +44,15 @@ type Branch struct {
 	TokenID   uint   `json:"tokenId"`
 }
 
+type BranchUpdate struct {
+	Name string `json:"name" validate:"required"`
+}
+
+type BranchListUpdate struct {
+	DefaultBranch string         `json:"defaultBranch" extensions:"x-nullable"`
+	Branches      []BranchUpdate `json:"branches"`
+}
+
 // LogOrStatusUpdate is a single log line, together with its timestamp of when
 // it was logged; or a build status update.
 //

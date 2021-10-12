@@ -90,6 +90,15 @@ var ProjectFields = struct {
 	Branches:  "Branches",
 }
 
+// ProjectColumns holds the DB column names for each field.
+// Useful in GORM .Order() statements to order the results based on a specific
+// column, which does not support the regular Go field names.
+var ProjectColumns = struct {
+	TokenID string
+}{
+	TokenID: "token_id",
+}
+
 // Project holds data about an imported project. A lot of the data is expected
 // to be populated with data from the remote provider, such as the description
 // and avatar.

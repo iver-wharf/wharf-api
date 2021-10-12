@@ -32,6 +32,11 @@ type Branch struct {
 	TokenID   uint   `json:"tokenId"`
 }
 
+type BranchList struct {
+	DefaultBranch *Branch  `json:"defaultBranch" extensions:"x-nullable"`
+	Branches      []Branch `json:"branches"`
+}
+
 // BuildJSONFields holds the JSON field names for each field.
 // Useful in ordering statements to map the correct field to the correct
 // database column.

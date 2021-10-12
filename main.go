@@ -130,7 +130,7 @@ func main() {
 		providerModule{Database: db},
 		deprecated.ProjectModule{Database: db},
 		deprecated.TokenModule{Database: db},
-		deprecated.BranchModule{},
+		deprecated.BranchModule{Database: db},
 		deprecated.ProviderModule{Database: db},
 	}
 
