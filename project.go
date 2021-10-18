@@ -646,16 +646,16 @@ func getDBJobParams(
 	return dbJobParams, nil
 }
 
-var defaultGetBuildsOrderBy = orderby.OrderBy{Column: database.BuildColumns.BuildID, Direction: orderby.Desc}
+var defaultGetBuildsOrderBy = orderby.Column{Column: database.BuildColumns.BuildID, Direction: orderby.Desc}
 
-func (m projectModule) getBuilds(projectID uint, limit int, offset int, orderBySlice []orderby.OrderBy) ([]database.Build, error) {
+func (m projectModule) getBuilds(projectID uint, limit int, offset int, orderBySlice orderby.Slice) ([]database.Build, error) {
 	var dbBuilds []database.Build
 	var query = m.Database.
 		Where(&database.Build{ProjectID: projectID}).
 		Preload(database.BuildFields.TestResultSummaries).
 		Limit(limit).
-		Offset(offset)
-	query = orderby.ApplyAllToGormQuery(query, orderBySlice, defaultGetBuildsOrderBy)
+		Offset(offset).
+		Clauses(orderBySlice.ClauseIfNone(defaultGetBuildsOrderBy))
 	if err := query.Find(&dbBuilds).Error; err != nil {
 		return nil, err
 	}

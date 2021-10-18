@@ -1,7 +1,12 @@
 package orderby
 
 import (
+	"errors"
 	"fmt"
+)
+
+var (
+	ErrInvalidDirection = errors.New("invalid direction, only 'asc' or 'desc' supported")
 )
 
 // Direction tells if an ordering is in ascending order or descending order.
@@ -26,7 +31,7 @@ func ParseDirection(direction string) (Direction, error) {
 	case "desc":
 		return Desc, nil
 	default:
-		return Direction(0), fmt.Errorf("invalid direction, only 'asc' or 'desc' supported, but got: %q", direction)
+		return Direction(0), fmt.Errorf("%q: %w", direction, ErrInvalidDirection)
 	}
 }
 

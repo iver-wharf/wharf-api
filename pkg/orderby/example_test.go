@@ -1,23 +1,41 @@
-package orderby
+package orderby_test
 
 import (
 	"fmt"
 
+	"github.com/iver-wharf/wharf-api/pkg/orderby"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-func ExampleOrderBy_String() {
-	fmt.Printf("1: %q\n", OrderBy{"build_id", Asc})
-	fmt.Printf("2: %q\n", OrderBy{"build_id", Desc})
+type Project struct {
+	ProjectID uint   `gorm:"primaryKey"`
+	Name      string `gorm:"size:500;not null"`
+	GroupName string `gorm:"size:500"`
+}
+
+func ExampleColumn_String() {
+	fmt.Printf("1: %q\n", orderby.Column{"build_id", orderby.Asc})
+	fmt.Printf("2: %q\n", orderby.Column{"build_id", orderby.Desc})
 	// Output:
 	// 1: "build_id asc"
 	// 2: "build_id desc"
 }
 
+func ExampleColumn_Clause() {
+	db := dryRunDB()
+	var projects []Project
+
+	orderBy := orderby.Column{"group_name", orderby.Asc}
+	printStmt(db.Model(&Project{}).Clauses(orderBy.Clause()).Find(&projects))
+
+	// Output:
+	// SELECT * FROM "projects" ORDER BY "group_name"
+}
+
 func ExampleParseDirection() {
 	for _, str := range []string{"asc", "desc", "foo"} {
-		if d, err := ParseDirection(str); err != nil {
+		if d, err := orderby.ParseDirection(str); err != nil {
 			fmt.Println("Error:", err)
 		} else {
 			fmt.Println("Direction:", d)
@@ -26,7 +44,7 @@ func ExampleParseDirection() {
 	// Output:
 	// Direction: asc
 	// Direction: desc
-	// Error: invalid direction, only 'asc' or 'desc' supported, but got: "foo"
+	// Error: "foo": invalid direction, only 'asc' or 'desc' supported
 }
 
 func ExampleParse() {
@@ -40,7 +58,7 @@ func ExampleParse() {
 		"buildId foo",
 	}
 	for _, field := range fields {
-		if order, err := Parse(field, fieldToColumnNames); err != nil {
+		if order, err := orderby.Parse(field, fieldToColumnNames); err != nil {
 			fmt.Printf("Invalid sort order: %v\n", err)
 		} else {
 			fmt.Printf("Sort by %q\n", order)
@@ -49,8 +67,8 @@ func ExampleParse() {
 	// Output:
 	// Sort by "build_id asc"
 	// Sort by "build_id desc"
-	// Invalid sort order: failed mapping field name to column name: invalid or unsupported ordering field: "foobar"
-	// Invalid sort order: failed parsing ordering direction: invalid direction, only 'asc' or 'desc' supported, but got: "foo"
+	// Invalid sort order: failed mapping field name to column name: "foobar": invalid or unsupported ordering field
+	// Invalid sort order: failed parsing ordering direction: "foo": invalid direction, only 'asc' or 'desc' supported
 }
 
 func ExampleParse_withoutNameMapping() {
@@ -62,7 +80,7 @@ func ExampleParse_withoutNameMapping() {
 	}
 	for _, field := range fields {
 		// leave second argument as nil
-		if order, err := Parse(field, nil); err != nil {
+		if order, err := orderby.Parse(field, nil); err != nil {
 			fmt.Printf("Invalid sort order: %v\n", err)
 		} else {
 			fmt.Printf("Sort by %q\n", order)
@@ -72,35 +90,36 @@ func ExampleParse_withoutNameMapping() {
 	// Sort by "buildId asc"
 	// Sort by "buildId desc"
 	// Sort by "foobar asc"
-	// Invalid sort order: failed parsing ordering direction: invalid direction, only 'asc' or 'desc' supported, but got: "foo"
+	// Invalid sort order: failed parsing ordering direction: "foo": invalid direction, only 'asc' or 'desc' supported
 }
 
-func ExampleApplyAllToGormQuery() {
+func ExampleSlice_Clause() {
 	db := dryRunDB()
-	type Project struct {
-		ProjectID uint   `gorm:"primaryKey"`
-		Name      string `gorm:"size:500;not null"`
-		GroupName string `gorm:"size:500"`
-	}
 	var projects []Project
 
-	fmt.Println(db.Model(&Project{}).Find(&projects).Statement.SQL.String())
-	// Result: SELECT * FROM "projects"
-
-	orderBySlice := []OrderBy{{"group_name", Asc}, {"name", Desc}}
-	multiOrderByQuery := ApplyAllToGormQuery(db.Model(&Project{}), orderBySlice, OrderBy{})
-	fmt.Println(multiOrderByQuery.Find(&projects).Statement.SQL.String())
-	// Result: SELECT * FROM "projects" ORDER BY group_name asc,name desc
-
-	fallbackOrderBy := OrderBy{"project_id", Asc}
-	fallbackQuery := ApplyAllToGormQuery(db.Model(&Project{}), []OrderBy{}, fallbackOrderBy)
-	fmt.Println(fallbackQuery.Find(&projects).Statement.SQL.String())
-	// Result: SELECT * FROM "projects" ORDER BY project_id asc
+	orderBySlice := orderby.Slice{{"group_name", orderby.Asc}, {"name", orderby.Desc}}
+	multiOrderByQuery := db.Model(&Project{}).Clauses(orderBySlice.Clause())
+	printStmt(multiOrderByQuery.Find(&projects))
 
 	// Output:
-	// SELECT * FROM "projects"
-	// SELECT * FROM "projects" ORDER BY group_name asc,name desc
-	// SELECT * FROM "projects" ORDER BY project_id asc
+	// SELECT * FROM "projects" ORDER BY "group_name","name" DESC
+}
+
+func ExampleSlice_ClauseIfNone() {
+	db := dryRunDB()
+	var projects []Project
+
+	fallbackOrderBy := orderby.Column{"project_id", orderby.Asc}
+	orderBySlice := orderby.Slice{} // intentionally empty
+	fallbackQuery := db.Model(&Project{}).Clauses(orderBySlice.ClauseIfNone(fallbackOrderBy))
+	printStmt(fallbackQuery.Find(&projects))
+
+	// Output:
+	// SELECT * FROM "projects" ORDER BY "project_id"
+}
+
+func printStmt(tx *gorm.DB) {
+	fmt.Println(tx.Statement.SQL.String())
 }
 
 func dryRunDB() *gorm.DB {
