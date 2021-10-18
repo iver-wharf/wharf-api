@@ -28,8 +28,8 @@ type Column struct {
 	Direction Direction
 }
 
-// String converts an OrderBy to a string with the column name, followed by 'asc'
-// if OrderBy.Ascending is true or 'desc' otherwise, separated by a space.
+// String converts an ordering to a string representation. The result is meant
+// to be parsable by the orderby.Parse function.
 func (o Column) String() string {
 	return fmt.Sprintf("%s %s", o.Column, o.Direction)
 }

@@ -10,8 +10,7 @@ import (
 // orderings to apply in order.
 type Slice []Column
 
-// String converts an OrderBy to a string with the column name, followed by 'asc'
-// if OrderBy.Ascending is true or 'desc' otherwise, separated by a space.
+// String converts a slice of orderings.
 func (slice Slice) String() string {
 	var sb strings.Builder
 	sb.WriteByte('[')
