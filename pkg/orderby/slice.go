@@ -6,6 +6,8 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+// Slice is a Go slice of column orderings, meant to represent multiple
+// orderings to apply in order.
 type Slice []Column
 
 // String converts an OrderBy to a string with the column name, followed by 'asc'
@@ -35,14 +37,14 @@ func (slice Slice) Clause() clause.Expression {
 	return clauseOrderBy
 }
 
-// Clause returns a GORM clause expression to apply the list of column orderings
-// to the query, or a fallback ordering if the list is empty. Meant to be used
-// on the gorm.DB.Clauses function.
-func (o Slice) ClauseIfNone(ifNone Column) clause.Expression {
-	if len(o) == 0 {
+// ClauseIfNone returns a GORM clause expression to apply the list of column
+// orderings to the query, or a fallback ordering if the list is empty. Meant to
+// be used on the gorm.DB.Clauses function.
+func (slice Slice) ClauseIfNone(ifNone Column) clause.Expression {
+	if len(slice) == 0 {
 		return ifNone.Clause()
 	}
-	return o.Clause()
+	return slice.Clause()
 }
 
 // ParseSlice returns a new slice where each element has been interpreted by the

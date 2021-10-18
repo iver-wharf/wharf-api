@@ -6,6 +6,8 @@ import (
 )
 
 var (
+	// ErrInvalidDirection is returned when parsing an ordering direction where
+	// the value did not fall into the valid values 'asc' or 'desc'.
 	ErrInvalidDirection = errors.New("invalid direction, only 'asc' or 'desc' supported")
 )
 
