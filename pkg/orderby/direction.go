@@ -23,8 +23,8 @@ const (
 	Desc
 )
 
-// ParseDirection returns true if the direction is ascending ('asc') or false if
-// it is descending ('desc'), or an error if neither.
+// ParseDirection interprets a string value as the equivalent direction enum
+// value, or an error if parsing failed.
 // Valid input values are 'asc' and 'desc'.
 func ParseDirection(direction string) (Direction, error) {
 	switch direction {
