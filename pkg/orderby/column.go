@@ -53,7 +53,7 @@ func (o Column) Clause() clause.Expression {
 	}
 }
 
-// Parse interprets a ordering/sorting definition and optionally translates the
+// Parse interprets an ordering/sorting definition and optionally translates the
 // inputted field name using a map.
 func Parse(query string, fieldToColumnNames map[string]string) (Column, error) {
 	field, direction, err := scanQueryForOrderBy(query)
