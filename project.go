@@ -646,7 +646,7 @@ func getDBJobParams(
 	return dbJobParams, nil
 }
 
-var defaultGetBuildsOrderBy = orderby.Column{Column: database.BuildColumns.BuildID, Direction: orderby.Desc}
+var defaultGetBuildsOrderBy = orderby.Column{Name: database.BuildColumns.BuildID, Direction: orderby.Desc}
 
 func (m projectModule) getBuilds(projectID uint, limit int, offset int, orderBySlice orderby.Slice) ([]database.Build, error) {
 	var dbBuilds []database.Build

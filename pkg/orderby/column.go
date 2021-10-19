@@ -24,20 +24,20 @@ var (
 
 // Column specifies a column or field to be sorted and its sorting direction.
 type Column struct {
-	Column    string
+	Name      string
 	Direction Direction
 }
 
 // String converts an ordering to a string representation. The result is meant
 // to be parsable by the orderby.Parse function.
 func (o Column) String() string {
-	return fmt.Sprintf("%s %s", o.Column, o.Direction)
+	return fmt.Sprintf("%s %s", o.Name, o.Direction)
 }
 
 func (o Column) clauseOrderByColumn() clause.OrderByColumn {
 	return clause.OrderByColumn{
 		Column: clause.Column{
-			Name: o.Column,
+			Name: o.Name,
 		},
 		Desc: o.Direction == Desc,
 	}
@@ -87,7 +87,7 @@ func parseFromFieldAndDirection(field, directionStr string, fieldToColumnNames m
 		return Column{}, fmt.Errorf("failed parsing ordering direction: %w", err)
 	}
 
-	return Column{Column: column, Direction: direction}, nil
+	return Column{Name: column, Direction: direction}, nil
 }
 
 func mapOrderByField(field string, fieldToColumnNames map[string]string) (string, error) {
