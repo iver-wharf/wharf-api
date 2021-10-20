@@ -20,7 +20,7 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
 - BREAKING: Changed the following POST creation endpoints to solely create,
   instead of the previous behavior where it instead could update if it found an
-  existing database object that matched the HTTP request data: (#88)
+  existing database object that matched the HTTP request data: (#88, #93)
 
   - `POST /project`
   - `POST /provider`
