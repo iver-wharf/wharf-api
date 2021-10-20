@@ -1,7 +1,9 @@
 package modelconv
 
 import (
+	"github.com/iver-wharf/wharf-api/internal/set"
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
+	"github.com/iver-wharf/wharf-api/pkg/model/request"
 	"github.com/iver-wharf/wharf-api/pkg/model/response"
 )
 
@@ -37,4 +39,20 @@ func DBBranchToResponse(dbBranch database.Branch) response.Branch {
 		Default:   dbBranch.Default,
 		TokenID:   dbBranch.TokenID,
 	}
+}
+
+func ReqBranchUpdatesToSetOfNames(reqBranches []request.BranchUpdate) set.String {
+	namesSet := set.String{}
+	for _, reqBranchUpdate := range reqBranches {
+		namesSet.Set(reqBranchUpdate.Name)
+	}
+	return namesSet
+}
+
+func DBBranchesToSetOfNames(dbBranches []database.Branch) set.String {
+	namesSet := set.String{}
+	for _, dbOldBranch := range dbBranches {
+		namesSet.Set(dbOldBranch.Name)
+	}
+	return namesSet
 }

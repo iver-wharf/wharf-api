@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/iver-wharf/wharf-api/internal/set"
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/iver-wharf/wharf-api/pkg/model/request"
 	"github.com/iver-wharf/wharf-api/pkg/modelconv"
@@ -133,7 +132,7 @@ func (m branchModule) updateProjectBranchListHandler(c *gin.Context) {
 	if !ok {
 		return
 	}
-	dbBranchList, err := replaceBranchList(m.Database, projectID, dbProject.TokenID, reqBranchListUpdate)
+	dbBranchList, err := updateBranchList(m.Database, projectID, dbProject.TokenID, reqBranchListUpdate)
 	if err != nil {
 		ginutil.WriteDBWriteError(c, err, "Failed to update branches in database.")
 		return
@@ -147,68 +146,8 @@ type databaseBranchList struct {
 	branches      []database.Branch
 }
 
-func replaceBranchList(db *gorm.DB, projectID uint, tokenID uint, reqUpdate request.BranchListUpdate) (databaseBranchList, error) {
-	err := db.Transaction(func(tx *gorm.DB) error {
-		var dbOldBranches []database.Branch
-		if err := tx.
-			Where(&database.Branch{ProjectID: projectID}, database.BranchFields.ProjectID).
-			Find(&dbOldBranches).Error; err != nil {
-			return err
-		}
-
-		wantBranchNamesSet := set.String{}
-		for _, reqBranchUpdate := range reqUpdate.Branches {
-			wantBranchNamesSet.Set(reqBranchUpdate.Name)
-		}
-
-		hasBranchNamesSet := set.String{}
-		for _, dbOldBranch := range dbOldBranches {
-			hasBranchNamesSet.Set(dbOldBranch.Name)
-		}
-
-		branchNamesToDelete := hasBranchNamesSet.Difference(wantBranchNamesSet)
-		branchNamesToAdd := wantBranchNamesSet.Difference(hasBranchNamesSet)
-
-		var dbBranchesToAdd []database.Branch
-		for branchName := range branchNamesToAdd {
-			dbBranchesToAdd = append(dbBranchesToAdd, database.Branch{
-				ProjectID: projectID,
-				TokenID:   tokenID,
-				Name:      branchName,
-				Default:   branchName == reqUpdate.DefaultBranch,
-			})
-		}
-		if len(dbBranchesToAdd) > 0 {
-			if err := tx.Create(dbBranchesToAdd).Error; err != nil {
-				return err
-			}
-			log.Info().
-				WithInt("branchesAdded", len(dbBranchesToAdd)).
-				WithUint("project", projectID).
-				Message("Added branches to project when updating branches.")
-		}
-
-		var dbBranchIDsToDelete []uint
-		for _, dbOldBranch := range dbOldBranches {
-			if branchNamesToDelete.Has(dbOldBranch.Name) {
-				dbBranchIDsToDelete = append(dbBranchIDsToDelete, dbOldBranch.BranchID)
-			}
-		}
-		if len(dbBranchIDsToDelete) > 0 {
-			if err := tx.
-				Delete(&database.Branch{}, dbBranchIDsToDelete).Error; err != nil {
-				return err
-			}
-			log.Info().
-				WithInt("branchesDeleted", len(dbBranchIDsToDelete)).
-				WithUint("project", projectID).
-				Message("Deleted branches from project when updating branches.")
-		}
-
-		return setDefaultBranch(tx, projectID, reqUpdate.DefaultBranch)
-	})
-
-	if err != nil {
+func updateBranchList(db *gorm.DB, projectID uint, tokenID uint, reqUpdate request.BranchListUpdate) (databaseBranchList, error) {
+	if err := ensureOnlyRequestedBranchesExist(db, projectID, tokenID, reqUpdate); err != nil {
 		log.Error().
 			WithError(err).
 			Message("Failed to replace branch list. Transaction rolled back.")
@@ -216,25 +155,87 @@ func replaceBranchList(db *gorm.DB, projectID uint, tokenID uint, reqUpdate requ
 	}
 
 	var dbNewBranches []database.Branch
-	var dbNewDefaultBranch *database.Branch
-
 	if err := db.
 		Where(&database.Branch{ProjectID: projectID}, database.BranchFields.ProjectID).
 		Find(&dbNewBranches).Error; err != nil {
 		return databaseBranchList{}, err
 	}
 
-	for _, dbNewBranch := range dbNewBranches {
-		if dbNewBranch.Default {
-			dbNewDefaultBranch = &dbNewBranch
-			break
-		}
-	}
-
-	return databaseBranchList{dbNewDefaultBranch, dbNewBranches}, nil
+	return databaseBranchList{
+		defaultBranch: findDefaultDBBranch(dbNewBranches),
+		branches:      dbNewBranches,
+	}, nil
 }
 
-func setDefaultBranch(db *gorm.DB, projectID uint, defaultBranchName string) error {
+func ensureOnlyRequestedBranchesExist(db *gorm.DB, projectID uint, tokenID uint, reqUpdate request.BranchListUpdate) error {
+	return db.Transaction(func(tx *gorm.DB) error {
+		var dbOldBranches []database.Branch
+		if err := tx.
+			Where(&database.Branch{ProjectID: projectID}, database.BranchFields.ProjectID).
+			Find(&dbOldBranches).Error; err != nil {
+			return err
+		}
+
+		wantBranchNamesSet := modelconv.ReqBranchUpdatesToSetOfNames(reqUpdate.Branches)
+		hasBranchNamesSet := modelconv.DBBranchesToSetOfNames(dbOldBranches)
+
+		branchNamesToDelete := hasBranchNamesSet.Difference(wantBranchNamesSet)
+		branchNamesToAdd := wantBranchNamesSet.Difference(hasBranchNamesSet)
+
+		if len(branchNamesToAdd) > 0 {
+			if err := createBranchesWithNames(tx, projectID, tokenID, branchNamesToAdd.Slice()); err != nil {
+				return err
+			}
+			log.Info().
+				WithInt("branchesAdded", len(branchNamesToAdd)).
+				WithUint("project", projectID).
+				Message("Added branches to project when updating branches.")
+		}
+
+		if len(branchNamesToDelete) > 0 {
+			if err := deleteBranchesByNames(tx, branchNamesToDelete.Slice()); err != nil {
+				return err
+			}
+			log.Info().
+				WithInt("branchesDeleted", len(branchNamesToDelete)).
+				WithUint("project", projectID).
+				Message("Deleted branches from project when updating branches.")
+		}
+
+		return setDefaultBranchByName(tx, projectID, reqUpdate.DefaultBranch)
+	})
+}
+
+func findDefaultDBBranch(dbBranches []database.Branch) *database.Branch {
+	for _, dbNewBranch := range dbBranches {
+		if dbNewBranch.Default {
+			return &dbNewBranch
+		}
+	}
+	return nil
+}
+
+func createBranchesWithNames(db *gorm.DB, projectID, tokenID uint, branchNames []string) error {
+	var dbBranches []database.Branch
+	for _, branchName := range branchNames {
+		dbBranches = append(dbBranches, database.Branch{
+			ProjectID: projectID,
+			TokenID:   tokenID,
+			Name:      branchName,
+		})
+	}
+	return db.Create(dbBranches).Error
+}
+
+func deleteBranchesByNames(db *gorm.DB, projectID uint, branchNames []string) error {
+	return db.
+		Where(&database.Branch{ProjectID: projectID}, database.BranchFields.ProjectID).
+		Where(database.BranchColumns.Name+" IN ?", branchNames).
+		Delete(&database.Branch{}).
+		Error
+}
+
+func setDefaultBranchByName(db *gorm.DB, projectID uint, defaultBranchName string) error {
 	return db.Transaction(func(tx *gorm.DB) error {
 		// ensure "default=false" on all other branches
 		if err := tx.

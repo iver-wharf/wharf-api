@@ -137,8 +137,10 @@ var BranchFields = struct {
 // column, which does not support the regular Go field names.
 var BranchColumns = struct {
 	BranchID string
+	Name     string
 }{
 	BranchID: "branch_id",
+	Name:     "name",
 }
 
 // Branch is a single branch in the VCS that can be targeted during builds.
