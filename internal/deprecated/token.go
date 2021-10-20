@@ -35,7 +35,7 @@ func (m TokenModule) Register(g *gin.RouterGroup) {
 }
 
 // updateTokenHandler godoc
-// @id updateToken
+// @id oldUpdateToken
 // @deprecated
 // @summary Put token in database.
 // @description Creates a new token if a match is not found.
