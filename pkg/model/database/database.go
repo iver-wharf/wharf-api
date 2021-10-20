@@ -73,21 +73,23 @@ type Token struct {
 // Useful in GORM .Where() statements to only select certain fields or in GORM
 // Preload statements to select the correct field to preload.
 var ProjectFields = struct {
-	ProjectID string
-	Name      string
-	GroupName string
-	TokenID   string
-	Token     string
-	Provider  string
-	Branches  string
+	ProjectID   string
+	Name        string
+	GroupName   string
+	Description string
+	TokenID     string
+	Token       string
+	Provider    string
+	Branches    string
 }{
-	ProjectID: "ProjectID",
-	Name:      "Name",
-	GroupName: "GroupName",
-	TokenID:   "TokenID",
-	Token:     "Token",
-	Provider:  "Provider",
-	Branches:  "Branches",
+	ProjectID:   "ProjectID",
+	Name:        "Name",
+	GroupName:   "GroupName",
+	Description: "Description",
+	TokenID:     "TokenID",
+	Token:       "Token",
+	Provider:    "Provider",
+	Branches:    "Branches",
 }
 
 // ProjectColumns holds the DB column names for each field.

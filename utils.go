@@ -9,6 +9,7 @@ import (
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 func contains(items []string, value string) bool {
@@ -48,4 +49,17 @@ func fetchDatabaseObjByID(c *gin.Context, db *gorm.DB, modelPtr interface{}, id 
 		return false
 	}
 	return true
+}
+
+func optionalLimitOffsetClause(limit, offset int) clause.Expression {
+	if limit <= 0 {
+		return clause.Limit{}
+	}
+	if offset <= 0 {
+		offset = 0
+	}
+	return clause.Limit{
+		Limit:  limit,
+		Offset: offset,
+	}
 }

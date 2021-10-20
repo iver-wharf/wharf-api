@@ -53,14 +53,45 @@ func (m projectModule) Register(g *gin.RouterGroup) {
 // getProjectListHandler godoc
 // @id getProjectList
 // @summary Returns all projects from database
+// @description List all projects, or a window of projects using the `limit` and
+// @description `offset` query parameters. Allows optional filtering parameters.
+// @description Verbatim filters will match on the entire string, while the
+// @description matching filters will search on substrings.
 // @tags project
+// @param limit query int false "Number of results to return. No limit if unset or non-positive. Required if offset is used."
+// @param offset query int false "Skipped results, where 0 means from the start." minimum(0)
+// @param name query string false "Filter by verbatim project name" extensions(x-nullable)
+// @param groupName query string false "Filter by verbatim project group" extensions(x-nullable)
+// @param description query string false "Filter by verbatim description" extensions(x-nullable)
+// @param tokenId query uint false "Filter by token ID. Zero (0) will search for null values." minimum(0) extensions(x-nullable)
+// @param providerId query uint false "Filter by provider ID. Zero (0) will search for null values." minimum(0) extensions(x-nullable)
 // @success 200 {object} []response.Project
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @router /projects [get]
 func (m projectModule) getProjectListHandler(c *gin.Context) {
+	var params = struct {
+		Limit       int     `form:"limit" binding:"required_with=Offset"`
+		Offset      int     `form:"offset" binding:"min=0"`
+		Name        *string `form:"name"`
+		GroupName   *string `form:"groupName"`
+		Description *string `form:"description"`
+		TokenID     *uint   `form:"tokenId"`
+		ProviderID  *uint   `form:"providerId"`
+	}{}
+	if err := c.ShouldBindQuery(&params); err != nil {
+		ginutil.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading query parameters.")
+		return
+	}
 	var dbProjects []database.Project
+	var sc searchCollection
 	err := databaseProjectPreloaded(m.Database).
+		Clauses(optionalLimitOffsetClause(params.Limit, params.Offset)).
+		Where(&database.Project{
+			Description: sc.String(database.ProjectFields.Description, params.Description),
+			TokenID:     sc.Uint(database.ProjectFields.TokenID, params.TokenID),
+			ProviderID:  sc.Uint(database.ProjectFields.ProjectID, params.ProviderID),
+		}, sc.fieldNames...).
 		Find(&dbProjects).
 		Error
 	if err != nil {
@@ -69,6 +100,30 @@ func (m projectModule) getProjectListHandler(c *gin.Context) {
 	}
 	resProjects := modelconv.DBProjectsToResponses(dbProjects)
 	c.JSON(http.StatusOK, resProjects)
+}
+
+type searchCollection struct {
+	fieldNames []interface{}
+}
+
+func (sc *searchCollection) addFieldName(field string) {
+	sc.fieldNames = append(sc.fieldNames, field)
+}
+
+func (sc *searchCollection) Uint(field string, value *uint) uint {
+	if value == nil {
+		return 0
+	}
+	sc.addFieldName(field)
+	return *value
+}
+
+func (sc *searchCollection) String(field string, value *string) string {
+	if value == nil {
+		return ""
+	}
+	sc.addFieldName(field)
+	return *value
 }
 
 // searchProjectListHandler godoc

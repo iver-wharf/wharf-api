@@ -28,6 +28,28 @@ func runDatabaseMigrations(db *gorm.DB, driver DBDriver) error {
 				" We advice against using this driver for production!")
 	}
 
+	types, err := db.Migrator().ColumnTypes(&database.Project{})
+	fmt.Println("err:", err)
+	fmt.Printf("Types: %#v\n", types)
+	for _, columnType := range types {
+		var (
+			nullablePtr *bool
+			lengthPtr   *int64
+		)
+		if nullable, ok := columnType.Nullable(); ok {
+			nullablePtr = &nullable
+		}
+		if length, ok := columnType.Length(); ok {
+			lengthPtr = &length
+		}
+		log.Info().
+			WithString("dbTypeName", columnType.DatabaseTypeName()).
+			WithString("name", columnType.Name()).
+			WithStringf("nullable", "%v", nullablePtr).
+			WithStringf("length", "%v", lengthPtr).
+			Message("Column type")
+	}
+
 	oldColumns := []columnToDrop{
 		// since v3.1.0, the token.provider_id column was removed as it induced a
 		// circular dependency between the token and provider tables
