@@ -105,7 +105,10 @@ func (m branchModule) createBranchHandler(c *gin.Context) {
 // updateProjectBranchListHandler godoc
 // @id updateProjectBranchList
 // @summary Resets branches for a project
-// @description Alters the database by removing, adding and updating until the stored branches equals the input branches.
+// @description For a given project, it will remove all branches unlisted in the request,
+// @description and add all branches from the request that are missing in the database.
+// @description Effectively resetting the list of branches to the list from the HTTP request body.
+// @description Useful when used via the provider APIs when importing a project.
 // @tags branch
 // @accept json
 // @produce json
@@ -193,7 +196,7 @@ func ensureOnlyRequestedBranchesExist(db *gorm.DB, projectID uint, tokenID uint,
 		}
 
 		if len(branchNamesToDelete) > 0 {
-			if err := deleteBranchesByNames(tx, branchNamesToDelete.Slice()); err != nil {
+			if err := deleteBranchesByNames(tx, projectID, branchNamesToDelete.Slice()); err != nil {
 				return err
 			}
 			log.Info().
