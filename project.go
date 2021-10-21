@@ -24,6 +24,7 @@ import (
 	"github.com/iver-wharf/wharf-core/pkg/problem"
 	"gopkg.in/guregu/null.v4"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type projectModule struct {
@@ -58,26 +59,38 @@ func (m projectModule) Register(g *gin.RouterGroup) {
 // @description Verbatim filters will match on the entire string, while the
 // @description matching filters will search on substrings.
 // @tags project
-// @param limit query int false "Number of results to return. No limit if unset or non-positive. Required if offset is used."
+// @param limit query int false "Number of results to return. No limit if unset or non-positive. Required if `offset` is used."
 // @param offset query int false "Skipped results, where 0 means from the start." minimum(0)
-// @param name query string false "Filter by verbatim project name" extensions(x-nullable)
-// @param groupName query string false "Filter by verbatim project group" extensions(x-nullable)
-// @param description query string false "Filter by verbatim description" extensions(x-nullable)
-// @param tokenId query uint false "Filter by token ID. Zero (0) will search for null values." minimum(0) extensions(x-nullable)
-// @param providerId query uint false "Filter by provider ID. Zero (0) will search for null values." minimum(0) extensions(x-nullable)
+// @param name query string false "Filter by verbatim project name."
+// @param groupName query string false "Filter by verbatim project group."
+// @param description query string false "Filter by verbatim description."
+// @param tokenId query uint false "Filter by token ID. Zero (0) will search for null values." minimum(0)
+// @param providerId query uint false "Filter by provider ID. Zero (0) will search for null values." minimum(0)
+// @param gitUrl query string false "Filter by verbatim Git URL."
+// @param nameMatch query string false "Filter by matching project name. Cannot be used with `name`."
+// @param groupNameMatch query string false "Filter by matching project group. Cannot be used with `groupName`."
+// @param descriptionMatch query string false "Filter by matching description. Cannot be used with `description`."
+// @param gitUrlMatch query string false "Filter by matching Git URL. Cannot be used with `gitUrl`."
 // @success 200 {object} []response.Project
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @router /projects [get]
 func (m projectModule) getProjectListHandler(c *gin.Context) {
 	var params = struct {
-		Limit       int     `form:"limit" binding:"required_with=Offset"`
-		Offset      int     `form:"offset" binding:"min=0"`
+		Limit  int `form:"limit" binding:"required_with=Offset"`
+		Offset int `form:"offset" binding:"min=0"`
+
 		Name        *string `form:"name"`
 		GroupName   *string `form:"groupName"`
 		Description *string `form:"description"`
 		TokenID     *uint   `form:"tokenId"`
 		ProviderID  *uint   `form:"providerId"`
+		GitURL      *string `form:"gitUrl"`
+
+		NameMatch        *string `form:"nameMatch" binding:"excluded_with=Name"`
+		GroupNameMatch   *string `form:"groupNameMatch" binding:"excluded_with=GroupName"`
+		DescriptionMatch *string `form:"descriptionMatch" binding:"excluded_with=Description"`
+		GitURLMatch      *string `form:"gitUrlMatch" binding:"excluded_with=GitURL"`
 	}{}
 	if err := c.ShouldBindQuery(&params); err != nil {
 		ginutil.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading query parameters.")
@@ -85,15 +98,22 @@ func (m projectModule) getProjectListHandler(c *gin.Context) {
 	}
 	var dbProjects []database.Project
 	var sc searchCollection
-	err := databaseProjectPreloaded(m.Database).
+	query := databaseProjectPreloaded(m.Database).
 		Clauses(optionalLimitOffsetClause(params.Limit, params.Offset)).
 		Where(&database.Project{
-			Description: sc.String(database.ProjectFields.Description, params.Description),
-			TokenID:     sc.Uint(database.ProjectFields.TokenID, params.TokenID),
-			ProviderID:  sc.Uint(database.ProjectFields.ProjectID, params.ProviderID),
-		}, sc.fieldNames...).
-		Find(&dbProjects).
-		Error
+			Name:       sc.String(database.ProjectFields.Name, params.Name),
+			GroupName:  sc.String(database.ProjectFields.GroupName, params.GroupName),
+			TokenID:    sc.Uint(database.ProjectFields.TokenID, params.TokenID),
+			ProviderID: sc.Uint(database.ProjectFields.ProviderID, params.ProviderID),
+			GitURL:     sc.String(database.ProjectFields.GitURL, params.GitURL),
+		}, sc.NonNilFieldNames()...)
+	query = whereLikeClauses(query, map[string]*string{
+		database.ProjectColumns.Name:        params.NameMatch,
+		database.ProjectColumns.GroupName:   params.GroupNameMatch,
+		database.ProjectColumns.Description: params.DescriptionMatch,
+		database.ProjectColumns.GitURL:      params.GitURLMatch,
+	})
+	err := query.Find(&dbProjects).Error
 	if err != nil {
 		ginutil.WriteDBReadError(c, err, "Failed fetching list of projects from database.")
 		return
@@ -102,8 +122,39 @@ func (m projectModule) getProjectListHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, resProjects)
 }
 
+var escaper = strings.NewReplacer(
+	`\`, `\\`,
+	`?`, `\?`,
+	`_`, `\_`,
+)
+
+func whereLikeClauses(db *gorm.DB, pairs map[string]*string) *gorm.DB {
+	var expressions []clause.Expression
+	for key, value := range pairs {
+		if value == nil || *value == "" {
+			continue
+		}
+		var sb strings.Builder
+		sb.WriteByte('%')
+		escaper.WriteString(&sb, *value)
+		sb.WriteByte('%')
+		expressions = append(expressions, clause.Expr{
+			SQL:  key + ` LIKE ? ESCAPE '\'`,
+			Vars: []interface{}{sb.String()},
+		})
+	}
+	if len(expressions) == 0 {
+		return db
+	}
+	return db.Clauses(clause.Where{Exprs: expressions})
+}
+
 type searchCollection struct {
 	fieldNames []interface{}
+}
+
+func (sc *searchCollection) NonNilFieldNames() []interface{} {
+	return sc.fieldNames
 }
 
 func (sc *searchCollection) addFieldName(field string) {

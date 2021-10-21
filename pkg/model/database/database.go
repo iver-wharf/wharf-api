@@ -79,8 +79,10 @@ var ProjectFields = struct {
 	Description string
 	TokenID     string
 	Token       string
+	ProviderID  string
 	Provider    string
 	Branches    string
+	GitURL      string
 }{
 	ProjectID:   "ProjectID",
 	Name:        "Name",
@@ -88,17 +90,27 @@ var ProjectFields = struct {
 	Description: "Description",
 	TokenID:     "TokenID",
 	Token:       "Token",
+	ProviderID:  "ProviderID",
 	Provider:    "Provider",
 	Branches:    "Branches",
+	GitURL:      "GitURL",
 }
 
 // ProjectColumns holds the DB column names for each field.
 // Useful in GORM .Order() statements to order the results based on a specific
 // column, which does not support the regular Go field names.
 var ProjectColumns = struct {
-	TokenID string
+	Name        string
+	GroupName   string
+	Description string
+	TokenID     string
+	GitURL      string
 }{
-	TokenID: "token_id",
+	Name:        "name",
+	GroupName:   "group_name",
+	Description: "description",
+	TokenID:     "token_id",
+	GitURL:      "git_url",
 }
 
 // Project holds data about an imported project. A lot of the data is expected
