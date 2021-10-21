@@ -125,7 +125,7 @@ var buildJSONToColumns = map[string]string{
 // @id getProjectBuildList
 // @summary Get slice of builds.
 // @tags project
-// @param projectId path int true "project ID"
+// @param projectId path uint true "project ID"
 // @param limit query string true "number of fetched branches"
 // @param offset query string true "PK of last branch taken"
 // @param orderby query []string false "Sorting orders. Takes the property name followed by either 'asc' or 'desc'. Can be specified multiple times for more granular sorting. Defaults to '?orderby=buildId desc'"
@@ -185,7 +185,7 @@ func (m projectModule) getProjectBuildListHandler(c *gin.Context) {
 // @id getProject
 // @summary Returns project with selected project ID
 // @tags project
-// @param projectId path int true "project ID"
+// @param projectId path uint true "project ID"
 // @success 200 {object} response.Project
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
@@ -252,7 +252,7 @@ func (m projectModule) createProjectHandler(c *gin.Context) {
 // @id deleteProject
 // @summary Delete project with selected project ID
 // @tags project
-// @param projectId path int true "project ID"
+// @param projectId path uint true "project ID"
 // @success 204 "Deleted"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @failure 400 {object} problem.Response "Bad request"
@@ -331,7 +331,7 @@ func (m projectModule) updateProjectHandler(c *gin.Context) {
 // @summary Responsible for run stage environment for selected project
 // @tags project
 // @accept json
-// @param projectId path int true "project ID"
+// @param projectId path uint true "project ID"
 // @param stage path string true "name of stage to run, or specify ALL to run everything"
 // @param branch query string false "branch name, uses default branch if omitted"
 // @param environment query string false "environment name"

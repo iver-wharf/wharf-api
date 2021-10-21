@@ -31,7 +31,7 @@ func (m BranchModule) Register(g *gin.RouterGroup) {
 // @description This endpoint has not been implemented!
 // @description Deprecated since v4.3.0. Planned for removal in v6.0.0.
 // @tags branch
-// @param branchId path int true "branch ID"
+// @param branchId path uint true "branch ID"
 // @success 501 "Not Implemented"
 // @router /branch/{branchId} [get]
 func (m BranchModule) GetBranchHandler(c *gin.Context) {

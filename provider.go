@@ -56,7 +56,7 @@ func (m providerModule) getProviderListHandler(c *gin.Context) {
 // @id getProvider
 // @summary Returns provider with selected provider ID
 // @tags provider
-// @param providerId path int true "Provider ID"
+// @param providerId path uint true "Provider ID"
 // @success 200 {object} response.Provider
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 404 {object} problem.Response "Provider not found"

@@ -73,7 +73,7 @@ func build(buildID uint) broadcast.Broadcaster {
 // @id getBuild
 // @summary Finds build by build ID
 // @tags build
-// @param buildId path int true "build id"
+// @param buildId path uint true "build id"
 // @success 200 {object} response.Build
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
@@ -143,7 +143,7 @@ func (m buildModule) searchBuildListHandler(c *gin.Context) {
 // @id getBuildLogList
 // @summary Finds logs for build with selected build ID
 // @tags build
-// @param buildId path int true "build id"
+// @param buildId path uint true "build id"
 // @success 200 {object} []response.Log "logs from selected build"
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
@@ -180,7 +180,7 @@ func (m buildModule) getBuildLogListHandler(c *gin.Context) {
 // @id streamBuildLog
 // @summary Opens stream listener
 // @tags build
-// @param buildId path int true "build id"
+// @param buildId path uint true "build id"
 // @success 200 "Open stream"
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
@@ -210,7 +210,7 @@ func (m buildModule) streamBuildLogHandler(c *gin.Context) {
 // @id createBuildLog
 // @summary Post a log to selected build
 // @tags build
-// @param buildId path int true "build id"
+// @param buildId path uint true "build id"
 // @param data body request.LogOrStatusUpdate true "data"
 // @success 201 "Created"
 // @failure 400 {object} problem.Response "Bad request"
