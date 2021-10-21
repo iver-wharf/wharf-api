@@ -1,7 +1,14 @@
 package orderby
 
 import (
+	"errors"
 	"fmt"
+)
+
+var (
+	// ErrInvalidDirection is returned when parsing an ordering direction where
+	// the value did not fall into the valid values 'asc' or 'desc'.
+	ErrInvalidDirection = errors.New("invalid direction, only 'asc' or 'desc' supported")
 )
 
 // Direction tells if an ordering is in ascending order or descending order.
@@ -16,8 +23,8 @@ const (
 	Desc
 )
 
-// ParseDirection returns true if the direction is ascending ('asc') or false if
-// it is descending ('desc'), or an error if neither.
+// ParseDirection interprets a string value as the equivalent direction enum
+// value, or an error if parsing failed.
 // Valid input values are 'asc' and 'desc'.
 func ParseDirection(direction string) (Direction, error) {
 	switch direction {
@@ -26,7 +33,7 @@ func ParseDirection(direction string) (Direction, error) {
 	case "desc":
 		return Desc, nil
 	default:
-		return Direction(0), fmt.Errorf("invalid direction, only 'asc' or 'desc' supported, but got: %q", direction)
+		return Direction(0), fmt.Errorf("%q: %w", direction, ErrInvalidDirection)
 	}
 }
 

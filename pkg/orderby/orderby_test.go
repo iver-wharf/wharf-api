@@ -68,49 +68,49 @@ func TestParse_HappyPath(t *testing.T) {
 		name     string
 		input    string
 		namesMap map[string]string
-		want     OrderBy
+		want     Column
 	}{
 		{
 			name:     "valid mapped asc",
 			input:    "buildId asc",
 			namesMap: fieldToColumnNames,
-			want:     OrderBy{"build_id", Asc},
+			want:     Column{"build_id", Asc},
 		},
 		{
 			name:     "valid mapped desc",
 			input:    "buildId desc",
 			namesMap: fieldToColumnNames,
-			want:     OrderBy{"build_id", Desc},
+			want:     Column{"build_id", Desc},
 		},
 		{
 			name:     "valid unmapped asc",
 			input:    "buildId asc",
 			namesMap: nil,
-			want:     OrderBy{"buildId", Asc},
+			want:     Column{"buildId", Asc},
 		},
 		{
 			name:     "valid unmapped desc",
 			input:    "buildId desc",
 			namesMap: nil,
-			want:     OrderBy{"buildId", Desc},
+			want:     Column{"buildId", Desc},
 		},
 		{
 			name:     "separated by tab",
 			input:    "buildId\tdesc",
 			namesMap: nil,
-			want:     OrderBy{"buildId", Desc},
+			want:     Column{"buildId", Desc},
 		},
 		{
 			name:     "excess whitespace",
 			input:    "   \t\t  buildId \t  \tdesc  \t  ",
 			namesMap: fieldToColumnNames,
-			want:     OrderBy{"build_id", Desc},
+			want:     Column{"build_id", Desc},
 		},
 		{
 			name:     "excess values",
 			input:    "buildId desc these values will be ignored",
 			namesMap: fieldToColumnNames,
-			want:     OrderBy{"build_id", Desc},
+			want:     Column{"build_id", Desc},
 		},
 	}
 	for _, tc := range testCases {
