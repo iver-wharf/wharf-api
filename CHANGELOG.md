@@ -138,6 +138,9 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Fixed bug where projects created using the deprecated `PUT /project` endpoint
   would have set a null `ProviderID` in the database. (#96)
 
+- Added Swagger attribute `minimum` to all ID path parameters, response bodies,
+  and request bodies, as we do not support negative values there. (#98)
+
 ## v4.2.0 (2021-09-10)
 
 - Added support for the TZ environment variable (setting timezones ex.
