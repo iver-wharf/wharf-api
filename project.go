@@ -492,6 +492,12 @@ func fetchProjectByID(c *gin.Context, db *gorm.DB, projectID uint, whenMsg strin
 	return dbProject, ok
 }
 
+func fetchProjectByIDSlim(c *gin.Context, db *gorm.DB, projectID uint, whenMsg string) (database.Project, bool) {
+	var dbProject database.Project
+	ok := fetchDatabaseObjByID(c, db, &dbProject, projectID, "project", whenMsg)
+	return dbProject, ok
+}
+
 func databaseProjectPreloaded(db *gorm.DB) *gorm.DB {
 	return db.Set("gorm:auto_preload", false).
 		Preload(database.ProjectFields.Provider).
