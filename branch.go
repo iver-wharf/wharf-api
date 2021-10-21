@@ -112,7 +112,7 @@ func (m branchModule) createBranchHandler(c *gin.Context) {
 // @tags branch
 // @accept json
 // @produce json
-// @param projectId path uint true "project ID"
+// @param projectId path uint true "project ID" minimum(0)
 // @param branches body request.BranchListUpdate true "Branch update"
 // @success 200 {object} response.BranchList "Updated branches"
 // @failure 400 {object} problem.Response "Bad request"
