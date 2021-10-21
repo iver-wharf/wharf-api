@@ -98,7 +98,7 @@ func (m ProjectModule) updateProjectHandler(c *gin.Context) {
 				Description:     reqProjectUpdate.Description,
 				AvatarURL:       reqProjectUpdate.AvatarURL,
 				TokenID:         reqProjectUpdate.TokenID,
-				ProviderID:      reqProjectUpdate.ProjectID,
+				ProviderID:      reqProjectUpdate.ProviderID,
 				BuildDefinition: reqProjectUpdate.BuildDefinition,
 				GitURL:          reqProjectUpdate.GitURL,
 			}
