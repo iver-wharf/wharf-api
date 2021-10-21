@@ -43,8 +43,8 @@ func DBBranchToResponse(dbBranch database.Branch) response.Branch {
 
 // ReqBranchUpdatesToSetOfNames converts a slice of request branch updates to a
 // set of branch names.
-func ReqBranchUpdatesToSetOfNames(reqBranches []request.BranchUpdate) set.String {
-	namesSet := set.String{}
+func ReqBranchUpdatesToSetOfNames(reqBranches []request.BranchUpdate) set.Strings {
+	namesSet := set.Strings{}
 	for _, reqBranchUpdate := range reqBranches {
 		namesSet.Set(reqBranchUpdate.Name)
 	}
@@ -53,8 +53,8 @@ func ReqBranchUpdatesToSetOfNames(reqBranches []request.BranchUpdate) set.String
 
 // DBBranchesToSetOfNames converts a slice of database branches to a set of
 // branch names.
-func DBBranchesToSetOfNames(dbBranches []database.Branch) set.String {
-	namesSet := set.String{}
+func DBBranchesToSetOfNames(dbBranches []database.Branch) set.Strings {
+	namesSet := set.Strings{}
 	for _, dbOldBranch := range dbBranches {
 		namesSet.Set(dbOldBranch.Name)
 	}

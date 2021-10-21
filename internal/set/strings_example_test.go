@@ -6,8 +6,8 @@ import (
 	"github.com/iver-wharf/wharf-api/internal/set"
 )
 
-func ExampleString_loop() {
-	s := set.NewString("a", "b", "c")
+func ExampleStrings_loop() {
+	s := set.NewStrings("a", "b", "c")
 
 	for value := range s {
 		fmt.Println("Value:", value)
