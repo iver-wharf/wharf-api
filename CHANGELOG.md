@@ -137,6 +137,9 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
 - Added `projectId` param to `updateProjectHandler` swagger docs. (#97)
 
+- Fixed bug where projects created using the deprecated `PUT /project` endpoint
+  would have set a null `ProviderID` in the database. (#96)
+
 ## v4.2.0 (2021-09-10)
 
 - Added support for the TZ environment variable (setting timezones ex.
