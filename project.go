@@ -283,6 +283,7 @@ func (m projectModule) deleteProjectHandler(c *gin.Context) {
 // @tags project
 // @accept json
 // @produce json
+// @param projectId path int true "project ID"
 // @param project body request.ProjectUpdate _ "New project values"
 // @success 200 {object} response.Project
 // @failure 400 {object} problem.Response "Bad request, such as invalid body JSON"
