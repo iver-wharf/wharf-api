@@ -29,7 +29,7 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Deprecated PUT endpoints that took the object ID from the HTTP request body.
   They are still supported, but may be removed in the next major release
   (v6.0.0). Please refer to the new endpoints that takes the ID from the URL
-  path. (#88, #91, #94)
+  path. (#88, #91, #94, #97)
 
   - Use `PUT /project/{projectId}` instead of `PUT /project`
   - Use `PUT /provider/{providerId}` instead of `PUT /provider`
