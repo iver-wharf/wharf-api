@@ -56,7 +56,7 @@ func (m providerModule) getProviderListHandler(c *gin.Context) {
 // @id getProvider
 // @summary Returns provider with selected provider ID
 // @tags provider
-// @param providerId path int true "Provider ID"
+// @param providerId path uint true "Provider ID" minimum(0)
 // @success 200 {object} response.Provider
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 404 {object} problem.Response "Provider not found"
@@ -199,7 +199,7 @@ func (m providerModule) createProviderHandler(c *gin.Context) {
 // @tags provider
 // @accept json
 // @produce json
-// @param providerId path uint _ "ID of provider to update"
+// @param providerId path uint _ "ID of provider to update" minimum(0)
 // @param provider body request.ProviderUpdate _ "New provider values"
 // @success 200 {object} response.Provider
 // @failure 400 {object} problem.Response "Bad request"

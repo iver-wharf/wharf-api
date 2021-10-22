@@ -11,8 +11,8 @@ import (
 // Artifact holds the binary data as well as metadata about that binary such as
 // the file name and which build it belongs to.
 type Artifact struct {
-	ArtifactID uint   `json:"artifactId"`
-	BuildID    uint   `json:"buildId"`
+	ArtifactID uint   `json:"artifactId" minimum:"0"`
+	BuildID    uint   `json:"buildId" minimum:"0"`
 	Name       string `json:"name"`
 	FileName   string `json:"fileName"`
 }
@@ -20,16 +20,16 @@ type Artifact struct {
 // ArtifactMetadata contains the file name and artifact ID of an Artifact.
 type ArtifactMetadata struct {
 	FileName   string `json:"fileName"`
-	ArtifactID uint   `json:"artifactId"`
+	ArtifactID uint   `json:"artifactId" minimum:"0"`
 }
 
 // Branch holds details about a project's branch.
 type Branch struct {
-	BranchID  uint   `json:"branchId"`
-	ProjectID uint   `json:"projectId"`
+	BranchID  uint   `json:"branchId" minimum:"0"`
+	ProjectID uint   `json:"projectId" minimum:"0"`
 	Name      string `json:"name"`
 	Default   bool   `json:"default"`
-	TokenID   uint   `json:"tokenId"`
+	TokenID   uint   `json:"tokenId" minimum:"0"`
 }
 
 // BranchList holds a list of branches, and a separate field for the default
@@ -65,10 +65,10 @@ var BuildJSONFields = struct {
 // Build holds data about the state of a build. Which parameters was used to
 // start it, what status it holds, et.al.
 type Build struct {
-	BuildID               uint                  `json:"buildId"`
+	BuildID               uint                  `json:"buildId" minimum:"0"`
 	StatusID              int                   `json:"statusId" enums:"0,1,2,3"`
 	Status                BuildStatus           `json:"status" enums:"Scheduling,Running,Completed,Failed"`
-	ProjectID             uint                  `json:"projectId"`
+	ProjectID             uint                  `json:"projectId" minimum:"0"`
 	ScheduledOn           null.Time             `json:"scheduledOn" format:"date-time" extensions:"x-nullable"`
 	StartedOn             null.Time             `json:"startedOn" format:"date-time" extensions:"x-nullable"`
 	CompletedOn           null.Time             `json:"finishedOn" format:"date-time" extensions:"x-nullable"`
@@ -83,7 +83,7 @@ type Build struct {
 
 // BuildParam holds the name and value of an input parameter fed into a build.
 type BuildParam struct {
-	BuildID uint   `json:"buildId"`
+	BuildID uint   `json:"buildId" minimum:"0"`
 	Name    string `json:"name"`
 	Value   string `json:"value"`
 }
@@ -121,8 +121,8 @@ type HealthStatus struct {
 
 // Log is a single logged line for a build.
 type Log struct {
-	LogID     uint      `json:"logId"`
-	BuildID   uint      `json:"buildId"`
+	LogID     uint      `json:"logId" minimum:"0"`
+	BuildID   uint      `json:"buildId" minimum:"0"`
 	Message   string    `json:"message"`
 	Timestamp time.Time `json:"timestamp" format:"date-time"`
 }
@@ -140,13 +140,13 @@ type Ping struct {
 
 // Project holds details about a project.
 type Project struct {
-	ProjectID             uint        `json:"projectId"`
+	ProjectID             uint        `json:"projectId" minimum:"0"`
 	Name                  string      `json:"name"`
 	GroupName             string      `json:"groupName"`
 	Description           string      `json:"description"`
 	AvatarURL             string      `json:"avatarUrl"`
-	TokenID               uint        `json:"tokenId"`
-	ProviderID            uint        `json:"providerId"`
+	TokenID               uint        `json:"tokenId" minimum:"0"`
+	ProviderID            uint        `json:"providerId" minimum:"0"`
 	Provider              *Provider   `json:"provider" extensions:"x-nullable"`
 	BuildDefinition       string      `json:"buildDefinition"`
 	Branches              []Branch    `json:"branches"`
@@ -158,10 +158,10 @@ type Project struct {
 // importance are the URL field of where to find the remote, and the token field
 // used to authenticate.
 type Provider struct {
-	ProviderID uint         `json:"providerId"`
+	ProviderID uint         `json:"providerId" minimum:"0"`
 	Name       ProviderName `json:"name" enums:"azuredevops,gitlab,github"`
 	URL        string       `json:"url"`
-	TokenID    uint         `json:"tokenId"`
+	TokenID    uint         `json:"tokenId" minimum:"0"`
 }
 
 // ProviderName is an enum of different providers that are available over at
@@ -201,9 +201,9 @@ const (
 
 // TestResultDetail contains data about a single test in a test result file.
 type TestResultDetail struct {
-	TestResultDetailID uint             `json:"testResultDetailId"`
-	ArtifactID         uint             `json:"artifactId"`
-	BuildID            uint             `json:"buildId"`
+	TestResultDetailID uint             `json:"testResultDetailId" minimum:"0"`
+	ArtifactID         uint             `json:"artifactId" minimum:"0"`
+	BuildID            uint             `json:"buildId" minimum:"0"`
 	Name               string           `json:"name"`
 	Message            null.String      `json:"message" swaggertype:"string" extensions:"x-nullable"`
 	StartedOn          null.Time        `json:"startedOn" format:"date-time" extensions:"x-nullable"`
@@ -213,7 +213,7 @@ type TestResultDetail struct {
 
 // TestResultListSummary contains data about several test result files.
 type TestResultListSummary struct {
-	BuildID uint `json:"buildId"`
+	BuildID uint `json:"buildId" minimum:"0"`
 	Total   uint `json:"total"`
 	Failed  uint `json:"failed"`
 	Passed  uint `json:"passed"`
@@ -234,10 +234,10 @@ const (
 
 // TestResultSummary contains data about a single test result file.
 type TestResultSummary struct {
-	TestResultSummaryID uint   `json:"testResultSummaryId"`
+	TestResultSummaryID uint   `json:"testResultSummaryId" minimum:"0"`
 	FileName            string `json:"fileName"`
-	ArtifactID          uint   `json:"artifactId"`
-	BuildID             uint   `json:"buildId"`
+	ArtifactID          uint   `json:"artifactId" minimum:"0"`
+	BuildID             uint   `json:"buildId" minimum:"0"`
 	Total               uint   `json:"total"`
 	Failed              uint   `json:"failed"`
 	Passed              uint   `json:"passed"`
@@ -256,7 +256,7 @@ type TestsResults struct {
 
 // Token holds credentials for a remote provider.
 type Token struct {
-	TokenID  uint   `json:"tokenId"`
+	TokenID  uint   `json:"tokenId" minimum:"0"`
 	Token    string `json:"token" format:"password"`
 	UserName string `json:"userName"`
 }

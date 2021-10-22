@@ -27,7 +27,7 @@ type TokenSearch struct {
 type Token struct {
 	Token      string `json:"token" format:"password" validate:"required"`
 	UserName   string `json:"userName" validate:"required"`
-	ProviderID uint   `json:"providerId"`
+	ProviderID uint   `json:"providerId" minimum:"0"`
 }
 
 // TokenUpdate specifies fields when updating a token.
@@ -38,10 +38,10 @@ type TokenUpdate struct {
 
 // Branch specifies fields when adding a new branch to a project.
 type Branch struct {
-	ProjectID uint   `json:"projectId" validate:"required"`
+	ProjectID uint   `json:"projectId" validate:"required" minimum:"0"`
 	Name      string `json:"name" validate:"required"`
 	Default   bool   `json:"default"`
-	TokenID   uint   `json:"tokenId"`
+	TokenID   uint   `json:"tokenId" minimum:"0"`
 }
 
 // BranchUpdate specifies fields for a single branch.
@@ -90,8 +90,8 @@ type ProjectSearch struct {
 	GroupName       string `json:"groupName"`
 	Description     string `json:"description"`
 	AvatarURL       string `json:"avatarUrl"`
-	TokenID         uint   `json:"tokenId"`
-	ProviderID      uint   `json:"providerId"`
+	TokenID         uint   `json:"tokenId" minimum:"0"`
+	ProviderID      uint   `json:"providerId" minimum:"0"`
 	BuildDefinition string `json:"buildDefinition"`
 	GitURL          string `json:"gitUrl"`
 }
@@ -102,8 +102,8 @@ type Project struct {
 	GroupName       string `json:"groupName"`
 	Description     string `json:"description"`
 	AvatarURL       string `json:"avatarUrl"`
-	TokenID         uint   `json:"tokenId"`
-	ProviderID      uint   `json:"providerId"`
+	TokenID         uint   `json:"tokenId" minimum:"0"`
+	ProviderID      uint   `json:"providerId" minimum:"0"`
 	BuildDefinition string `json:"buildDefinition"`
 	GitURL          string `json:"gitUrl"`
 }
@@ -114,8 +114,8 @@ type ProjectUpdate struct {
 	GroupName       string `json:"groupName"`
 	Description     string `json:"description"`
 	AvatarURL       string `json:"avatarUrl"`
-	TokenID         uint   `json:"tokenId"`
-	ProviderID      uint   `json:"providerId"`
+	TokenID         uint   `json:"tokenId" minimum:"0"`
+	ProviderID      uint   `json:"providerId" minimum:"0"`
 	BuildDefinition string `json:"buildDefinition"`
 	GitURL          string `json:"gitUrl"`
 }
@@ -163,19 +163,19 @@ func (name ProviderName) ValidString() (string, bool) {
 type ProviderSearch struct {
 	Name    ProviderName `json:"name" enums:"azuredevops,gitlab,github"`
 	URL     string       `json:"url"`
-	TokenID uint         `json:"tokenId"`
+	TokenID uint         `json:"tokenId" minimum:"0"`
 }
 
 // Provider specifies fields when creating a new provider.
 type Provider struct {
 	Name    ProviderName `json:"name" enums:"azuredevops,gitlab,github" validate:"required" binding:"required"`
 	URL     string       `json:"url" validate:"required" binding:"required"`
-	TokenID uint         `json:"tokenId"`
+	TokenID uint         `json:"tokenId" minimum:"0"`
 }
 
 // ProviderUpdate specifies fields when updating a provider.
 type ProviderUpdate struct {
 	Name    ProviderName `json:"name" enums:"azuredevops,gitlab,github" validate:"required" binding:"required"`
 	URL     string       `json:"url" validate:"required" binding:"required"`
-	TokenID uint         `json:"tokenId"`
+	TokenID uint         `json:"tokenId" minimum:"0"`
 }

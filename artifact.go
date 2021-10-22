@@ -33,7 +33,7 @@ func (m artifactModule) Register(g *gin.RouterGroup) {
 // @id getBuildArtifactList
 // @summary Get list of build artifacts
 // @tags artifact
-// @param buildId path int true "Build ID"
+// @param buildId path uint true "Build ID" minimum(0)
 // @success 200 {object} []response.Artifact
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
@@ -69,8 +69,8 @@ func (m artifactModule) getBuildArtifactListHandler(c *gin.Context) {
 // @id getBuildArtifact
 // @summary Get build artifact
 // @tags artifact
-// @param buildId path int true "Build ID"
-// @param artifactId path int true "Artifact ID"
+// @param buildId path uint true "Build ID" minimum(0)
+// @param artifactId path uint true "Artifact ID" minimum(0)
 // @success 200 {file} string "OK"
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
@@ -121,7 +121,7 @@ func (m artifactModule) getBuildArtifactHandler(c *gin.Context) {
 // @summary Post build artifact
 // @tags artifact
 // @accept multipart/form-data
-// @param buildId path int true "Build ID"
+// @param buildId path uint true "Build ID" minimum(0)
 // @param files formData file true "Build artifact file"
 // @success 201 "Added new artifacts"
 // @failure 400 {object} problem.Response "Bad request"
@@ -157,7 +157,7 @@ func (m artifactModule) createBuildArtifactHandler(c *gin.Context) {
 // @summary Get build tests results from .trx files.
 // @description Deprecated, /build/{buildid}/test-result/list-summary should be used instead.
 // @tags artifact
-// @param buildId path int true "Build ID"
+// @param buildId path uint true "Build ID" minimum(0)
 // @success 200 {object} response.TestsResults
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"

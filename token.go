@@ -57,7 +57,7 @@ func (m tokenModule) getTokenListHandler(c *gin.Context) {
 // @id getToken
 // @summary Returns token with selected token ID
 // @tags token
-// @param tokenId path int true "Token ID"
+// @param tokenId path uint true "Token ID" minimum(0)
 // @success 200 {object} response.Token
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
@@ -176,7 +176,7 @@ func (m tokenModule) createTokenHandler(c *gin.Context) {
 // @tags token
 // @accept json
 // @produce json
-// @param tokenId path uint true "ID of token to update"
+// @param tokenId path uint true "ID of token to update" minimum(0)
 // @param token body request.TokenUpdate _ "New token values"
 // @success 200 {object} response.Token
 // @failure 400 {object} problem.Response "Bad request"

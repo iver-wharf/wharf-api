@@ -40,7 +40,7 @@ func (m buildTestResultModule) Register(r gin.IRouter) {
 // @summary Post test result data
 // @tags test-result
 // @accept multipart/form-data
-// @param buildId path int true "Build ID"
+// @param buildId path uint true "Build ID" minimum(0)
 // @param files formData file true "Test result file"
 // @success 201 {object} []response.ArtifactMetadata "Added new test result data and created summaries"
 // @failure 400 {object} problem.Response "Bad request"
@@ -125,7 +125,7 @@ func (m buildTestResultModule) createBuildTestResultHandler(c *gin.Context) {
 // @id getBuildAllTestResultDetailList
 // @summary Get all test result details for specified build
 // @tags test-result
-// @param buildId path int true "Build ID"
+// @param buildId path uint true "Build ID" minimum(0)
 // @success 200 {object} []response.TestResultDetail
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 502 {object} problem.Response "Database is unreachable"
@@ -157,7 +157,7 @@ func (m buildTestResultModule) getBuildAllTestResultDetailListHandler(c *gin.Con
 // @id getBuildAllTestResultSummaryList
 // @summary Get all test result summaries for specified build
 // @tags test-result
-// @param buildId path int true "Build ID"
+// @param buildId path uint true "Build ID" minimum(0)
 // @success 200 {object} []response.TestResultSummary
 // @failure 400 {object} problem.Response "Bad Request"
 // @failure 502 {object} problem.Response "Database is unreachable"
@@ -193,8 +193,8 @@ func (m buildTestResultModule) getBuildAllTestResultSummaryListHandler(c *gin.Co
 // @id getBuildTestResultSummary
 // @summary Get test result summary for specified test
 // @tags test-result
-// @param buildId path int true "Build ID"
-// @param artifactId path int true "Artifact ID"
+// @param buildId path uint true "Build ID" minimum(0)
+// @param artifactId path uint true "Artifact ID" minimum(0)
 // @success 200 {object} response.TestResultSummary
 // @failure 400 {object} problem.Response "Bad Request"
 // @failure 502 {object} problem.Response "Database is unreachable"
@@ -231,8 +231,8 @@ func (m buildTestResultModule) getBuildTestResultSummaryHandler(c *gin.Context) 
 // @id getBuildTestResultDetailList
 // @summary Get all test result details for specified test
 // @tags test-result
-// @param buildId path int true "Build ID"
-// @param artifactId path int true "Artifact ID"
+// @param buildId path uint true "Build ID" minimum(0)
+// @param artifactId path uint true "Artifact ID" minimum(0)
 // @success 200 {object} []response.TestResultDetail
 // @failure 400 {object} problem.Response "Bad Request"
 // @failure 502 {object} problem.Response "Database is unreachable"
@@ -269,7 +269,7 @@ func (m buildTestResultModule) getBuildTestResultDetailListHandler(c *gin.Contex
 // @id getBuildAllTestResultListSummary
 // @summary Get test result list summary of all tests for specified build
 // @tags test-result
-// @param buildId path int true "Build ID"
+// @param buildId path uint true "Build ID" minimum(0)
 // @success 200 {object} response.TestResultListSummary
 // @failure 400 {object} problem.Response "Bad Request"
 // @failure 502 {object} problem.Response "Database is unreachable"
