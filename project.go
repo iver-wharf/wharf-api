@@ -24,7 +24,6 @@ import (
 	"github.com/iver-wharf/wharf-core/pkg/problem"
 	"gopkg.in/guregu/null.v4"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 type projectModule struct {
@@ -54,10 +53,8 @@ func (m projectModule) Register(g *gin.RouterGroup) {
 // getProjectListHandler godoc
 // @id getProjectList
 // @summary Returns all projects from database
-// @description List all projects, or a window of projects using the `limit` and
-// @description `offset` query parameters. Allows optional filtering parameters.
-// @description Verbatim filters will match on the entire string, while the
-// @description matching filters will search on substrings.
+// @description List all projects, or a window of projects using the `limit` and `offset` query parameters. Allows optional filtering parameters.
+// @description Verbatim filters will match on the entire string, while the matching filters will search on substrings.
 // @tags project
 // @param limit query int false "Number of results to return. No limit if unset or non-positive. Required if `offset` is used."
 // @param offset query int false "Skipped results, where 0 means from the start." minimum(0)
@@ -71,6 +68,7 @@ func (m projectModule) Register(g *gin.RouterGroup) {
 // @param groupNameMatch query string false "Filter by matching project group. Cannot be used with `groupName`."
 // @param descriptionMatch query string false "Filter by matching description. Cannot be used with `description`."
 // @param gitUrlMatch query string false "Filter by matching Git URL. Cannot be used with `gitUrl`."
+// @param match query string false "Filter by matching on any supported fields. Meant for freetext search by humans, and is inaccurate by nature."
 // @success 200 {object} []response.Project
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
@@ -91,6 +89,8 @@ func (m projectModule) getProjectListHandler(c *gin.Context) {
 		GroupNameMatch   *string `form:"groupNameMatch" binding:"excluded_with=GroupName"`
 		DescriptionMatch *string `form:"descriptionMatch" binding:"excluded_with=Description"`
 		GitURLMatch      *string `form:"gitUrlMatch" binding:"excluded_with=GitURL"`
+
+		Match *string `form:"match"`
 	}{}
 	if err := c.ShouldBindQuery(&params); err != nil {
 		ginutil.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading query parameters.")
@@ -98,55 +98,38 @@ func (m projectModule) getProjectListHandler(c *gin.Context) {
 	}
 	var dbProjects []database.Project
 	var sc searchCollection
-	query := databaseProjectPreloaded(m.Database).
-		Clauses(optionalLimitOffsetClause(params.Limit, params.Offset)).
+	err := databaseProjectPreloaded(m.Database).
 		Where(&database.Project{
 			Name:       sc.String(database.ProjectFields.Name, params.Name),
 			GroupName:  sc.String(database.ProjectFields.GroupName, params.GroupName),
 			TokenID:    sc.Uint(database.ProjectFields.TokenID, params.TokenID),
 			ProviderID: sc.Uint(database.ProjectFields.ProviderID, params.ProviderID),
 			GitURL:     sc.String(database.ProjectFields.GitURL, params.GitURL),
-		}, sc.NonNilFieldNames()...)
-	query = whereLikeClauses(query, map[string]*string{
-		database.ProjectColumns.Name:        params.NameMatch,
-		database.ProjectColumns.GroupName:   params.GroupNameMatch,
-		database.ProjectColumns.Description: params.DescriptionMatch,
-		database.ProjectColumns.GitURL:      params.GitURLMatch,
-	})
-	err := query.Find(&dbProjects).Error
+		}, sc.NonNilFieldNames()...).
+		Scopes(
+			optionalLimitOffsetScope(params.Limit, params.Offset),
+			whereLikeScope(map[string]*string{
+				database.ProjectColumns.Name:        params.NameMatch,
+				database.ProjectColumns.GroupName:   params.GroupNameMatch,
+				database.ProjectColumns.Description: params.DescriptionMatch,
+				database.ProjectColumns.GitURL:      params.GitURLMatch,
+			}),
+			whereAnyLikeScope(
+				params.Match,
+				database.ProjectColumns.Name,
+				database.ProjectColumns.GroupName,
+				database.ProjectColumns.Description,
+				database.ProjectColumns.GitURL,
+			),
+		).
+		Find(&dbProjects).
+		Error
 	if err != nil {
 		ginutil.WriteDBReadError(c, err, "Failed fetching list of projects from database.")
 		return
 	}
 	resProjects := modelconv.DBProjectsToResponses(dbProjects)
 	c.JSON(http.StatusOK, resProjects)
-}
-
-var escaper = strings.NewReplacer(
-	`\`, `\\`,
-	`?`, `\?`,
-	`_`, `\_`,
-)
-
-func whereLikeClauses(db *gorm.DB, pairs map[string]*string) *gorm.DB {
-	var expressions []clause.Expression
-	for key, value := range pairs {
-		if value == nil || *value == "" {
-			continue
-		}
-		var sb strings.Builder
-		sb.WriteByte('%')
-		escaper.WriteString(&sb, *value)
-		sb.WriteByte('%')
-		expressions = append(expressions, clause.Expr{
-			SQL:  key + ` LIKE ? ESCAPE '\'`,
-			Vars: []interface{}{sb.String()},
-		})
-	}
-	if len(expressions) == 0 {
-		return db
-	}
-	return db.Clauses(clause.Where{Exprs: expressions})
 }
 
 type searchCollection struct {

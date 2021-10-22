@@ -51,15 +51,118 @@ func fetchDatabaseObjByID(c *gin.Context, db *gorm.DB, modelPtr interface{}, id 
 	return true
 }
 
-func optionalLimitOffsetClause(limit, offset int) clause.Expression {
+func optionalLimitOffsetScope(limit, offset int) func(*gorm.DB) *gorm.DB {
 	if limit <= 0 {
-		return clause.Limit{}
+		return gormIdentityScope
 	}
 	if offset <= 0 {
 		offset = 0
 	}
-	return clause.Limit{
-		Limit:  limit,
-		Offset: offset,
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Clauses(clause.Limit{
+			Limit:  limit,
+			Offset: offset,
+		})
 	}
+}
+
+func gormIdentityScope(db *gorm.DB) *gorm.DB {
+	return db
+}
+
+var sqlLikeEscaper = strings.NewReplacer(
+	`\`, `\\`,
+	`?`, `\?`,
+	`_`, `\_`,
+)
+
+func whereLikeScope(pairs map[string]*string) func(*gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		b := newGormClauseBuilder(db.Dialector)
+		expressions := b.likeExprsFromMap(pairs)
+		if len(expressions) == 0 {
+			return db
+		}
+		return db.Clauses(clause.And(expressions...))
+	}
+}
+
+func whereAnyLikeScope(value *string, keys ...string) func(*gorm.DB) *gorm.DB {
+	if value == nil || *value == "" {
+		return gormIdentityScope
+	}
+	return func(db *gorm.DB) *gorm.DB {
+		b := newGormClauseBuilder(db.Dialector)
+		expressions := b.likeExprsFromSliceSameValue(value, keys...)
+		if expressions == nil {
+			return db
+		}
+		return db.Clauses(clause.Or(expressions...))
+	}
+}
+
+func (b gormClauseBuilder) likeExprsFromMap(pairs map[string]*string) []clause.Expression {
+	if len(pairs) == 0 {
+		return nil
+	}
+	expressions := make([]clause.Expression, 0, len(pairs))
+	for key, value := range pairs {
+		if expr := b.likeExpr(key, value); expr != nil {
+			expressions = append(expressions, expr)
+		}
+	}
+	return expressions
+}
+
+func (b gormClauseBuilder) likeExprsFromSliceSameValue(value *string, keys ...string) []clause.Expression {
+	if len(keys) == 0 {
+		return nil
+	}
+	if value == nil || *value == "" {
+		return nil
+	}
+	expressions := make([]clause.Expression, 0, len(keys))
+	for _, key := range keys {
+		if expr := b.likeExpr(key, value); expr != nil {
+			expressions = append(expressions, expr)
+		}
+	}
+	return expressions
+}
+
+func (b gormClauseBuilder) likeExpr(key string, value *string) clause.Expression {
+	if value == nil || *value == "" {
+		return nil
+	}
+	var sqlBuilder strings.Builder
+	sqlBuilder.WriteString(key)
+	sqlBuilder.WriteByte(' ')
+	switch b.dialect {
+	case DBDriverPostgres:
+		// Case insensitive LIKE
+		// https://www.postgresql.org/docs/9.6/functions-matching.html#FUNCTIONS-LIKE
+		sqlBuilder.WriteString("ILIKE")
+	default:
+		// Sqlite is always case-insensitive
+		// https://www.sqlite.org/lang_expr.html#like
+		sqlBuilder.WriteString("LIKE")
+	}
+	sqlBuilder.WriteString(` ? ESCAPE '\'`)
+
+	var varBuilder strings.Builder
+	varBuilder.WriteByte('%')
+	sqlLikeEscaper.WriteString(&varBuilder, *value)
+	varBuilder.WriteByte('%')
+	return clause.Expr{
+		SQL:  sqlBuilder.String(),
+		Vars: []interface{}{varBuilder.String()},
+	}
+}
+
+type gormClauseBuilder struct {
+	dialect DBDriver
+}
+
+func newGormClauseBuilder(dialector gorm.Dialector) gormClauseBuilder {
+	return gormClauseBuilder{dialect: DBDriver(dialector.Name())}
 }
