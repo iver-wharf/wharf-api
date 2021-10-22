@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"gorm.io/gorm"
@@ -28,6 +29,46 @@ func runDatabaseMigrations(db *gorm.DB, driver DBDriver) error {
 				" We advice against using this driver for production!")
 	}
 
+	types, err := db.Migrator().ColumnTypes(&database.Project{})
+	fmt.Println("err:", err)
+	fmt.Printf("Types: %#v\n", types)
+	for _, columnType := range types {
+		var (
+			nullableStr string = "<nil>"
+			lengthStr   string = "<nil>"
+		)
+		if nullable, ok := columnType.Nullable(); ok {
+			nullableStr = strconv.FormatBool(nullable)
+		}
+		if length, ok := columnType.Length(); ok {
+			lengthStr = strconv.FormatInt(length, 10)
+		}
+		log.Info().
+			WithString("dbTypeName", columnType.DatabaseTypeName()).
+			WithString("name", columnType.Name()).
+			WithString("nullable", nullableStr).
+			WithString("length", lengthStr).
+			Message("Column type")
+	}
+	stmt := db.Model(&database.Project{}).Statement
+	if err := stmt.Parse(&database.Project{}); err != nil {
+		return err
+	}
+	for _, field := range stmt.Schema.Fields {
+		log.Info().
+			WithString("name", field.Name).
+			WithBool("notNull", field.NotNull).
+			WithInt("size", field.Size).
+			Message("Field type")
+	}
+	//if err := db.Migrator().AlterColumn(&database.Project{}, "Description"); err != nil {
+	//	return err
+	//}
+	//if err := db.Migrator().AlterColumn(&database.Project{}, &schema.Field{}); err != nil {
+	//	db.Model(&database.Project{}).Statement.Schema.Fields
+	//	return err
+	//}
+
 	oldColumns := []columnToDrop{
 		// since v3.1.0, the token.provider_id column was removed as it induced a
 		// circular dependency between the token and provider tables
@@ -50,6 +91,20 @@ func runDatabaseMigrations(db *gorm.DB, driver DBDriver) error {
 
 	return dropOldIndices(db, oldIndices)
 }
+
+//func myAlterColumn(m gorm.Migrator, value interface{}, field string) error {
+//	return m.RunWithValue(value, func(stmt *gorm.Statement) error {
+//		if field := stmt.Schema.LookUpField(field); field != nil {
+//			fileType := clause.Expr{SQL: m.DataTypeOf(field)}
+//			return m.DB.Exec(
+//				"ALTER TABLE ? ALTER COLUMN ? TYPE ?",
+//				m.CurrentTable(stmt), clause.Column{Name: field.DBName}, fileType,
+//			).Error
+//
+//		}
+//		return fmt.Errorf("failed to look up field with name: %s", field)
+//	})
+//}
 
 func migrateConstraints(db *gorm.DB, tables []interface{}) error {
 	if err := db.Transaction(func(tx *gorm.DB) error {
