@@ -141,6 +141,23 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Added Swagger attribute `minimum` to all ID path parameters, response bodies,
   and request bodies, as we do not support negative values there. (#98)
 
+- Changed a lot of database columns to be `NOT NULL` where wharf-api already
+  didn't support null/nil values. Migration steps have been added so any
+  potential null values will be changed to empty strings or zeroes.
+  The updated columns are: (#100)
+
+  - `artifact.file_name`
+  - `build_param.value`
+  - `param.default_value`
+  - `param.value`
+  - `project.avatar_url`
+  - `project.build_definition`
+  - `project.description`
+  - `project.git_url`
+  - `project.group_name`
+  - `test_result_summary.file_name`
+  - `token.user_name`
+
 ## v4.2.0 (2021-09-10)
 
 - Added support for the TZ environment variable (setting timezones ex.
