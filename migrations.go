@@ -278,10 +278,6 @@ func migrateColumnsToNotNull(driver DBDriver, db *gorm.DB, model interface{}, fi
 			if err := migrateColumnToNotNull(driver, tx, model, wantedField, actualType); err != nil {
 				return err
 			}
-			log.Info().
-				WithStringf("model", "%T", model).
-				WithString("field", fieldName).
-				Message("Changed column to not null.")
 		}
 		return nil
 	})
@@ -309,7 +305,7 @@ func migrateColumnToNotNull(driver DBDriver, db *gorm.DB, model interface{}, wan
 		return fmt.Errorf("get default value as SQL string: %w", err)
 	}
 
-	return db.Transaction(func(tx *gorm.DB) error {
+	if err := db.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Model(model).Where(want.DBName, nil).Update(want.DBName, defaultValue).Error; err != nil {
 			return fmt.Errorf("set all to zero where %q is null: %w", want.DBName, err)
 		}
@@ -338,7 +334,15 @@ func migrateColumnToNotNull(driver DBDriver, db *gorm.DB, model interface{}, wan
 		default:
 			return fmt.Errorf("migrating column to not null has not been implemented for this DB driver: %q", driver)
 		}
-	})
+	}); err != nil {
+		return err
+	}
+	log.Info().
+		WithStringf("model", "%T", model).
+		WithString("field", want.Name).
+		WithString("column", want.DBName).
+		Message("Changed column to not null.")
+	return nil
 }
 
 func sqlDefaultValue(dataType schema.DataType) (interface{}, error) {
