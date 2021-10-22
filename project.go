@@ -16,6 +16,7 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/gin-gonic/gin"
 	"github.com/iver-wharf/messagebus-go"
+	"github.com/iver-wharf/wharf-api/internal/wherefields"
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/iver-wharf/wharf-api/pkg/model/request"
 	"github.com/iver-wharf/wharf-api/pkg/model/response"
@@ -97,15 +98,15 @@ func (m projectModule) getProjectListHandler(c *gin.Context) {
 		return
 	}
 	var dbProjects []database.Project
-	var sc searchCollection
+	var where wherefields.Collection
 	err := databaseProjectPreloaded(m.Database).
 		Where(&database.Project{
-			Name:       sc.String(database.ProjectFields.Name, params.Name),
-			GroupName:  sc.String(database.ProjectFields.GroupName, params.GroupName),
-			TokenID:    sc.Uint(database.ProjectFields.TokenID, params.TokenID),
-			ProviderID: sc.Uint(database.ProjectFields.ProviderID, params.ProviderID),
-			GitURL:     sc.String(database.ProjectFields.GitURL, params.GitURL),
-		}, sc.NonNilFieldNames()...).
+			Name:       where.String(database.ProjectFields.Name, params.Name),
+			GroupName:  where.String(database.ProjectFields.GroupName, params.GroupName),
+			TokenID:    where.Uint(database.ProjectFields.TokenID, params.TokenID),
+			ProviderID: where.Uint(database.ProjectFields.ProviderID, params.ProviderID),
+			GitURL:     where.String(database.ProjectFields.GitURL, params.GitURL),
+		}, where.NonNilFieldNames()...).
 		Scopes(
 			optionalLimitOffsetScope(params.Limit, params.Offset),
 			whereLikeScope(map[string]*string{
@@ -130,34 +131,6 @@ func (m projectModule) getProjectListHandler(c *gin.Context) {
 	}
 	resProjects := modelconv.DBProjectsToResponses(dbProjects)
 	c.JSON(http.StatusOK, resProjects)
-}
-
-type searchCollection struct {
-	fieldNames []interface{}
-}
-
-func (sc *searchCollection) NonNilFieldNames() []interface{} {
-	return sc.fieldNames
-}
-
-func (sc *searchCollection) addFieldName(field string) {
-	sc.fieldNames = append(sc.fieldNames, field)
-}
-
-func (sc *searchCollection) Uint(field string, value *uint) uint {
-	if value == nil {
-		return 0
-	}
-	sc.addFieldName(field)
-	return *value
-}
-
-func (sc *searchCollection) String(field string, value *string) string {
-	if value == nil {
-		return ""
-	}
-	sc.addFieldName(field)
-	return *value
 }
 
 // searchProjectListHandler godoc
