@@ -138,6 +138,23 @@ type Ping struct {
 	Message string `json:"message" example:"pong"`
 }
 
+// ProjectJSONFields holds the JSON field names for each field.
+// Useful in ordering statements to map the correct field to the correct
+// database column.
+var ProjectJSONFields = struct {
+	ProjectID   string
+	Name        string
+	GroupName   string
+	Description string
+	GitURL      string
+}{
+	ProjectID:   "projectId",
+	Name:        "name",
+	GroupName:   "groupName",
+	Description: "description",
+	GitURL:      "gitUrl",
+}
+
 // Project holds details about a project.
 type Project struct {
 	ProjectID             uint        `json:"projectId" minimum:"0"`

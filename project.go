@@ -50,12 +50,22 @@ func (m projectModule) Register(g *gin.RouterGroup) {
 	}
 }
 
+var projectJSONToColumns = map[string]string{
+	response.ProjectJSONFields.ProjectID:   database.ProjectColumns.ProjectID,
+	response.ProjectJSONFields.Name:        database.ProjectColumns.Name,
+	response.ProjectJSONFields.GroupName:   database.ProjectColumns.GroupName,
+	response.ProjectJSONFields.Description: database.ProjectColumns.Description,
+	response.ProjectJSONFields.GitURL:      database.ProjectColumns.GitURL,
+}
+
 // getProjectListHandler godoc
 // @id getProjectList
 // @summary Returns all projects from database
 // @description List all projects, or a window of projects using the `limit` and `offset` query parameters. Allows optional filtering parameters.
-// @description Verbatim filters will match on the entire string, while the matching filters will search on substrings.
+// @description Verbatim filters will match on the entire string used to find exact matches,
+// @description while the matching filters are meant for searches by humans where it tries to find soft matches and is therefore inaccurate by nature.
 // @tags project
+// @param orderby query []string false "Sorting orders. Takes the property name followed by either 'asc' or 'desc'. Can be specified multiple times for more granular sorting. Defaults to `?orderby=projectId desc`"
 // @param limit query int false "Number of results to return. No limit if unset or non-positive. Required if `offset` is used."
 // @param offset query int false "Skipped results, where 0 means from the start." minimum(0)
 // @param name query string false "Filter by verbatim project name."
@@ -68,7 +78,7 @@ func (m projectModule) Register(g *gin.RouterGroup) {
 // @param groupNameMatch query string false "Filter by matching project group. Cannot be used with `groupName`."
 // @param descriptionMatch query string false "Filter by matching description. Cannot be used with `description`."
 // @param gitUrlMatch query string false "Filter by matching Git URL. Cannot be used with `gitUrl`."
-// @param match query string false "Filter by matching on any supported fields. Meant for freetext search by humans, and is inaccurate by nature."
+// @param match query string false "Filter by matching on any supported fields."
 // @success 200 {object} []response.Project
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
@@ -77,6 +87,8 @@ func (m projectModule) getProjectListHandler(c *gin.Context) {
 	var params = struct {
 		Limit  int `form:"limit" binding:"required_with=Offset"`
 		Offset int `form:"offset" binding:"min=0"`
+
+		OrderBy []string `form:"orderby"`
 
 		Name        *string `form:"name"`
 		GroupName   *string `form:"groupName"`
@@ -96,9 +108,19 @@ func (m projectModule) getProjectListHandler(c *gin.Context) {
 		ginutil.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading query parameters.")
 		return
 	}
+	orderBySlice, err := orderby.ParseSlice(params.OrderBy, projectJSONToColumns)
+	if err != nil {
+		joinedOrders := strings.Join(params.OrderBy, ", ")
+		ginutil.WriteInvalidParamError(c, err, "orderby", fmt.Sprintf(
+			"Failed parsing the %d sort ordering values: %s",
+			len(params.OrderBy),
+			joinedOrders))
+		return
+	}
 	var dbProjects []database.Project
 	var where wherefields.Collection
-	err := databaseProjectPreloaded(m.Database).
+	err = databaseProjectPreloaded(m.Database).
+		Clauses(orderBySlice.ClauseIfNone(defaultGetProjectsOrderBy)).
 		Where(&database.Project{
 			Name:       where.String(database.ProjectFields.Name, params.Name),
 			GroupName:  where.String(database.ProjectFields.GroupName, params.GroupName),
@@ -150,7 +172,7 @@ var buildJSONToColumns = map[string]string{
 // @param projectId path uint true "project ID" minimum(0)
 // @param limit query string true "number of fetched branches"
 // @param offset query string true "PK of last branch taken"
-// @param orderby query []string false "Sorting orders. Takes the property name followed by either 'asc' or 'desc'. Can be specified multiple times for more granular sorting. Defaults to '?orderby=buildId desc'"
+// @param orderby query []string false "Sorting orders. Takes the property name followed by either 'asc' or 'desc'. Can be specified multiple times for more granular sorting. Defaults to `?orderby=buildId desc`"
 // @success 200 {object} response.PaginatedBuilds
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
@@ -674,6 +696,8 @@ func getDBJobParams(
 
 	return dbJobParams, nil
 }
+
+var defaultGetProjectsOrderBy = orderby.Column{Name: database.ProjectColumns.ProjectID, Direction: orderby.Desc}
 
 var defaultGetBuildsOrderBy = orderby.Column{Name: database.BuildColumns.BuildID, Direction: orderby.Desc}
 

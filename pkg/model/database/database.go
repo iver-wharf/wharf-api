@@ -100,12 +100,14 @@ var ProjectFields = struct {
 // Useful in GORM .Order() statements to order the results based on a specific
 // column, which does not support the regular Go field names.
 var ProjectColumns = struct {
+	ProjectID   string
 	Name        string
 	GroupName   string
 	Description string
 	TokenID     string
 	GitURL      string
 }{
+	ProjectID:   "project_id",
 	Name:        "name",
 	GroupName:   "group_name",
 	Description: "description",
