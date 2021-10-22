@@ -101,6 +101,14 @@ func whereAnyLikeScope(value *string, keys ...string) func(*gorm.DB) *gorm.DB {
 	}
 }
 
+type gormClauseBuilder struct {
+	dialect DBDriver
+}
+
+func newGormClauseBuilder(dialector gorm.Dialector) gormClauseBuilder {
+	return gormClauseBuilder{dialect: DBDriver(dialector.Name())}
+}
+
 func (b gormClauseBuilder) likeExprsFromMap(pairs map[string]*string) []clause.Expression {
 	if len(pairs) == 0 {
 		return nil
@@ -157,12 +165,4 @@ func (b gormClauseBuilder) likeExpr(key string, value *string) clause.Expression
 		SQL:  sqlBuilder.String(),
 		Vars: []interface{}{varBuilder.String()},
 	}
-}
-
-type gormClauseBuilder struct {
-	dialect DBDriver
-}
-
-func newGormClauseBuilder(dialector gorm.Dialector) gormClauseBuilder {
-	return gormClauseBuilder{dialect: DBDriver(dialector.Name())}
 }
