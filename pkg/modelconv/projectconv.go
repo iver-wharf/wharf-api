@@ -2,7 +2,9 @@ package modelconv
 
 import (
 	"github.com/ghodss/yaml"
+	"github.com/iver-wharf/wharf-api/internal/ptrconv"
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
+	"github.com/iver-wharf/wharf-api/pkg/model/request"
 	"github.com/iver-wharf/wharf-api/pkg/model/response"
 )
 
@@ -36,13 +38,27 @@ func DBProjectToResponse(dbProject database.Project) response.Project {
 		GroupName:             dbProject.GroupName,
 		Description:           dbProject.Description,
 		AvatarURL:             dbProject.AvatarURL,
-		TokenID:               dbProject.TokenID,
-		ProviderID:            dbProject.ProviderID,
+		TokenID:               ptrconv.UintPtr(dbProject.TokenID),
+		ProviderID:            ptrconv.UintPtr(dbProject.ProviderID),
 		Provider:              resProviderPtr,
 		BuildDefinition:       dbProject.BuildDefinition,
 		Branches:              DBBranchesToResponses(dbProject.Branches),
 		GitURL:                dbProject.GitURL,
 		ParsedBuildDefinition: parsedBuildDef,
+	}
+}
+
+// ReqProjectToDatabase converts a request project to a database project.
+func ReqProjectToDatabase(reqProject request.Project) database.Project {
+	return database.Project{
+		Name:            reqProject.Name,
+		GroupName:       reqProject.GroupName,
+		Description:     reqProject.Description,
+		AvatarURL:       reqProject.AvatarURL,
+		TokenID:         ptrconv.UintZeroNil(reqProject.TokenID),
+		ProviderID:      ptrconv.UintZeroNil(reqProject.ProviderID),
+		BuildDefinition: reqProject.BuildDefinition,
+		GitURL:          reqProject.GitURL,
 	}
 }
 

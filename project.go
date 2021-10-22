@@ -16,6 +16,7 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/gin-gonic/gin"
 	"github.com/iver-wharf/messagebus-go"
+	"github.com/iver-wharf/wharf-api/internal/ptrconv"
 	"github.com/iver-wharf/wharf-api/internal/wherefields"
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/iver-wharf/wharf-api/pkg/model/request"
@@ -124,8 +125,8 @@ func (m projectModule) getProjectListHandler(c *gin.Context) {
 		Where(&database.Project{
 			Name:       where.String(database.ProjectFields.Name, params.Name),
 			GroupName:  where.String(database.ProjectFields.GroupName, params.GroupName),
-			TokenID:    where.Uint(database.ProjectFields.TokenID, params.TokenID),
-			ProviderID: where.Uint(database.ProjectFields.ProviderID, params.ProviderID),
+			TokenID:    where.UintPtrZeroNil(database.ProjectFields.TokenID, params.TokenID),
+			ProviderID: where.UintPtrZeroNil(database.ProjectFields.ProviderID, params.ProviderID),
 			GitURL:     where.String(database.ProjectFields.GitURL, params.GitURL),
 		}, where.NonNilFieldNames()...).
 		Scopes(
@@ -271,16 +272,7 @@ func (m projectModule) createProjectHandler(c *gin.Context) {
 		return
 	}
 
-	dbProject := database.Project{
-		Name:            reqProject.Name,
-		GroupName:       reqProject.GroupName,
-		Description:     reqProject.Description,
-		AvatarURL:       reqProject.AvatarURL,
-		TokenID:         reqProject.TokenID,
-		ProviderID:      reqProject.ProviderID,
-		BuildDefinition: reqProject.BuildDefinition,
-		GitURL:          reqProject.GitURL,
-	}
+	dbProject := modelconv.ReqProjectToDatabase(reqProject)
 	if err := m.Database.Create(&dbProject).Error; err != nil {
 		ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
 			"Failed creating new project with group %q, token ID %d, and name %q in database.",
@@ -355,8 +347,8 @@ func (m projectModule) updateProjectHandler(c *gin.Context) {
 	dbProject.GroupName = reqProjectUpdate.GroupName
 	dbProject.Description = reqProjectUpdate.Description
 	dbProject.AvatarURL = reqProjectUpdate.AvatarURL
-	dbProject.TokenID = reqProjectUpdate.TokenID
-	dbProject.ProviderID = reqProjectUpdate.ProviderID
+	dbProject.TokenID = ptrconv.UintZeroNil(reqProjectUpdate.TokenID)
+	dbProject.ProviderID = ptrconv.UintZeroNil(reqProjectUpdate.ProviderID)
 	dbProject.BuildDefinition = reqProjectUpdate.BuildDefinition
 	dbProject.GitURL = reqProjectUpdate.GitURL
 

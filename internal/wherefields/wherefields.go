@@ -26,6 +26,19 @@ func (sc *Collection) Uint(field string, value *uint) uint {
 	return *value
 }
 
+// UintPtrZeroNil stores the field name if the value was non-nil and returns the
+// value of the field and translates zero (0) to nil.
+func (sc *Collection) UintPtrZeroNil(field string, value *uint) *uint {
+	if value == nil {
+		return nil
+	}
+	sc.addFieldName(field)
+	if *value == 0 {
+		return nil
+	}
+	return value
+}
+
 // String stores the field name if the value was non-nil and returns the value
 // of the field, or empty string ("") if it was nil.
 func (sc *Collection) String(field string, value *string) string {

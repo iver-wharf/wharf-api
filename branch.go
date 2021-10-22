@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/iver-wharf/wharf-api/internal/ptrconv"
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/iver-wharf/wharf-api/pkg/model/request"
 	"github.com/iver-wharf/wharf-api/pkg/modelconv"
@@ -135,7 +136,7 @@ func (m branchModule) updateProjectBranchListHandler(c *gin.Context) {
 	if !ok {
 		return
 	}
-	dbBranchList, err := updateBranchList(m.Database, projectID, dbProject.TokenID, reqBranchListUpdate)
+	dbBranchList, err := updateBranchList(m.Database, projectID, ptrconv.UintPtr(dbProject.TokenID), reqBranchListUpdate)
 	if err != nil {
 		ginutil.WriteDBWriteError(c, err, "Failed to update branches in database.")
 		return

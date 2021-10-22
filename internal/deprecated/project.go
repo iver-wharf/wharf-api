@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/iver-wharf/wharf-api/internal/ptrconv"
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/iver-wharf/wharf-api/pkg/modelconv"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
@@ -21,8 +22,8 @@ type ProjectUpdate struct {
 	GroupName       string `json:"groupName"`
 	Description     string `json:"description"`
 	AvatarURL       string `json:"avatarUrl"`
-	TokenID         uint   `json:"tokenId"`
-	ProviderID      uint   `json:"providerId"`
+	TokenID         uint   `json:"tokenId" extensions:"x-nullable"`
+	ProviderID      uint   `json:"providerId" extensions:"x-nullable"`
 	BuildDefinition string `json:"buildDefinition"`
 	GitURL          string `json:"gitUrl"`
 }
@@ -35,8 +36,8 @@ type ProjectSearch struct {
 	GroupName       string `json:"groupName"`
 	Description     string `json:"description"`
 	AvatarURL       string `json:"avatarUrl"`
-	TokenID         uint   `json:"tokenId" minimum:"0"`
-	ProviderID      uint   `json:"providerId" minimum:"0"`
+	TokenID         uint   `json:"tokenId" minimum:"0" extensions:"x-nullable"`
+	ProviderID      uint   `json:"providerId" minimum:"0" extensions:"x-nullable"`
 	BuildDefinition string `json:"buildDefinition"`
 	GitURL          string `json:"gitUrl"`
 }
@@ -110,8 +111,8 @@ func (m ProjectModule) searchProjectListHandler(c *gin.Context) {
 			GroupName:       reqProjectSearch.GroupName,
 			Description:     reqProjectSearch.Description,
 			AvatarURL:       reqProjectSearch.AvatarURL,
-			TokenID:         reqProjectSearch.TokenID,
-			ProviderID:      reqProjectSearch.ProviderID,
+			TokenID:         ptrconv.UintZeroNil(reqProjectSearch.TokenID),
+			ProviderID:      ptrconv.UintZeroNil(reqProjectSearch.ProviderID),
 			BuildDefinition: reqProjectSearch.BuildDefinition,
 			GitURL:          reqProjectSearch.GitURL,
 		}).
@@ -183,8 +184,8 @@ func (m ProjectModule) updateProjectHandler(c *gin.Context) {
 				GroupName:       reqProjectUpdate.GroupName,
 				Description:     reqProjectUpdate.Description,
 				AvatarURL:       reqProjectUpdate.AvatarURL,
-				TokenID:         reqProjectUpdate.TokenID,
-				ProviderID:      reqProjectUpdate.ProviderID,
+				TokenID:         ptrconv.UintZeroNil(reqProjectUpdate.TokenID),
+				ProviderID:      ptrconv.UintZeroNil(reqProjectUpdate.ProviderID),
 				BuildDefinition: reqProjectUpdate.BuildDefinition,
 				GitURL:          reqProjectUpdate.GitURL,
 			}
@@ -209,8 +210,8 @@ func (m ProjectModule) updateProjectHandler(c *gin.Context) {
 	dbExistingProject.GroupName = reqProjectUpdate.GroupName
 	dbExistingProject.Description = reqProjectUpdate.Description
 	dbExistingProject.AvatarURL = reqProjectUpdate.AvatarURL
-	dbExistingProject.TokenID = reqProjectUpdate.TokenID
-	dbExistingProject.ProviderID = reqProjectUpdate.ProviderID
+	dbExistingProject.TokenID = ptrconv.UintZeroNil(reqProjectUpdate.TokenID)
+	dbExistingProject.ProviderID = ptrconv.UintZeroNil(reqProjectUpdate.ProviderID)
 	dbExistingProject.BuildDefinition = reqProjectUpdate.BuildDefinition
 	dbExistingProject.GitURL = reqProjectUpdate.GitURL
 

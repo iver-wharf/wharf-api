@@ -124,9 +124,9 @@ type Project struct {
 	GroupName       string    `gorm:"size:500"`
 	Description     string    `gorm:"size:500"`
 	AvatarURL       string    `gorm:"size:500"`
-	TokenID         uint      `gorm:"nullable;default:NULL;index:project_idx_token_id"`
+	TokenID         *uint     `gorm:"nullable;default:NULL;index:project_idx_token_id"`
 	Token           *Token    `gorm:"foreignKey:TokenID;constraint:OnUpdate:RESTRICT,OnDelete:RESTRICT"`
-	ProviderID      uint      `gorm:"nullable;default:NULL;index:project_idx_provider_id"`
+	ProviderID      *uint     `gorm:"nullable;default:NULL;index:project_idx_provider_id"`
 	Provider        *Provider `gorm:"foreignKey:ProviderID;constraint:OnUpdate:RESTRICT,OnDelete:RESTRICT"`
 	BuildDefinition string    `sql:"type:text"`
 	Branches        []Branch  `gorm:"foreignKey:ProjectID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
