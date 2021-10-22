@@ -36,13 +36,12 @@ type projectModule struct {
 func (m projectModule) Register(g *gin.RouterGroup) {
 	projects := g.Group("/projects")
 	{
-		projects.GET("", m.getProjectListHandler)
-		projects.POST("/search", m.searchProjectListHandler)
 		projects.GET("/:projectId/builds", m.getProjectBuildListHandler)
 	}
 
 	project := g.Group("/project")
 	{
+		project.GET("", m.getProjectListHandler)
 		project.GET("/:projectId", m.getProjectHandler)
 		project.POST("", m.createProjectHandler)
 		project.DELETE("/:projectId", m.deleteProjectHandler)
@@ -73,7 +72,7 @@ func (m projectModule) Register(g *gin.RouterGroup) {
 // @success 200 {object} []response.Project
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
-// @router /projects [get]
+// @router /project [get]
 func (m projectModule) getProjectListHandler(c *gin.Context) {
 	var params = struct {
 		Limit  int `form:"limit" binding:"required_with=Offset"`
@@ -127,45 +126,6 @@ func (m projectModule) getProjectListHandler(c *gin.Context) {
 		Error
 	if err != nil {
 		ginutil.WriteDBReadError(c, err, "Failed fetching list of projects from database.")
-		return
-	}
-	resProjects := modelconv.DBProjectsToResponses(dbProjects)
-	c.JSON(http.StatusOK, resProjects)
-}
-
-// searchProjectListHandler godoc
-// @id searchProjectList
-// @summary Search for projects from database
-// @tags project
-// @param project body request.ProjectSearch _ "Project search criteria"
-// @success 200 {object} []response.Project
-// @failure 502 {object} problem.Response "Database is unreachable"
-// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
-// @router /projects/search [post]
-func (m projectModule) searchProjectListHandler(c *gin.Context) {
-	var reqProjectSearch request.ProjectSearch
-	if err := c.ShouldBindJSON(&reqProjectSearch); err != nil {
-		ginutil.WriteInvalidBindError(c, err,
-			"One or more parameters failed to parse when reading the request body for the project object to search with.")
-		return
-	}
-	var dbProjects []database.Project
-	err := m.Database.
-		Where(&database.Project{
-			Name:            reqProjectSearch.Name,
-			GroupName:       reqProjectSearch.GroupName,
-			Description:     reqProjectSearch.Description,
-			AvatarURL:       reqProjectSearch.AvatarURL,
-			TokenID:         reqProjectSearch.TokenID,
-			ProviderID:      reqProjectSearch.ProviderID,
-			BuildDefinition: reqProjectSearch.BuildDefinition,
-			GitURL:          reqProjectSearch.GitURL,
-		}).
-		Preload(database.ProjectFields.Provider).
-		Find(&dbProjects).
-		Error
-	if err != nil {
-		ginutil.WriteDBReadError(c, err, "Failed searching for projects in database.")
 		return
 	}
 	resProjects := modelconv.DBProjectsToResponses(dbProjects)
