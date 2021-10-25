@@ -1,6 +1,6 @@
 package ptrconv
 
-// UintPtr converts an uint pointer to a uint value, where nil is
+// UintPtr converts a uint pointer to a uint value, where nil is
 // translated to zero (0).
 func UintPtr(value *uint) uint {
 	if value == nil {
@@ -9,7 +9,7 @@ func UintPtr(value *uint) uint {
 	return *value
 }
 
-// UintZeroNil converts an uint value to a uint pointer, where zero (0) is
+// UintZeroNil converts a uint value to a uint pointer, where zero (0) is
 // translated to nil.
 func UintZeroNil(value uint) *uint {
 	if value == 0 {
