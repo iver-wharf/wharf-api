@@ -70,12 +70,6 @@ func gormIdentityScope(db *gorm.DB) *gorm.DB {
 	return db
 }
 
-var sqlLikeEscaper = strings.NewReplacer(
-	`\`, `\\`,
-	`?`, `\?`,
-	`_`, `\_`,
-)
-
 func whereLikeScope(pairs map[string]*string) func(*gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		b := newGormClauseBuilder(db.Dialector)
@@ -137,6 +131,12 @@ func (b gormClauseBuilder) likeExprsFromSliceSameValue(value *string, keys ...st
 	}
 	return expressions
 }
+
+var sqlLikeEscaper = strings.NewReplacer(
+	`\`, `\\`,
+	`?`, `\?`,
+	`_`, `\_`,
+)
 
 func (b gormClauseBuilder) likeExpr(key string, value *string) clause.Expression {
 	if value == nil || *value == "" {
