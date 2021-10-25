@@ -201,7 +201,7 @@ func migrateWharfColumnsToNotNull(driver DBDriver, db *gorm.DB) error {
 	if err := migrateColumnsToNotNull(driver, db, &database.Token{},
 		database.TokenFields.UserName,
 	); err != nil {
-		return fmt.Errorf("migrating columns to not null for project: %w", err)
+		return fmt.Errorf("migrating columns to not null for token: %w", err)
 	}
 
 	if err := migrateColumnsToNotNull(driver, db, &database.Project{},
@@ -230,7 +230,7 @@ func migrateWharfColumnsToNotNull(driver DBDriver, db *gorm.DB) error {
 	if err := migrateColumnsToNotNull(driver, db, &database.Artifact{},
 		database.ArtifactFields.FileName,
 	); err != nil {
-		return fmt.Errorf("migrating columns to not null for param: %w", err)
+		return fmt.Errorf("migrating columns to not null for artifact: %w", err)
 	}
 
 	if err := migrateColumnsToNotNull(driver, db, &database.TestResultSummary{},
@@ -307,7 +307,7 @@ func migrateColumnToNotNull(driver DBDriver, db *gorm.DB, model interface{}, wan
 
 	if err := db.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Model(model).Where(want.DBName, nil).Update(want.DBName, defaultValue).Error; err != nil {
-			return fmt.Errorf("set all to zero where %q is null: %w", want.DBName, err)
+			return fmt.Errorf("set all to default value where %q is null: %w", want.DBName, err)
 		}
 
 		switch driver {
