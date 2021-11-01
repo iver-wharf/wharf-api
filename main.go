@@ -90,7 +90,14 @@ func main() {
 		ginutil.RecoverProblem,
 	)
 
-	if config.HTTP.CORS.AllowAllOrigins {
+	if len(config.HTTP.CORS.AllowOrigins) > 0 {
+		log.Info().Message("Allowing " + config.HTTP.CORS.AllowOrigins + " origins in CORS.")
+		corsConfig := cors.DefaultConfig()
+		corsConfig.AllowOrigins = []string{config.HTTP.CORS.AllowOrigins}
+		corsConfig.AddAllowHeaders("Authorization")
+		corsConfig.AllowCredentials = true
+		r.Use(cors.New(corsConfig))
+	} else if config.HTTP.CORS.AllowAllOrigins {
 		log.Info().Message("Allowing all origins in CORS.")
 		corsConfig := cors.DefaultConfig()
 		corsConfig.AllowAllOrigins = true
