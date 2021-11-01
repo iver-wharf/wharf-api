@@ -29,6 +29,8 @@ func runDatabaseMigrations(db *gorm.DB, driver DBDriver) error {
 				" We advice against using this driver for production!")
 	}
 
+	// since v5.0.0, all columns that were not nil'able in the GORM models
+	// has been migrated to not be nullable in the database either.
 	if err := migrateWharfColumnsToNotNull(driver, db); err != nil {
 		return err
 	}
