@@ -14,6 +14,10 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
 ## v5.0.0 (WIP)
 
+- Enables setting specific origins for CORS via the
+  WHARF_HTTP_CORS_ALLOWORIGINS environment variable. This is to make sending
+  `Authorization` headers possible. (#101)
+
 - BREAKING: Removed all deprecated environment variable configs, which were
   marked as deprecated in v4.2.0/#38. Now all environment variables require the
   `WHARF_` prefix. (#87)
