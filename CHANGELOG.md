@@ -26,6 +26,11 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   - `POST /provider`
   - `POST /token`
 
+- BREAKING: Removed RabbitMQ integration. All `mq.*` YAML configs and
+  `WHARF_MQ_*` environment variables are no longer relevant. This may be
+  implemented again later, but inside a new "notification" component instead of
+  directly inside wharf-api. (#102)
+
 - Deprecated PUT endpoints that took the object ID from the HTTP request body.
   They are still supported, but may be removed in the next major release
   (v6.0.0). Please refer to the new endpoints that takes the ID from the URL
