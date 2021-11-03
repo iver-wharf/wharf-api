@@ -78,26 +78,6 @@ func main() {
 		os.Exit(3)
 	}
 
-	mq, err := GetMQConnection(config.MQ)
-	if err != nil {
-		log.Error().WithError(err).Message("Message queue error.")
-		os.Exit(4)
-	} else if mq == nil {
-		log.Info().Message("RabbitMQ integration has been disabled in the config. Skipping connection instantiation.")
-	} else {
-		err = mq.Connect()
-		if err != nil {
-			log.Error().WithError(err).Message("Unable to connect to the RabbitMQ queue.")
-			os.Exit(5)
-		}
-
-		go func() {
-			<-mq.UnexpectedClose
-			log.Error().Message("Unexpected RabbitMQ close.")
-			os.Exit(6)
-		}()
-	}
-
 	gin.DefaultWriter = ginutil.DefaultLoggerWriter
 	gin.DefaultErrorWriter = ginutil.DefaultLoggerWriter
 
@@ -123,8 +103,8 @@ func main() {
 	setupBasicAuth(r, config)
 
 	modules := []httpModule{
-		projectModule{Database: db, MessageQueue: mq, Config: &config},
-		buildModule{Database: db, MessageQueue: mq},
+		projectModule{Database: db, Config: &config},
+		buildModule{Database: db},
 		tokenModule{Database: db},
 		branchModule{Database: db},
 		providerModule{Database: db},
