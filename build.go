@@ -16,13 +16,10 @@ import (
 	"github.com/iver-wharf/wharf-api/pkg/modelconv"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"gorm.io/gorm"
-
-	"github.com/iver-wharf/messagebus-go"
 )
 
 type buildModule struct {
-	Database     *gorm.DB
-	MessageQueue *messagebus.MQConnection
+	Database *gorm.DB
 }
 
 func (m buildModule) Register(g *gin.RouterGroup) {
@@ -331,12 +328,6 @@ func (m buildModule) updateBuildStatus(buildID uint, statusID database.BuildStat
 
 	if err := m.Database.Save(&dbBuild).Error; err != nil {
 		return database.Build{}, err
-	}
-
-	if m.MessageQueue != nil {
-		if err := m.MessageQueue.PublishMessage(message); err != nil {
-			log.Error().WithError(err).Message("Failed sending build-status update message.")
-		}
 	}
 
 	return dbBuild, nil

@@ -31,7 +31,6 @@ type Config struct {
 	HTTP HTTPConfig
 	CA   CertConfig
 	DB   DBConfig
-	MQ   MQConfig
 
 	// InstanceID may be an arbitrary string that is used to identify different
 	// Wharf installations from each other. Needed when you use multiple Wharf
@@ -264,88 +263,6 @@ type DBConfig struct {
 	Log bool
 }
 
-// MQConfig holds settings for connecting to a message queue
-// (ex: AMQP/RabbitMQ), such as credentials and hostnames.
-type MQConfig struct {
-	// Enabled controls whether the message queue integration is turned
-	// on or off.
-	//
-	// This corresponds to the deprecated (and unsupported since v5.0.0)
-	// environment variable RABBITMQENABLED, which was added back in v3.0.0.
-	//
-	// Added in v4.2.0
-	Enabled bool
-
-	// Host is the network hostname wharf-api will connect to.
-	//
-	// This corresponds to the deprecated (and unsupported since v5.0.0)
-	// environment variable RABBITMQHOST, which was added back in v0.7.9.
-	//
-	// Added in v4.2.0
-	Host string
-
-	// Host is the network port wharf-api will connect to.
-	//
-	// This corresponds to the deprecated (and unsupported since v5.0.0)
-	// environment variable RABBITMQPORT, which was added back in v0.7.9.
-	//
-	// Added in v4.2.0
-	Port string
-
-	// Username is the username part of credentials used when connecting to the
-	// message queue instance (usually RabbitMQ).
-	//
-	// This corresponds to the deprecated (and unsupported since v5.0.0)
-	// environment variable RABBITMQUSER, which was added back in v0.7.9.
-	//
-	// Added in v4.2.0.
-	Username string
-
-	// Password is the password part of credentials used when connecting to the
-	// message queue instance (usually RabbitMQ).
-	//
-	// This corresponds to the deprecated (and unsupported since v5.0.0)
-	// environment variable RABBITMQPASS, which was added back in v0.7.9.
-	//
-	// Added in v4.2.0.
-	Password string
-
-	// QueueName is the name of the AMQP message queue that wharf-api will use.
-	//
-	// This corresponds to the deprecated (and unsupported since v5.0.0)
-	// environment variable RABBITMQNAME, which was added back in v0.7.9.
-	//
-	// Added in v4.2.0.
-	QueueName string
-
-	// VHost is the name of the AMQP virtual host that wharf-api will use.
-	//
-	// This corresponds to the deprecated (and unsupported since v5.0.0)
-	// environment variable RABBITMQVHOST, which was added back in v0.7.9.
-	//
-	// Added in v4.2.0.
-	VHost string
-
-	// DisableSSL will make wharf-api connect to the message queue service via
-	// AMQP when set to true, and AMQPS when set to false.
-	//
-	// This corresponds to the deprecated (and unsupported since v5.0.0)
-	// environment variable RABBITMQDISABLESSL, which was added back in v0.7.9.
-	//
-	// Added in v4.2.0.
-	DisableSSL bool
-
-	// ConnAttempts sets the number of connection attempts when setting up the
-	// initial AMQP connection. If all those attempts fail, then the wharf-api
-	// application will exit.
-	//
-	// This corresponds to the deprecated (and unsupported since v5.0.0)
-	// environment variable RABBITMQCONNATTEMPTS, which was added back in v0.7.9.
-	//
-	// Added in v4.2.0.
-	ConnAttempts uint64
-}
-
 // DefaultConfig is the hard-coded default values for wharf-api's configs.
 var DefaultConfig = Config{
 	HTTP: HTTPConfig{
@@ -361,9 +278,6 @@ var DefaultConfig = Config{
 		// https://golang.org/pkg/database/sql/#DB.SetMaxOpenConns
 		MaxOpenConns:    0,
 		MaxConnLifetime: 20 * time.Minute,
-	},
-	MQ: MQConfig{
-		ConnAttempts: 10,
 	},
 }
 
@@ -384,4 +298,3 @@ func loadConfig() (Config, error) {
 	}
 	return cfg, err
 }
-

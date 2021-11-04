@@ -15,7 +15,6 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/gin-gonic/gin"
-	"github.com/iver-wharf/messagebus-go"
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/iver-wharf/wharf-api/pkg/model/request"
 	"github.com/iver-wharf/wharf-api/pkg/model/response"
@@ -27,9 +26,8 @@ import (
 )
 
 type projectModule struct {
-	Database     *gorm.DB
-	MessageQueue *messagebus.MQConnection
-	Config       *Config
+	Database *gorm.DB
+	Config   *Config
 }
 
 func (m projectModule) Register(g *gin.RouterGroup) {
@@ -435,29 +433,6 @@ func (m projectModule) startProjectBuildHandler(c *gin.Context) {
 				stageName, branch, projectID),
 		})
 		return
-	}
-
-	if m.MessageQueue != nil {
-		if err := m.MessageQueue.PublishMessage(struct {
-			Project    response.Project
-			Build      response.Build
-			Parameters []response.BuildParam
-		}{
-			Project:    modelconv.DBProjectToResponse(dbProject),
-			Build:      modelconv.DBBuildToResponse(dbBuild),
-			Parameters: modelconv.DBBuildParamsToResponses(dbBuildParams),
-		}); err != nil {
-			log.Error().WithError(err).Message("Failed to publish message.")
-			c.Error(err)
-			dbBuild.IsInvalid = true
-			if saveErr := m.Database.Save(&dbBuild).Error; saveErr != nil {
-				ginutil.WriteDBWriteError(c, saveErr, fmt.Sprintf(
-					"Failed to marking build with ID %d as invalid after failing to publish event message to message queue.",
-					dbBuild.BuildID))
-				log.Error().WithError(saveErr).Message("Failed to save build.")
-				return
-			}
-		}
 	}
 
 	if m.Config.CI.MockTriggerResponse {
