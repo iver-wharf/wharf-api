@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/rsa"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -108,6 +109,14 @@ func main() {
 
 	healthModule{}.DeprecatedRegister(r)
 	healthModule{}.Register(r.Group("/api"))
+
+	if config.HTTP.OIDC.Enable {
+		var rsaKeys = make(map[string]*rsa.PublicKey)
+		oidcService := oidcService{&rsaKeys}
+		oidcService.GetPublicKeys(config.HTTP.OIDC)
+		r.Use(oidcService.VerifyTokenMiddleware(config.HTTP.OIDC))
+		// TODO implement key rotation - oidcService.SubscribeToKeyURLUpdates()
+	}
 
 	setupBasicAuth(r, config)
 

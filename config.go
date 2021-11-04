@@ -108,6 +108,16 @@ type HTTPConfig struct {
 	//
 	// Added in v4.2.0.
 	BasicAuth string
+
+	// OIDC
+	// SHOULD be use with HTTPS/SSL (unsecure without)
+	// Requires CORS set to specific origins.
+	// Return unauthorized on http requests unless valid OIDC access
+	// tokens sent through the Authorization header for all requests.
+	//
+	// Added in v5.0.0.
+	OIDC OICDConfig
+
 }
 
 // CORSConfig holds settings for the HTTP server's CORS settings.
@@ -128,6 +138,25 @@ type CORSConfig struct {
 	//
 	// Added in v5.0.0.
 	AllowOrigins []string
+}
+
+// OICDConfig holds settings for the HTTP server's OIDC access token validation settings.
+type OICDConfig struct {
+
+	Enable bool
+
+	// OICDMetadataURL
+	//
+	// Sample URL https://login.microsoftonline.com/common/v2.0/.well-known/openid-configuration
+	//
+	// Added in v5.0.0.
+	MetadataURL string
+
+	IssuerURL string
+
+	AudienceURL string
+
+	KeysURL string
 }
 
 // CertConfig holds settings for certificates verification used when talking
