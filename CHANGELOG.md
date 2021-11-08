@@ -14,10 +14,6 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
 ## v5.0.0 (WIP)
 
-- Enables setting specific origins for CORS via the
-  WHARF_HTTP_CORS_ALLOWORIGINS environment variable. This is to make sending
-  `Authorization` headers possible. (#101)
-
 - BREAKING: Removed all deprecated environment variable configs, which were
   marked as deprecated in v4.2.0/#38. Now all environment variables require the
   `WHARF_` prefix. (#87)
@@ -45,12 +41,17 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   - Use `PUT /token/{tokenId}` instead of `PUT /token`
   - Use `PUT /project/{projectId}/branch` instead of `PUT /branches`
 
+
 - Deprecated POST search endpoints that took the search queries from the HTTP
   request body. They are still supported, but may be removed in the next major
   release (v6.0.0). Please refer to the new endpoints that use query parameter
   instead. (#99)
 
   - Use `GET /project` instead of `GET /projects` or `POST /projects/search`
+
+- Enables setting specific origins for CORS via the
+  WHARF_HTTP_CORS_ALLOWORIGINS environment variable. This is to make sending
+  `Authorization` headers possible. (#101)
 
 - Added support for Sqlite. Default database driver is still Postgres.
 
