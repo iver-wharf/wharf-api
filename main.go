@@ -91,9 +91,11 @@ func main() {
 	)
 
 	if len(config.HTTP.CORS.AllowOrigins) > 0 {
-		log.Info().Message("Allowing " + config.HTTP.CORS.AllowOrigins + " origins in CORS.")
+		log.Info().
+			WithStringf("origin", "%v", config.HTTP.CORS.AllowOrigins).
+			Message("Allowing origins in CORS.")
 		corsConfig := cors.DefaultConfig()
-		corsConfig.AllowOrigins = []string{config.HTTP.CORS.AllowOrigins}
+		corsConfig.AllowOrigins = config.HTTP.CORS.AllowOrigins
 		corsConfig.AddAllowHeaders("Authorization")
 		corsConfig.AllowCredentials = true
 		r.Use(cors.New(corsConfig))

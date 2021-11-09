@@ -127,7 +127,7 @@ type CORSConfig struct {
 	// results in the HTTP header "Access-Control-Allow-Origin".
 	//
 	// Added in v5.0.0.
-	AllowOrigins string
+	AllowOrigins []string
 }
 
 // CertConfig holds settings for certificates verification used when talking
