@@ -65,35 +65,39 @@ var TokenFields = struct {
 // Token holds credentials for a remote provider.
 type Token struct {
 	TokenID  uint   `gorm:"primaryKey"`
-	Token    string `gorm:"size:500; not null"`
-	UserName string `gorm:"size:500"`
+	Token    string `gorm:"size:500;not null"`
+	UserName string `gorm:"size:500;not null;default:''"`
 }
 
 // ProjectFields holds the Go struct field names for each field.
 // Useful in GORM .Where() statements to only select certain fields or in GORM
 // Preload statements to select the correct field to preload.
 var ProjectFields = struct {
-	ProjectID   string
-	Name        string
-	GroupName   string
-	Description string
-	TokenID     string
-	Token       string
-	ProviderID  string
-	Provider    string
-	Branches    string
-	GitURL      string
+	ProjectID       string
+	Name            string
+	GroupName       string
+	Description     string
+	AvatarURL       string
+	TokenID         string
+	Token           string
+	ProviderID      string
+	Provider        string
+	BuildDefinition string
+	Branches        string
+	GitURL          string
 }{
-	ProjectID:   "ProjectID",
-	Name:        "Name",
-	GroupName:   "GroupName",
-	Description: "Description",
-	TokenID:     "TokenID",
-	Token:       "Token",
-	ProviderID:  "ProviderID",
-	Provider:    "Provider",
-	Branches:    "Branches",
-	GitURL:      "GitURL",
+	ProjectID:       "ProjectID",
+	Name:            "Name",
+	GroupName:       "GroupName",
+	Description:     "Description",
+	AvatarURL:       "AvatarURL",
+	TokenID:         "TokenID",
+	Token:           "Token",
+	ProviderID:      "ProviderID",
+	Provider:        "Provider",
+	BuildDefinition: "BuildDefinition",
+	Branches:        "Branches",
+	GitURL:          "GitURL",
 }
 
 // ProjectColumns holds the DB column names for each field.
@@ -121,16 +125,16 @@ var ProjectColumns = struct {
 type Project struct {
 	ProjectID       uint      `gorm:"primaryKey"`
 	Name            string    `gorm:"size:500;not null"`
-	GroupName       string    `gorm:"size:500"`
-	Description     string    `gorm:"size:500"`
-	AvatarURL       string    `gorm:"size:500"`
+	GroupName       string    `gorm:"size:500;not null;default:''"`
+	Description     string    `gorm:"size:500;not null;default:''"`
+	AvatarURL       string    `gorm:"size:500;not null;default:''"`
 	TokenID         *uint     `gorm:"nullable;default:NULL;index:project_idx_token_id"`
 	Token           *Token    `gorm:"foreignKey:TokenID;constraint:OnUpdate:RESTRICT,OnDelete:RESTRICT"`
 	ProviderID      *uint     `gorm:"nullable;default:NULL;index:project_idx_provider_id"`
 	Provider        *Provider `gorm:"foreignKey:ProviderID;constraint:OnUpdate:RESTRICT,OnDelete:RESTRICT"`
-	BuildDefinition string    `sql:"type:text"`
+	BuildDefinition string    `gorm:"not null;default:''"`
 	Branches        []Branch  `gorm:"foreignKey:ProjectID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-	GitURL          string    `gorm:"nullable;default:NULL"`
+	GitURL          string    `gorm:"not null;default:''"`
 }
 
 // BranchFields holds the Go struct field names for each field.
@@ -215,9 +219,9 @@ type Build struct {
 	ScheduledOn         null.Time           `gorm:"nullable;default:NULL"`
 	StartedOn           null.Time           `gorm:"nullable;default:NULL"`
 	CompletedOn         null.Time           `gorm:"nullable;default:NULL"`
-	GitBranch           string              `gorm:"size:300;default:'';not null"`
+	GitBranch           string              `gorm:"size:300;not null;default:''"`
 	Environment         null.String         `gorm:"nullable;size:40" swaggertype:"string"`
-	Stage               string              `gorm:"size:40;default:'';not null"`
+	Stage               string              `gorm:"size:40;not null;default:''"`
 	Params              []BuildParam        `gorm:"foreignKey:BuildID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	IsInvalid           bool                `gorm:"not null;default:false"`
 	TestResultSummaries []TestResultSummary `gorm:"foreignKey:BuildID"`
@@ -248,13 +252,22 @@ func (buildStatus BuildStatus) IsValid() bool {
 	return buildStatus >= BuildScheduling && buildStatus <= BuildFailed
 }
 
+// BuildParamFields holds the Go struct field names for each field.
+// Useful in GORM .Where() statements to only select certain fields or in GORM
+// Preload statements to select the correct field to preload.
+var BuildParamFields = struct {
+	Value string
+}{
+	Value: "Value",
+}
+
 // BuildParam holds the name and value of an input parameter fed into a build.
 type BuildParam struct {
 	BuildParamID uint   `gorm:"primaryKey"`
 	BuildID      uint   `gorm:"not null;index:buildparam_idx_build_id"`
 	Build        *Build `gorm:"foreignKey:BuildID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	Name         string `gorm:"not null"`
-	Value        string `gorm:"nullable"`
+	Value        string `gorm:"not null;default:''"`
 }
 
 // Log is a single logged line for a build.
@@ -266,13 +279,24 @@ type Log struct {
 	Timestamp time.Time `gorm:"not null"`
 }
 
+// ParamFields holds the Go struct field names for each field.
+// Useful in GORM .Where() statements to only select certain fields or in GORM
+// Preload statements to select the correct field to preload.
+var ParamFields = struct {
+	Value        string
+	DefaultValue string
+}{
+	Value:        "Value",
+	DefaultValue: "DefaultValue",
+}
+
 // Param holds the definition of an input parameter for a project.
 type Param struct {
 	ParamID      int    `gorm:"primaryKey"`
 	Name         string `gorm:"not null"`
 	Type         string `gorm:"not null"`
-	Value        string
-	DefaultValue string
+	Value        string `gorm:"not null;default:''"`
+	DefaultValue string `gorm:"not null;default:''"`
 }
 
 // ArtifactColumns holds the DB column names for each field.
@@ -286,6 +310,15 @@ var ArtifactColumns = struct {
 	FileName:   "file_name",
 }
 
+// ArtifactFields holds the Go struct field names for each field.
+// Useful in GORM .Where() statements to only select certain fields or in GORM
+// Preload statements to select the correct field to preload.
+var ArtifactFields = struct {
+	FileName string
+}{
+	FileName: "FileName",
+}
+
 // Artifact holds the binary data as well as metadata about that binary such as
 // the file name and which build it belongs to.
 type Artifact struct {
@@ -293,14 +326,23 @@ type Artifact struct {
 	BuildID    uint   `gorm:"not null;index:artifact_idx_build_id"`
 	Build      *Build `gorm:"foreignKey:BuildID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	Name       string `gorm:"not null"`
-	FileName   string `gorm:"nullable"`
+	FileName   string `gorm:"not null;default:''"`
 	Data       []byte `gorm:"nullable"`
+}
+
+// TestResultSummaryFields holds the Go struct field names for each field.
+// Useful in GORM .Where() statements to only select certain fields or in GORM
+// Preload statements to select the correct field to preload.
+var TestResultSummaryFields = struct {
+	FileName string
+}{
+	FileName: "FileName",
 }
 
 // TestResultSummary contains data about a single test result file.
 type TestResultSummary struct {
 	TestResultSummaryID uint      `gorm:"primaryKey"`
-	FileName            string    `gorm:"nullable"`
+	FileName            string    `gorm:"not null;default:''"`
 	ArtifactID          uint      `gorm:"not null;index:testresultsummary_idx_artifact_id"`
 	Artifact            *Artifact `gorm:"foreignKey:ArtifactID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
 	BuildID             uint      `gorm:"not null;index:testresultsummary_idx_build_id"`
