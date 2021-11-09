@@ -136,6 +136,7 @@ var sqlLikeEscaper = strings.NewReplacer(
 	`\`, `\\`,
 	`?`, `\?`,
 	`_`, `\_`,
+	`%`, `\%`,
 )
 
 func (b gormClauseBuilder) likeExpr(key string, value *string) clause.Expression {
