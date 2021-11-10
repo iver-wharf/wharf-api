@@ -48,6 +48,10 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
   - Use `GET /project` instead of `GET /projects` or `POST /projects/search`
 
+- Added configuration of specific origins for CORS via the environment variable
+  `WHARF_HTTP_CORS_ALLOWORIGINS` or the YAML key `http.cors.allowOrigins`. This
+  is to make sending `Authorization` headers possible. (#101)
+
 - Added support for Sqlite. Default database driver is still Postgres.
 
   Note: wharf-api must be compiled with `CGO_ENABLED=1` (which is the default
