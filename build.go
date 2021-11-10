@@ -240,9 +240,7 @@ func (m buildModule) getBuildListHandler(c *gin.Context) {
 
 	var dbBuilds []database.Build
 	err = query.
-		Scopes(
-			optionalLimitOffsetScope(params.Limit, params.Offset),
-		).
+		Scopes(optionalLimitOffsetScope(params.Limit, params.Offset)).
 		Find(&dbBuilds).
 		Error
 	if err != nil {
