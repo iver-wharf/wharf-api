@@ -28,10 +28,37 @@ type TokenModule struct {
 
 // Register adds all deprecated endpoints to a given Gin router group.
 func (m TokenModule) Register(g *gin.RouterGroup) {
+	tokens := g.Group("/tokens")
+	{
+		tokens.GET("", m.getTokenListHandler)
+	}
+
 	token := g.Group("/token")
 	{
 		token.PUT("", m.updateTokenHandler)
 	}
+}
+
+// getTokenListHandler godoc
+// @id oldGetTokenList
+// @summary Returns first 100 tokens
+// @description Deprecated since v5.0.0. Planned for removal in v6.0.0.
+// @description Use `GET /token` instead.
+// @tags token
+// @success 200 {object} []response.Token
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 502 {object} problem.Response "Database is unreachable"
+// @router /tokens [get]
+func (m TokenModule) getTokenListHandler(c *gin.Context) {
+	var dbTokens []database.Token
+	err := m.Database.Limit(100).Find(&dbTokens).Error
+	if err != nil {
+		ginutil.WriteDBReadError(c, err, "Failed fetching list of tokens from database.")
+		return
+	}
+
+	resTokens := modelconv.DBTokensToResponses(dbTokens)
+	c.JSON(http.StatusOK, resTokens)
 }
 
 // updateTokenHandler godoc
