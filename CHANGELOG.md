@@ -41,7 +41,6 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   - Use `PUT /token/{tokenId}` instead of `PUT /token`
   - Use `PUT /project/{projectId}/branch` instead of `PUT /branches`
 
-
 - Deprecated POST search endpoints that took the search queries from the HTTP
   request body. They are still supported, but may be removed in the next major
   release (v6.0.0). Please refer to the new endpoints that use query parameter
