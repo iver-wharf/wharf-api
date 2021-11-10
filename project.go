@@ -181,11 +181,12 @@ var buildJSONToColumns = map[string]string{
 // @param environment query string false "Filter by verbatim build environment."
 // @param gitBranch query string false "Filter by verbatim build Git branch."
 // @param stage query string false "Filter by verbatim build stage."
+// @param isInvalid query bool false "Filter by build's valid/invalid state."
 // @param status query string false "Filter by build status name" enums(Scheduling,Running,Completed,Failed)
 // @param statusId query int false "Filter by build status ID. Cannot be used with `status`." enums(0,1,2,3)
 // @param environmentMatch query string false "Filter by matching build environment. Cannot be used with `environment`."
-// @param gitBranchMatch query string false "Filter by matching build Git branch."
-// @param stageMatch query string false "Filter by matching build stage."
+// @param gitBranchMatch query string false "Filter by matching build Git branch. Cannot be used with `gitBranch`."
+// @param stageMatch query string false "Filter by matching build stage. Cannot be used with `stage`."
 // @param match query string false "Filter by matching on any supported fields."
 // @success 200 {object} response.PaginatedBuilds
 // @failure 400 {object} problem.Response "Bad request"
