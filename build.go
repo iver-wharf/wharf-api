@@ -124,7 +124,7 @@ var buildJSONToColumns = map[string]string{
 // @param limit query int false "Number of results to return. No limit if unset or non-positive." default(100)
 // @param offset query int false "Skipped results, where 0 means from the start." minimum(0) default(0)
 // @param orderby query []string false "Sorting orders. Takes the property name followed by either 'asc' or 'desc'. Can be specified multiple times for more granular sorting. Defaults to `?orderby=buildId desc`"
-// @param projectId query uint false "Filter by project ID." minimum(0)
+// @param projectId query uint false "Filter by project ID."
 // @param scheduledAfter query string false "Filter by builds with scheduled date later than value." format(date-time)
 // @param scheduledBefore query string false "Filter by builds with scheduled date earlier than value." format(date-time)
 // @param finishedAfter query string false "Filter by builds with finished date later than value." format(date-time)
@@ -156,7 +156,7 @@ func (m buildModule) getBuildListHandler(c *gin.Context) {
 		FinishedAfter   *time.Time `form:"finishedAfter"`
 		FinishedBefore  *time.Time `form:"finishedBefore"`
 
-		ProjectID   *uint   `form:"projectId" binding:"min=0"`
+		ProjectID   *uint   `form:"projectId"`
 		Environment *string `form:"environment"`
 		GitBranch   *string `form:"gitBranch"`
 		Stage       *string `form:"stage"`
