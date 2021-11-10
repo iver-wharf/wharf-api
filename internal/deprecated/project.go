@@ -147,7 +147,7 @@ var buildJSONToColumns = map[string]string{
 // @deprecated
 // @summary Get slice of builds.
 // @description Deprecated since v5.0.0. Planned for removal in v6.0.0.
-// @description Use GET /project/{projectId}/build instead.
+// @description Use `GET /build?projectId=...` instead.
 // @tags project
 // @param projectId path uint true "project ID" minimum(0)
 // @param limit query string true "number of fetched branches"
