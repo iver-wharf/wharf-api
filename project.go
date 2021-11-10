@@ -167,11 +167,27 @@ var buildJSONToColumns = map[string]string{
 // getProjectBuildListHandler godoc
 // @id getProjectBuildList
 // @summary Get slice of builds.
+// @description List all builds for a project, or a window of builds using the `limit` and `offset` query parameters. Allows optional filtering parameters.
+// @description Verbatim filters will match on the entire string used to find exact matches,
+// @description while the matching filters are meant for searches by humans where it tries to find soft matches and is therefore inaccurate by nature.
 // @tags project
 // @param projectId path uint true "project ID" minimum(0)
-// @param limit query string true "number of fetched branches"
-// @param offset query string true "PK of last branch taken"
+// @param limit query int false "Number of results to return. No limit if unset or non-positive." default(100)
+// @param offset query int false "Skipped results, where 0 means from the start." minimum(0) default(0)
 // @param orderby query []string false "Sorting orders. Takes the property name followed by either 'asc' or 'desc'. Can be specified multiple times for more granular sorting. Defaults to `?orderby=buildId desc`"
+// @param scheduledAfter query string false "Filter by builds with scheduled date later than value." format(date-time)
+// @param scheduledBefore query string false "Filter by builds with scheduled date earlier than value." format(date-time)
+// @param finishedAfter query string false "Filter by builds with finished date later than value." format(date-time)
+// @param finishedBefore query string false "Filter by builds with finished date earlier than value." format(date-time)
+// @param environment query string false "Filter by verbatim build environment."
+// @param gitBranch query string false "Filter by verbatim build Git branch."
+// @param stage query string false "Filter by verbatim build stage."
+// @param status query string false "Filter by build status name" enums(Scheduling,Running,Completed,Failed)
+// @param statusId query int false "Filter by build status ID. Cannot be used with `status`." enums(0,1,2,3)
+// @param environmentMatch query string false "Filter by matching build environment. Cannot be used with `environment`."
+// @param gitBranchMatch query string false "Filter by matching build Git branch."
+// @param stageMatch query string false "Filter by matching build stage."
+// @param match query string false "Filter by matching on any supported fields."
 // @success 200 {object} response.PaginatedBuilds
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
@@ -182,29 +198,102 @@ func (m projectModule) getProjectBuildListHandler(c *gin.Context) {
 	if !ok {
 		return
 	}
-	limit, ok := ginutil.ParseQueryInt(c, "limit")
-	if !ok {
+	var params = struct {
+		Limit  int `form:"limit"`
+		Offset int `form:"offset" binding:"min=0"`
+
+		OrderBy []string `form:"orderby"`
+
+		ScheduledAfter  *time.Time `form:"scheduledAfter"`
+		ScheduledBefore *time.Time `form:"scheduledBefore"`
+		FinishedAfter   *time.Time `form:"finishedAfter"`
+		FinishedBefore  *time.Time `form:"finishedBefore"`
+
+		Environment *string `form:"environment"`
+		GitBranch   *string `form:"gitBranch"`
+		Stage       *string `form:"stage"`
+
+		IsInvalid *bool `form:"isInvalid"`
+
+		Status   *string `form:"status"`
+		StatusID *int    `form:"statusId" binding:"excluded_with=Status"`
+
+		EnvironmentMatch *string `form:"environmentMatch" binding:"excluded_with=Environment"`
+		GitBranchMatch   *string `form:"gitBranchMatch" binding:"excluded_with=GitBranch"`
+		StageMatch       *string `form:"stageMatch" binding:"excluded_with=Stage"`
+
+		Match *string `form:"match"`
+	}{
+		Limit:  100,
+		Offset: 0,
+	}
+	if err := c.ShouldBindQuery(&params); err != nil {
+		ginutil.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading query parameters.")
 		return
 	}
-	offset, ok := ginutil.ParseQueryInt(c, "offset")
-	if !ok {
-		return
-	}
-	orderByQueryParams := c.QueryArray("orderby")
-	orderBySlice, err := orderby.ParseSlice(orderByQueryParams, buildJSONToColumns)
+	orderBySlice, err := orderby.ParseSlice(params.OrderBy, buildJSONToColumns)
 	if err != nil {
-		joinedOrders := strings.Join(orderByQueryParams, ", ")
+		joinedOrders := strings.Join(params.OrderBy, ", ")
 		ginutil.WriteInvalidParamError(c, err, "orderby", fmt.Sprintf(
 			"Failed parsing the %d sort ordering values: %s",
-			len(orderByQueryParams),
+			len(params.OrderBy),
 			joinedOrders))
 		return
 	}
 
-	dbBuilds, err := m.getBuilds(projectID, limit, offset, orderBySlice)
+	var where wherefields.Collection
+
+	var statusID database.BuildStatus
+	if params.StatusID != nil {
+		statusID = database.BuildStatus(*params.StatusID)
+		if !statusID.IsValid() {
+			err := fmt.Errorf("invalid database build status: %v", statusID)
+			ginutil.WriteInvalidParamError(c, err, "statusId", fmt.Sprintf("Invalid build status ID: %d", *params.StatusID))
+			return
+		}
+		where.AddFieldName(database.BuildColumns.StatusID)
+	} else if params.Status != nil {
+		reqStatusID := request.BuildStatus(*params.Status)
+		statusID, ok = modelconv.ReqBuildStatusToDatabase(reqStatusID)
+		if !ok {
+			err := fmt.Errorf("invalid request build status: %v", reqStatusID)
+			ginutil.WriteInvalidParamError(c, err, "status", fmt.Sprintf("Invalid build status: %q", *params.Status))
+			return
+		}
+		where.AddFieldName(database.BuildColumns.StatusID)
+	}
+
+	var dbBuilds []database.Build
+	err = m.Database.
+		Clauses(orderBySlice.ClauseIfNone(defaultGetBuildsOrderBy)).
+		Where(&database.Build{
+			Environment: where.NullStringEmptyNull(database.BuildColumns.Environment, params.Environment),
+			GitBranch:   where.String(database.BuildColumns.GitBranch, params.GitBranch),
+			IsInvalid:   where.Bool(database.BuildColumns.IsInvalid, params.IsInvalid),
+			Stage:       where.String(database.BuildColumns.Stage, params.Stage),
+			StatusID:    statusID,
+		}, where.NonNilFieldNames()...).
+		Scopes(
+			optionalLimitOffsetScope(params.Limit, params.Offset),
+			optionalTimeRangeScope(database.BuildColumns.ScheduledOn, params.ScheduledAfter, params.ScheduledBefore),
+			optionalTimeRangeScope(database.BuildColumns.CompletedOn, params.FinishedAfter, params.FinishedBefore),
+			whereLikeScope(map[string]*string{
+				database.BuildColumns.Environment: params.EnvironmentMatch,
+				database.BuildColumns.GitBranch:   params.GitBranchMatch,
+				database.BuildColumns.Stage:       params.StageMatch,
+			}),
+			whereAnyLikeScope(
+				params.Match,
+				database.BuildColumns.Environment,
+				database.BuildColumns.GitBranch,
+				database.BuildColumns.Stage,
+			),
+		).
+		Find(&dbBuilds).
+		Error
 	if err != nil {
 		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
-			"Failed fetching builds for project with ID %d from database.",
+			"Failed fetching list of builds for project with ID %d from database.",
 			projectID))
 		return
 	}
@@ -667,21 +756,6 @@ func getDBJobParams(
 var defaultGetProjectsOrderBy = orderby.Column{Name: database.ProjectColumns.ProjectID, Direction: orderby.Desc}
 
 var defaultGetBuildsOrderBy = orderby.Column{Name: database.BuildColumns.BuildID, Direction: orderby.Desc}
-
-func (m projectModule) getBuilds(projectID uint, limit int, offset int, orderBySlice orderby.Slice) ([]database.Build, error) {
-	var dbBuilds []database.Build
-	var query = m.Database.
-		Where(&database.Build{ProjectID: projectID}).
-		Preload(database.BuildFields.TestResultSummaries).
-		Limit(limit).
-		Offset(offset).
-		Clauses(orderBySlice.ClauseIfNone(defaultGetBuildsOrderBy))
-	if err := query.Find(&dbBuilds).Error; err != nil {
-		return nil, err
-	}
-
-	return dbBuilds, nil
-}
 
 func (m projectModule) getBuildsCount(projectID uint) (int64, error) {
 	var count int64

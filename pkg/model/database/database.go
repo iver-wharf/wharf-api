@@ -195,6 +195,7 @@ var BuildColumns = struct {
 	ScheduledOn string
 	StartedOn   string
 	CompletedOn string
+	GitBranch   string
 	Environment string
 	Stage       string
 	IsInvalid   string
@@ -204,6 +205,7 @@ var BuildColumns = struct {
 	ScheduledOn: "scheduled_on",
 	StartedOn:   "started_on",
 	CompletedOn: "completed_on",
+	GitBranch:   "git_branch",
 	Environment: "environment",
 	Stage:       "stage",
 	IsInvalid:   "is_invalid",

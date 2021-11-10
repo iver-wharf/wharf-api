@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
@@ -63,6 +64,22 @@ func optionalLimitOffsetScope(limit, offset int) func(*gorm.DB) *gorm.DB {
 			Limit:  limit,
 			Offset: offset,
 		})
+	}
+}
+
+func optionalTimeRangeScope(column string, min, max *time.Time) func(*gorm.DB) *gorm.DB {
+	if min == nil && max == nil {
+		return gormIdentityScope
+	}
+	return func(db *gorm.DB) *gorm.DB {
+		switch {
+		case min == nil:
+			return db.Where(column+" < ?", *max)
+		case max == nil:
+			return db.Where(column+" > ?", *min)
+		default:
+			return db.Where(column+" BETWEEN ? AND ?", *min, *max)
+		}
 	}
 }
 
