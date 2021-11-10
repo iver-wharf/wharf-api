@@ -2,10 +2,14 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
+	"github.com/iver-wharf/wharf-api/internal/wherefields"
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/iver-wharf/wharf-api/pkg/model/request"
+	"github.com/iver-wharf/wharf-api/pkg/model/response"
 	"github.com/iver-wharf/wharf-api/pkg/modelconv"
+	"github.com/iver-wharf/wharf-api/pkg/orderby"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 
 	"net/http"
@@ -21,36 +25,106 @@ type tokenModule struct {
 func (m tokenModule) Register(g *gin.RouterGroup) {
 	tokens := g.Group("/tokens")
 	{
-		tokens.GET("", m.getTokenListHandler)
 		tokens.POST("/search", m.searchTokenListHandler)
 	}
 
 	token := g.Group("/token")
 	{
-		token.GET("/:tokenId", m.getTokenHandler)
+		token.GET("", m.getTokenListHandler)
 		token.POST("", m.createTokenHandler)
-		token.PUT("/:tokenId", m.updateTokenHandler)
+
+		tokenByID := g.Group("/:tokenId")
+		{
+			tokenByID.GET("", m.getTokenHandler)
+			tokenByID.PUT("", m.updateTokenHandler)
+		}
 	}
 }
 
-// getTokenListHandler godoc
+var tokenJSONToColumns = map[string]string{
+	response.TokenJSONFields.TokenID:  database.TokenColumns.TokenID,
+	response.TokenJSONFields.Token:    database.TokenColumns.Token,
+	response.TokenJSONFields.UserName: database.TokenColumns.UserName,
+}
+
+var defaultGetTokensOrderBy = orderby.Column{Name: database.TokenColumns.TokenID, Direction: orderby.Desc}
+
+// getBuildListHandler godoc
 // @id getTokenList
-// @summary Returns first 100 tokens
-// @tags token
-// @success 200 {object} []response.Token
+// @summary Get slice of tokens.
+// @description List all tokens, or a window of tokens using the `limit` and `offset` query parameters. Allows optional filtering parameters.
+// @description Verbatim filters will match on the entire string used to find exact matches,
+// @description while the matching filters are meant for searches by humans where it tries to find soft matches and is therefore inaccurate by nature.
+// @tags build
+// @param limit query int false "Number of results to return. No limit if unset or non-positive." default(100)
+// @param offset query int false "Skipped results, where 0 means from the start." minimum(0) default(0)
+// @param orderby query []string false "Sorting orders. Takes the property name followed by either 'asc' or 'desc'. Can be specified multiple times for more granular sorting. Defaults to `?orderby=tokenId desc`"
+// @param userName query string false "Filter by verbatim token user name."
+// @param userNameMatch query string false "Filter by matching token user name. Cannot be used with `userName`."
+// @success 200 {object} response.PaginatedTokens
+// @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
-// @router /tokens [get]
+// @router /token [get]
 func (m tokenModule) getTokenListHandler(c *gin.Context) {
+	var params = struct {
+		Limit  int `form:"limit"`
+		Offset int `form:"offset" binding:"min=0"`
+
+		OrderBy []string `form:"orderby"`
+
+		UserName *string `form:"userName"`
+
+		UserNameMatch *string `form:"userNameMatch" binding:"excluded_with=UserNameMatch"`
+	}{
+		Limit:  100,
+		Offset: 0,
+	}
+	if err := c.ShouldBindQuery(&params); err != nil {
+		ginutil.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading query parameters.")
+		return
+	}
+	orderBySlice, err := orderby.ParseSlice(params.OrderBy, tokenJSONToColumns)
+	if err != nil {
+		joinedOrders := strings.Join(params.OrderBy, ", ")
+		ginutil.WriteInvalidParamError(c, err, "orderby", fmt.Sprintf(
+			"Failed parsing the %d sort ordering values: %s",
+			len(params.OrderBy),
+			joinedOrders))
+		return
+	}
+
+	var where wherefields.Collection
+	query := m.Database.
+		Clauses(orderBySlice.ClauseIfNone(defaultGetTokensOrderBy)).
+		Where(&database.Token{
+			UserName: where.String(database.TokenFields.UserName, params.UserName),
+		}, where.NonNilFieldNames()...).
+		Scopes(
+			whereLikeScope(map[string]*string{
+				database.TokenColumns.UserName: params.UserNameMatch,
+			}),
+		)
+
 	var dbTokens []database.Token
-	err := m.Database.Limit(100).Find(&dbTokens).Error
+	err = query.
+		Scopes(optionalLimitOffsetScope(params.Limit, params.Offset)).
+		Find(&dbTokens).
+		Error
 	if err != nil {
 		ginutil.WriteDBReadError(c, err, "Failed fetching list of tokens from database.")
 		return
 	}
 
-	resTokens := modelconv.DBTokensToResponses(dbTokens)
-	c.JSON(http.StatusOK, resTokens)
+	var totalCount int64
+	if err := query.Count(&totalCount).Error; err != nil {
+		ginutil.WriteDBReadError(c, err, "Failed fetching tokens count from database.")
+	}
+
+	c.JSON(http.StatusOK, response.PaginatedTokens{
+		Tokens:     modelconv.DBTokensToResponses(dbTokens),
+		TotalCount: totalCount,
+	})
 }
 
 // getTokenHandler godoc

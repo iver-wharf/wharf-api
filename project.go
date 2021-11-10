@@ -55,6 +55,8 @@ var projectJSONToColumns = map[string]string{
 	response.ProjectJSONFields.GitURL:      database.ProjectColumns.GitURL,
 }
 
+var defaultGetProjectsOrderBy = orderby.Column{Name: database.ProjectColumns.ProjectID, Direction: orderby.Desc}
+
 // getProjectListHandler godoc
 // @id getProjectList
 // @summary Returns all projects from database
@@ -599,10 +601,6 @@ func getDBJobParams(
 
 	return dbJobParams, nil
 }
-
-var defaultGetProjectsOrderBy = orderby.Column{Name: database.ProjectColumns.ProjectID, Direction: orderby.Desc}
-
-var defaultGetBuildsOrderBy = orderby.Column{Name: database.BuildColumns.BuildID, Direction: orderby.Desc}
 
 func (m projectModule) getBuildsCount(projectID uint) (int64, error) {
 	var count int64

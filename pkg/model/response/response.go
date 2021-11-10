@@ -285,6 +285,19 @@ type TestsResults struct {
 	Status TestStatus `json:"status" enums:"Success,Failed,No tests"`
 }
 
+// TokenJSONFields holds the JSON field names for each field.
+// Useful in ordering statements to map the correct field to the correct
+// database column.
+var TokenJSONFields = struct {
+	TokenID  string
+	Token    string
+	UserName string
+}{
+	TokenID:  "tokenId",
+	Token:    "token",
+	UserName: "userName",
+}
+
 // Token holds credentials for a remote provider.
 type Token struct {
 	TokenID  uint   `json:"tokenId" minimum:"0"`

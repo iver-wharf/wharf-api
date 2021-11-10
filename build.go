@@ -114,6 +114,8 @@ var buildJSONToColumns = map[string]string{
 	response.BuildJSONFields.IsInvalid:   database.BuildColumns.IsInvalid,
 }
 
+var defaultGetBuildsOrderBy = orderby.Column{Name: database.BuildColumns.BuildID, Direction: orderby.Desc}
+
 // getBuildListHandler godoc
 // @id getBuildList
 // @summary Get slice of builds.

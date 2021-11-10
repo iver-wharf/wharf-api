@@ -55,11 +55,26 @@ type Provider struct {
 // Useful in GORM .Where() statements to only select certain fields or in GORM
 // Preload statements to select the correct field to preload.
 var TokenFields = struct {
+	TokenID  string
 	Token    string
 	UserName string
 }{
+	TokenID:  "TokenID",
 	Token:    "Token",
 	UserName: "UserName",
+}
+
+// TokenColumns holds the DB column names for each field.
+// Useful in GORM .Order() statements to order the results based on a specific
+// column, which does not support the regular Go field names.
+var TokenColumns = struct {
+	TokenID  string
+	Token    string
+	UserName string
+}{
+	TokenID:  "token_id",
+	Token:    "token",
+	UserName: "user_name",
 }
 
 // Token holds credentials for a remote provider.
