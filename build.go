@@ -133,38 +133,48 @@ func (m buildModule) getBuildHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build [get]
 func (m buildModule) getBuildListHandler(c *gin.Context) {
-	var params = struct {
-		Limit  int `form:"limit"`
-		Offset int `form:"offset" binding:"min=0"`
+	dbBuilds, ok := getBuildListFromGinParams(c, m.Database)
+	if !ok {
+		return
+	}
+	c.JSON(http.StatusOK, modelconv.DBBuildsToResponses(dbBuilds))
+}
 
-		OrderBy []string `form:"orderby"`
+type getBuildListParams struct {
+	Limit  int `form:"limit"`
+	Offset int `form:"offset" binding:"min=0"`
 
-		ScheduledAfter  *time.Time `form:"scheduledAfter"`
-		ScheduledBefore *time.Time `form:"scheduledBefore"`
-		FinishedAfter   *time.Time `form:"finishedAfter"`
-		FinishedBefore  *time.Time `form:"finishedBefore"`
+	OrderBy []string `form:"orderby"`
 
-		Environment *string `form:"environment"`
-		GitBranch   *string `form:"gitBranch"`
-		Stage       *string `form:"stage"`
+	ScheduledAfter  *time.Time `form:"scheduledAfter"`
+	ScheduledBefore *time.Time `form:"scheduledBefore"`
+	FinishedAfter   *time.Time `form:"finishedAfter"`
+	FinishedBefore  *time.Time `form:"finishedBefore"`
 
-		IsInvalid *bool `form:"isInvalid"`
+	Environment *string `form:"environment"`
+	GitBranch   *string `form:"gitBranch"`
+	Stage       *string `form:"stage"`
 
-		Status   *string `form:"status"`
-		StatusID *int    `form:"statusId" binding:"excluded_with=Status"`
+	IsInvalid *bool `form:"isInvalid"`
 
-		EnvironmentMatch *string `form:"environmentMatch" binding:"excluded_with=Environment"`
-		GitBranchMatch   *string `form:"gitBranchMatch" binding:"excluded_with=GitBranch"`
-		StageMatch       *string `form:"stageMatch" binding:"excluded_with=Stage"`
+	Status   *string `form:"status"`
+	StatusID *int    `form:"statusId" binding:"excluded_with=Status"`
 
-		Match *string `form:"match"`
-	}{
+	EnvironmentMatch *string `form:"environmentMatch" binding:"excluded_with=Environment"`
+	GitBranchMatch   *string `form:"gitBranchMatch" binding:"excluded_with=GitBranch"`
+	StageMatch       *string `form:"stageMatch" binding:"excluded_with=Stage"`
+
+	Match *string `form:"match"`
+}
+
+func getBuildListFromGinParams(c *gin.Context, db *gorm.DB) ([]database.Build, bool) {
+	var params = getBuildListParams{
 		Limit:  100,
 		Offset: 0,
 	}
 	if err := c.ShouldBindQuery(&params); err != nil {
 		ginutil.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading query parameters.")
-		return
+		return nil, false
 	}
 	orderBySlice, err := orderby.ParseSlice(params.OrderBy, buildJSONToColumns)
 	if err != nil {
@@ -173,7 +183,7 @@ func (m buildModule) getBuildListHandler(c *gin.Context) {
 			"Failed parsing the %d sort ordering values: %s",
 			len(params.OrderBy),
 			joinedOrders))
-		return
+		return nil, false
 	}
 
 	var where wherefields.Collection
@@ -185,7 +195,7 @@ func (m buildModule) getBuildListHandler(c *gin.Context) {
 		if !statusID.IsValid() {
 			err := fmt.Errorf("invalid database build status: %v", statusID)
 			ginutil.WriteInvalidParamError(c, err, "statusId", fmt.Sprintf("Invalid build status ID: %d", *params.StatusID))
-			return
+			return nil, false
 		}
 		where.AddFieldName(database.BuildColumns.StatusID)
 	} else if params.Status != nil {
@@ -194,13 +204,13 @@ func (m buildModule) getBuildListHandler(c *gin.Context) {
 		if !ok {
 			err := fmt.Errorf("invalid request build status: %v", reqStatusID)
 			ginutil.WriteInvalidParamError(c, err, "status", fmt.Sprintf("Invalid build status: %q", *params.Status))
-			return
+			return nil, false
 		}
 		where.AddFieldName(database.BuildColumns.StatusID)
 	}
 
 	var dbBuilds []database.Build
-	err = m.Database.
+	err = db.
 		Clauses(orderBySlice.ClauseIfNone(defaultGetBuildsOrderBy)).
 		Where(&database.Build{
 			Environment: where.NullStringEmptyNull(database.BuildFields.Environment, params.Environment),
@@ -229,10 +239,9 @@ func (m buildModule) getBuildListHandler(c *gin.Context) {
 		Error
 	if err != nil {
 		ginutil.WriteDBReadError(c, err, "Failed fetching list of builds from database.")
-		return
+		return nil, false
 	}
-
-	c.JSON(http.StatusOK, modelconv.DBBuildsToResponses(dbBuilds))
+	return dbBuilds, true
 }
 
 // getBuildLogListHandler godoc
