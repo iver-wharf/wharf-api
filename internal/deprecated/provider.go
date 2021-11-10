@@ -30,10 +30,34 @@ type ProviderModule struct {
 
 // Register adds all deprecated endpoints to a given Gin router group.
 func (m ProviderModule) Register(g *gin.RouterGroup) {
+	providers := g.Group("/providers")
+	{
+		providers.GET("", m.getProviderListHandler)
+	}
+
 	provider := g.Group("/provider")
 	{
 		provider.PUT("", m.updateProviderHandler)
 	}
+}
+
+// getProviderListHandler godoc
+// @id oldGetProviderList
+// @summary Returns first 100 providers
+// @tags provider
+// @success 200 {object} []response.Provider
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 502 {object} problem.Response "Database is unreachable"
+// @router /providers [get]
+func (m ProviderModule) getProviderListHandler(c *gin.Context) {
+	var dbProviders []database.Provider
+	err := m.Database.Limit(100).Find(&dbProviders).Error
+	if err != nil {
+		ginutil.WriteDBReadError(c, err, "Failed fetching list of projects from database.")
+		return
+	}
+	resProviders := modelconv.DBProvidersToResponses(dbProviders)
+	c.JSON(http.StatusOK, resProviders)
 }
 
 // updateProviderHandler godoc
