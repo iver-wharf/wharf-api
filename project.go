@@ -270,10 +270,10 @@ func (m projectModule) getProjectBuildListHandler(c *gin.Context) {
 			ProjectID: projectID,
 		}, database.BuildColumns.ProjectID).
 		Where(&database.Build{
-			Environment: where.NullStringEmptyNull(database.BuildColumns.Environment, params.Environment),
-			GitBranch:   where.String(database.BuildColumns.GitBranch, params.GitBranch),
-			IsInvalid:   where.Bool(database.BuildColumns.IsInvalid, params.IsInvalid),
-			Stage:       where.String(database.BuildColumns.Stage, params.Stage),
+			Environment: where.NullStringEmptyNull(database.BuildFields.Environment, params.Environment),
+			GitBranch:   where.String(database.BuildFields.GitBranch, params.GitBranch),
+			IsInvalid:   where.Bool(database.BuildFields.IsInvalid, params.IsInvalid),
+			Stage:       where.String(database.BuildFields.Stage, params.Stage),
 			StatusID:    statusID,
 		}, where.NonNilFieldNames()...).
 		Scopes(

@@ -179,9 +179,17 @@ type Branch struct {
 // Useful in GORM .Where() statements to only select certain fields or in GORM
 // Preload statements to select the correct field to preload.
 var BuildFields = struct {
+	GitBranch           string
+	Environment         string
+	Stage               string
+	IsInvalid           string
 	Params              string
 	TestResultSummaries string
 }{
+	GitBranch:           "GitBranch",
+	Environment:         "Environment",
+	Stage:               "Stage",
+	IsInvalid:           "IsInvalid",
 	Params:              "Params",
 	TestResultSummaries: "TestResultSummaries",
 }
@@ -199,7 +207,6 @@ var BuildColumns = struct {
 	GitBranch   string
 	Environment string
 	Stage       string
-	IsInvalid   string
 }{
 	BuildID:     "build_id",
 	StatusID:    "status_id",
@@ -210,7 +217,6 @@ var BuildColumns = struct {
 	GitBranch:   "git_branch",
 	Environment: "environment",
 	Stage:       "stage",
-	IsInvalid:   "is_invalid",
 }
 
 // Build holds data about the state of a build. Which parameters was used to
