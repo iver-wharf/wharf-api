@@ -165,7 +165,7 @@ var buildJSONToColumns = map[string]string{
 
 // getProjectBuildListHandler godoc
 // @id getProjectBuildList
-// @summary Get slice of builds.
+// @summary Get slice of builds for project.
 // @description List all builds for a project, or a window of builds using the `limit` and `offset` query parameters. Allows optional filtering parameters.
 // @description Verbatim filters will match on the entire string used to find exact matches,
 // @description while the matching filters are meant for searches by humans where it tries to find soft matches and is therefore inaccurate by nature.
@@ -266,6 +266,9 @@ func (m projectModule) getProjectBuildListHandler(c *gin.Context) {
 	var dbBuilds []database.Build
 	err = m.Database.
 		Clauses(orderBySlice.ClauseIfNone(defaultGetBuildsOrderBy)).
+		Where(&database.Build{
+			ProjectID: projectID,
+		}, database.BuildColumns.ProjectID).
 		Where(&database.Build{
 			Environment: where.NullStringEmptyNull(database.BuildColumns.Environment, params.Environment),
 			GitBranch:   where.String(database.BuildColumns.GitBranch, params.GitBranch),

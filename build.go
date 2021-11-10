@@ -4,16 +4,19 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 
 	"net/http"
 
 	"github.com/dustin/go-broadcast"
 	"github.com/gin-gonic/gin"
+	"github.com/iver-wharf/wharf-api/internal/wherefields"
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/iver-wharf/wharf-api/pkg/model/request"
 	"github.com/iver-wharf/wharf-api/pkg/model/response"
 	"github.com/iver-wharf/wharf-api/pkg/modelconv"
+	"github.com/iver-wharf/wharf-api/pkg/orderby"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"gorm.io/gorm"
 )
@@ -23,19 +26,24 @@ type buildModule struct {
 }
 
 func (m buildModule) Register(g *gin.RouterGroup) {
-	build := g.Group("/build/:buildId")
+	build := g.Group("/build")
 	{
-		build.GET("", m.getBuildHandler)
-		build.PUT("", m.updateBuildHandler)
-		build.POST("/log", m.createBuildLogHandler)
-		build.GET("/log", m.getBuildLogListHandler)
-		build.GET("/stream", m.streamBuildLogHandler)
+		build.GET("", m.getBuildListHandler)
 
-		artifacts := artifactModule{m.Database}
-		artifacts.Register(build)
+		buildByID := build.Group("/:buildId")
+		{
+			buildByID.GET("", m.getBuildHandler)
+			buildByID.PUT("", m.updateBuildHandler)
+			buildByID.POST("/log", m.createBuildLogHandler)
+			buildByID.GET("/log", m.getBuildLogListHandler)
+			buildByID.GET("/stream", m.streamBuildLogHandler)
 
-		buildTestResults := buildTestResultModule{m.Database}
-		buildTestResults.Register(build)
+			artifacts := artifactModule{m.Database}
+			artifacts.Register(buildByID)
+
+			buildTestResults := buildTestResultModule{m.Database}
+			buildTestResults.Register(buildByID)
+		}
 	}
 }
 
@@ -95,28 +103,136 @@ func (m buildModule) getBuildHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, resBuild)
 }
 
-func (m buildModule) getBuild(buildID uint) (database.Build, error) {
-	var dbBuild database.Build
-	if err := m.Database.
-		Where(&database.Build{BuildID: buildID}).
-		Preload(database.BuildFields.TestResultSummaries).
-		Preload(database.BuildFields.Params).
-		First(&dbBuild).
-		Error; err != nil {
-		return database.Build{}, err
-	}
-	return dbBuild, nil
-}
+// getBuildListHandler godoc
+// @id getBuildList
+// @summary Get slice of builds.
+// @description List all builds, unrelated to which project, or a window of builds using the `limit` and `offset` query parameters. Allows optional filtering parameters.
+// @description Verbatim filters will match on the entire string used to find exact matches,
+// @description while the matching filters are meant for searches by humans where it tries to find soft matches and is therefore inaccurate by nature.
+// @tags build
+// @param limit query int false "Number of results to return. No limit if unset or non-positive." default(100)
+// @param offset query int false "Skipped results, where 0 means from the start." minimum(0) default(0)
+// @param orderby query []string false "Sorting orders. Takes the property name followed by either 'asc' or 'desc'. Can be specified multiple times for more granular sorting. Defaults to `?orderby=buildId desc`"
+// @param scheduledAfter query string false "Filter by builds with scheduled date later than value." format(date-time)
+// @param scheduledBefore query string false "Filter by builds with scheduled date earlier than value." format(date-time)
+// @param finishedAfter query string false "Filter by builds with finished date later than value." format(date-time)
+// @param finishedBefore query string false "Filter by builds with finished date earlier than value." format(date-time)
+// @param environment query string false "Filter by verbatim build environment."
+// @param gitBranch query string false "Filter by verbatim build Git branch."
+// @param stage query string false "Filter by verbatim build stage."
+// @param isInvalid query bool false "Filter by build's valid/invalid state."
+// @param status query string false "Filter by build status name" enums(Scheduling,Running,Completed,Failed)
+// @param statusId query int false "Filter by build status ID. Cannot be used with `status`." enums(0,1,2,3)
+// @param environmentMatch query string false "Filter by matching build environment. Cannot be used with `environment`."
+// @param gitBranchMatch query string false "Filter by matching build Git branch. Cannot be used with `gitBranch`."
+// @param stageMatch query string false "Filter by matching build stage. Cannot be used with `stage`."
+// @param match query string false "Filter by matching on any supported fields."
+// @success 200 {object} []response.Build
+// @failure 400 {object} problem.Response "Bad request"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 502 {object} problem.Response "Database is unreachable"
+// @router /build [get]
+func (m buildModule) getBuildListHandler(c *gin.Context) {
+	var params = struct {
+		Limit  int `form:"limit"`
+		Offset int `form:"offset" binding:"min=0"`
 
-func (m buildModule) getLogs(buildID uint) ([]database.Log, error) {
-	var dbLogs []database.Log
-	if err := m.Database.
-		Where(&database.Build{BuildID: buildID}).
-		Find(&dbLogs).
-		Error; err != nil {
-		return []database.Log{}, err
+		OrderBy []string `form:"orderby"`
+
+		ScheduledAfter  *time.Time `form:"scheduledAfter"`
+		ScheduledBefore *time.Time `form:"scheduledBefore"`
+		FinishedAfter   *time.Time `form:"finishedAfter"`
+		FinishedBefore  *time.Time `form:"finishedBefore"`
+
+		Environment *string `form:"environment"`
+		GitBranch   *string `form:"gitBranch"`
+		Stage       *string `form:"stage"`
+
+		IsInvalid *bool `form:"isInvalid"`
+
+		Status   *string `form:"status"`
+		StatusID *int    `form:"statusId" binding:"excluded_with=Status"`
+
+		EnvironmentMatch *string `form:"environmentMatch" binding:"excluded_with=Environment"`
+		GitBranchMatch   *string `form:"gitBranchMatch" binding:"excluded_with=GitBranch"`
+		StageMatch       *string `form:"stageMatch" binding:"excluded_with=Stage"`
+
+		Match *string `form:"match"`
+	}{
+		Limit:  100,
+		Offset: 0,
 	}
-	return dbLogs, nil
+	if err := c.ShouldBindQuery(&params); err != nil {
+		ginutil.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading query parameters.")
+		return
+	}
+	orderBySlice, err := orderby.ParseSlice(params.OrderBy, buildJSONToColumns)
+	if err != nil {
+		joinedOrders := strings.Join(params.OrderBy, ", ")
+		ginutil.WriteInvalidParamError(c, err, "orderby", fmt.Sprintf(
+			"Failed parsing the %d sort ordering values: %s",
+			len(params.OrderBy),
+			joinedOrders))
+		return
+	}
+
+	var where wherefields.Collection
+
+	var statusID database.BuildStatus
+	var ok bool
+	if params.StatusID != nil {
+		statusID = database.BuildStatus(*params.StatusID)
+		if !statusID.IsValid() {
+			err := fmt.Errorf("invalid database build status: %v", statusID)
+			ginutil.WriteInvalidParamError(c, err, "statusId", fmt.Sprintf("Invalid build status ID: %d", *params.StatusID))
+			return
+		}
+		where.AddFieldName(database.BuildColumns.StatusID)
+	} else if params.Status != nil {
+		reqStatusID := request.BuildStatus(*params.Status)
+		statusID, ok = modelconv.ReqBuildStatusToDatabase(reqStatusID)
+		if !ok {
+			err := fmt.Errorf("invalid request build status: %v", reqStatusID)
+			ginutil.WriteInvalidParamError(c, err, "status", fmt.Sprintf("Invalid build status: %q", *params.Status))
+			return
+		}
+		where.AddFieldName(database.BuildColumns.StatusID)
+	}
+
+	var dbBuilds []database.Build
+	err = m.Database.
+		Clauses(orderBySlice.ClauseIfNone(defaultGetBuildsOrderBy)).
+		Where(&database.Build{
+			Environment: where.NullStringEmptyNull(database.BuildColumns.Environment, params.Environment),
+			GitBranch:   where.String(database.BuildColumns.GitBranch, params.GitBranch),
+			IsInvalid:   where.Bool(database.BuildColumns.IsInvalid, params.IsInvalid),
+			Stage:       where.String(database.BuildColumns.Stage, params.Stage),
+			StatusID:    statusID,
+		}, where.NonNilFieldNames()...).
+		Scopes(
+			optionalLimitOffsetScope(params.Limit, params.Offset),
+			optionalTimeRangeScope(database.BuildColumns.ScheduledOn, params.ScheduledAfter, params.ScheduledBefore),
+			optionalTimeRangeScope(database.BuildColumns.CompletedOn, params.FinishedAfter, params.FinishedBefore),
+			whereLikeScope(map[string]*string{
+				database.BuildColumns.Environment: params.EnvironmentMatch,
+				database.BuildColumns.GitBranch:   params.GitBranchMatch,
+				database.BuildColumns.Stage:       params.StageMatch,
+			}),
+			whereAnyLikeScope(
+				params.Match,
+				database.BuildColumns.Environment,
+				database.BuildColumns.GitBranch,
+				database.BuildColumns.Stage,
+			),
+		).
+		Find(&dbBuilds).
+		Error
+	if err != nil {
+		ginutil.WriteDBReadError(c, err, "Failed fetching list of builds from database.")
+		return
+	}
+
+	c.JSON(http.StatusOK, modelconv.DBBuildsToResponses(dbBuilds))
 }
 
 // getBuildLogListHandler godoc
@@ -336,4 +452,28 @@ func setStatusDate(build *database.Build, statusID database.BuildStatus) {
 	case database.BuildCompleted, database.BuildFailed:
 		build.CompletedOn.SetValid(now)
 	}
+}
+
+func (m buildModule) getBuild(buildID uint) (database.Build, error) {
+	var dbBuild database.Build
+	if err := m.Database.
+		Where(&database.Build{BuildID: buildID}).
+		Preload(database.BuildFields.TestResultSummaries).
+		Preload(database.BuildFields.Params).
+		First(&dbBuild).
+		Error; err != nil {
+		return database.Build{}, err
+	}
+	return dbBuild, nil
+}
+
+func (m buildModule) getLogs(buildID uint) ([]database.Log, error) {
+	var dbLogs []database.Log
+	if err := m.Database.
+		Where(&database.Build{BuildID: buildID}).
+		Find(&dbLogs).
+		Error; err != nil {
+		return []database.Log{}, err
+	}
+	return dbLogs, nil
 }

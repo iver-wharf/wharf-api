@@ -192,6 +192,7 @@ var BuildFields = struct {
 var BuildColumns = struct {
 	BuildID     string
 	StatusID    string
+	ProjectID   string
 	ScheduledOn string
 	StartedOn   string
 	CompletedOn string
@@ -202,6 +203,7 @@ var BuildColumns = struct {
 }{
 	BuildID:     "build_id",
 	StatusID:    "status_id",
+	ProjectID:   "project_id",
 	ScheduledOn: "scheduled_on",
 	StartedOn:   "started_on",
 	CompletedOn: "completed_on",
