@@ -2,13 +2,17 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/iver-wharf/wharf-api/internal/wherefields"
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/iver-wharf/wharf-api/pkg/model/request"
+	"github.com/iver-wharf/wharf-api/pkg/model/response"
 	"github.com/iver-wharf/wharf-api/pkg/modelconv"
+	"github.com/iver-wharf/wharf-api/pkg/orderby"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"github.com/iver-wharf/wharf-core/pkg/problem"
 	"gorm.io/gorm"
@@ -21,35 +25,120 @@ type providerModule struct {
 func (m providerModule) Register(g *gin.RouterGroup) {
 	providers := g.Group("/providers")
 	{
-		providers.GET("", m.getProviderListHandler)
 		providers.POST("/search", m.searchProviderListHandler)
 	}
 
 	provider := g.Group("/provider")
 	{
-		provider.GET("/:providerId", m.getProviderHandler)
+		provider.GET("", m.getProviderListHandler)
 		provider.POST("", m.createProviderHandler)
-		provider.PUT("/:providerId", m.updateProviderHandler)
+
+		providerByID := provider.Group("/:providerId")
+		{
+			providerByID.GET("", m.getProviderHandler)
+			providerByID.PUT("", m.updateProviderHandler)
+		}
 	}
 }
 
-// getProviderListHandler godoc
+var providerJSONToColumns = map[string]string{
+	response.ProviderJSONFields.ProviderID: database.ProviderColumns.ProviderID,
+	response.ProviderJSONFields.Name:       database.ProviderColumns.Name,
+	response.ProviderJSONFields.URL:        database.ProviderColumns.URL,
+}
+
+var defaultGetProvidersOrderBy = orderby.Column{Name: database.ProviderColumns.ProviderID, Direction: orderby.Desc}
+
+// getBuildListHandler godoc
 // @id getProviderList
-// @summary Returns first 100 providers
-// @tags provider
-// @success 200 {object} []response.Provider
-// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @summary Get slice of providers.
+// @description List all providers, or a window of providers using the `limit` and `offset` query parameters. Allows optional filtering parameters.
+// @description Verbatim filters will match on the entire string used to find exact matches,
+// @description while the matching filters are meant for searches by humans where it tries to find soft matches and is therefore inaccurate by nature.
+// @tags build
+// @param limit query int false "Number of results to return. No limit if unset or non-positive." default(100)
+// @param offset query int false "Skipped results, where 0 means from the start." minimum(0) default(0)
+// @param orderby query []string false "Sorting orders. Takes the property name followed by either 'asc' or 'desc'. Can be specified multiple times for more granular sorting. Defaults to `?orderby=providerId desc`"
+// @param name query string false "Filter by verbatim provider name."
+// @param url query string false "Filter by verbatim provider URL."
+// @param nameMatch query string false "Filter by matching provider name. Cannot be used with `name`."
+// @param urlMatch query string false "Filter by matching provider URL. Cannot be used with `url`."
+// @param match query string false "Filter by matching on any supported fields."
+// @success 200 {object} response.PaginatedProviders
+// @failure 400 {object} problem.Response "Bad request"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt provider"
 // @failure 502 {object} problem.Response "Database is unreachable"
-// @router /providers [get]
+// @router /provider [get]
 func (m providerModule) getProviderListHandler(c *gin.Context) {
-	var dbProviders []database.Provider
-	err := m.Database.Limit(100).Find(&dbProviders).Error
-	if err != nil {
-		ginutil.WriteDBReadError(c, err, "Failed fetching list of projects from database.")
+	var params = struct {
+		Limit  int `form:"limit"`
+		Offset int `form:"offset" binding:"min=0"`
+
+		OrderBy []string `form:"orderby"`
+
+		Name *string `form:"name"`
+		URL  *string `form:"url"`
+
+		NameMatch *string `form:"nameMatch" binding:"excluded_with=Name"`
+		URLMatch  *string `form:"urlMatch" binding:"excluded_with=URL"`
+
+		Match *string `form:"match"`
+	}{
+		Limit:  100,
+		Offset: 0,
+	}
+	if err := c.ShouldBindQuery(&params); err != nil {
+		ginutil.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading query parameters.")
 		return
 	}
-	resProviders := modelconv.DBProvidersToResponses(dbProviders)
-	c.JSON(http.StatusOK, resProviders)
+	orderBySlice, err := orderby.ParseSlice(params.OrderBy, providerJSONToColumns)
+	if err != nil {
+		joinedOrders := strings.Join(params.OrderBy, ", ")
+		ginutil.WriteInvalidParamError(c, err, "orderby", fmt.Sprintf(
+			"Failed parsing the %d sort ordering values: %s",
+			len(params.OrderBy),
+			joinedOrders))
+		return
+	}
+
+	var where wherefields.Collection
+	query := m.Database.
+		Clauses(orderBySlice.ClauseIfNone(defaultGetProvidersOrderBy)).
+		Where(&database.Provider{
+			Name: where.String(database.ProviderFields.Name, params.Name),
+			URL:  where.String(database.ProviderFields.URL, params.URL),
+		}, where.NonNilFieldNames()...).
+		Scopes(
+			whereLikeScope(map[string]*string{
+				database.ProviderColumns.Name: params.NameMatch,
+				database.ProviderColumns.URL:  params.URLMatch,
+			}),
+			whereAnyLikeScope(
+				params.Match,
+				database.ProviderColumns.Name,
+				database.ProviderColumns.URL,
+			),
+		)
+
+	var dbProviders []database.Provider
+	err = query.
+		Scopes(optionalLimitOffsetScope(params.Limit, params.Offset)).
+		Find(&dbProviders).
+		Error
+	if err != nil {
+		ginutil.WriteDBReadError(c, err, "Failed fetching list of providers from database.")
+		return
+	}
+
+	var totalCount int64
+	if err := query.Count(&totalCount).Error; err != nil {
+		ginutil.WriteDBReadError(c, err, "Failed fetching providers count from database.")
+	}
+
+	c.JSON(http.StatusOK, response.PaginatedProviders{
+		Providers:  modelconv.DBProvidersToResponses(dbProviders),
+		TotalCount: totalCount,
+	})
 }
 
 // getProviderHandler godoc

@@ -147,6 +147,13 @@ type PaginatedTokens struct {
 	TotalCount int64   `json:"totalCount"`
 }
 
+// PaginatedProviders is a list of providers as well as the explicit total count
+// field.
+type PaginatedProviders struct {
+	Providers  []Provider `json:"providers"`
+	TotalCount int64      `json:"totalCount"`
+}
+
 // Ping pongs.
 type Ping struct {
 	Message string `json:"message" example:"pong"`
@@ -183,6 +190,21 @@ type Project struct {
 	Branches              []Branch    `json:"branches"`
 	GitURL                string      `json:"gitUrl"`
 	ParsedBuildDefinition interface{} `json:"build" swaggertype:"object" extensions:"x-nullable"`
+}
+
+// ProviderJSONFields holds the JSON field names for each field.
+// Useful in ordering statements to map the correct field to the correct
+// database column.
+var ProviderJSONFields = struct {
+	ProviderID string
+	Name       string
+	URL        string
+	TokenID    string
+}{
+	ProviderID: "providerId",
+	Name:       "name",
+	URL:        "url",
+	TokenID:    "tokenId",
 }
 
 // Provider holds metadata about a connection to a remote provider. Some of

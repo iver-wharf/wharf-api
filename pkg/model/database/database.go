@@ -31,13 +31,30 @@ import (
 // Useful in GORM .Where() statements to only select certain fields or in GORM
 // Preload statements to select the correct field to preload.
 var ProviderFields = struct {
-	Name    string
-	URL     string
-	TokenID string
+	ProviderID string
+	Name       string
+	URL        string
+	TokenID    string
 }{
-	Name:    "Name",
-	URL:     "URL",
-	TokenID: "TokenID",
+	ProviderID: "ProviderID",
+	Name:       "Name",
+	URL:        "URL",
+	TokenID:    "TokenID",
+}
+
+// ProviderColumns holds the DB column names for each field.
+// Useful in GORM .Order() statements to order the results based on a specific
+// column, which does not support the regular Go field names.
+var ProviderColumns = struct {
+	ProviderID string
+	Name       string
+	URL        string
+	TokenID    string
+}{
+	ProviderID: "provider_id",
+	Name:       "name",
+	URL:        "url",
+	TokenID:    "token_id",
 }
 
 // Provider holds metadata about a connection to a remote provider. Some of
