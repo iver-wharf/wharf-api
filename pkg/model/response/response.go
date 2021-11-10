@@ -133,6 +133,20 @@ type PaginatedBuilds struct {
 	TotalCount int64   `json:"totalCount"`
 }
 
+// PaginatedProjects is a list of projects as well as the explicit total count
+// field.
+type PaginatedProjects struct {
+	Projects   []Project `json:"projects"`
+	TotalCount int64     `json:"totalCount"`
+}
+
+// PaginatedTokens is a list of tokens as well as the explicit total count
+// field.
+type PaginatedTokens struct {
+	Tokens     []Token `json:"tokens"`
+	TotalCount int64   `json:"totalCount"`
+}
+
 // Ping pongs.
 type Ping struct {
 	Message string `json:"message" example:"pong"`

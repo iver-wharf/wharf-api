@@ -76,7 +76,7 @@ var projectJSONToColumns = map[string]string{
 // @param descriptionMatch query string false "Filter by matching description. Cannot be used with `description`."
 // @param gitUrlMatch query string false "Filter by matching Git URL. Cannot be used with `gitUrl`."
 // @param match query string false "Filter by matching on any supported fields."
-// @success 200 {object} []response.Project
+// @success 200 {object} response.PaginatedProjects
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @router /project [get]
@@ -114,9 +114,8 @@ func (m projectModule) getProjectListHandler(c *gin.Context) {
 			joinedOrders))
 		return
 	}
-	var dbProjects []database.Project
 	var where wherefields.Collection
-	err = databaseProjectPreloaded(m.Database).
+	query := databaseProjectPreloaded(m.Database).
 		Clauses(orderBySlice.ClauseIfNone(defaultGetProjectsOrderBy)).
 		Where(&database.Project{
 			Name:       where.String(database.ProjectFields.Name, params.Name),
@@ -126,7 +125,6 @@ func (m projectModule) getProjectListHandler(c *gin.Context) {
 			GitURL:     where.String(database.ProjectFields.GitURL, params.GitURL),
 		}, where.NonNilFieldNames()...).
 		Scopes(
-			optionalLimitOffsetScope(params.Limit, params.Offset),
 			whereLikeScope(map[string]*string{
 				database.ProjectColumns.Name:        params.NameMatch,
 				database.ProjectColumns.GroupName:   params.GroupNameMatch,
@@ -140,15 +138,26 @@ func (m projectModule) getProjectListHandler(c *gin.Context) {
 				database.ProjectColumns.Description,
 				database.ProjectColumns.GitURL,
 			),
-		).
+		)
+
+	var dbProjects []database.Project
+	err = query.Scopes(optionalLimitOffsetScope(params.Limit, params.Offset)).
 		Find(&dbProjects).
 		Error
 	if err != nil {
 		ginutil.WriteDBReadError(c, err, "Failed fetching list of projects from database.")
 		return
 	}
-	resProjects := modelconv.DBProjectsToResponses(dbProjects)
-	c.JSON(http.StatusOK, resProjects)
+
+	var totalCount int64
+	if err := query.Count(&totalCount).Error; err != nil {
+		ginutil.WriteDBReadError(c, err, "Failed fetching builds count from database.")
+	}
+
+	c.JSON(http.StatusOK, response.PaginatedProjects{
+		Projects:   modelconv.DBProjectsToResponses(dbProjects),
+		TotalCount: totalCount,
+	})
 }
 
 // getProjectHandler godoc
