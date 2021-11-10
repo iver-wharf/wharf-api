@@ -33,19 +33,18 @@ type projectModule struct {
 }
 
 func (m projectModule) Register(g *gin.RouterGroup) {
-	projects := g.Group("/projects")
-	{
-		projects.GET("/:projectId/builds", m.getProjectBuildListHandler)
-	}
-
 	project := g.Group("/project")
 	{
 		project.GET("", m.getProjectListHandler)
-		project.GET("/:projectId", m.getProjectHandler)
 		project.POST("", m.createProjectHandler)
-		project.DELETE("/:projectId", m.deleteProjectHandler)
-		project.PUT("/:projectId", m.updateProjectHandler)
-		project.POST("/:projectId/:stage/run", m.startProjectBuildHandler)
+		projectByID := project.Group("/:projectId")
+		{
+			projectByID.GET("", m.getProjectHandler)
+			projectByID.DELETE("", m.deleteProjectHandler)
+			projectByID.PUT("", m.updateProjectHandler)
+			projectByID.POST("/:stage/run", m.startProjectBuildHandler)
+			projectByID.GET("/build", m.getProjectBuildListHandler)
+		}
 	}
 }
 
@@ -192,7 +191,7 @@ var buildJSONToColumns = map[string]string{
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
-// @router /projects/{projectId}/builds [get]
+// @router /project/{projectId}/build [get]
 func (m projectModule) getProjectBuildListHandler(c *gin.Context) {
 	projectID, ok := ginutil.ParseParamUint(c, "projectId")
 	if !ok {
