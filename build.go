@@ -139,7 +139,7 @@ var buildJSONToColumns = map[string]string{
 // @param gitBranchMatch query string false "Filter by matching build Git branch. Cannot be used with `gitBranch`."
 // @param stageMatch query string false "Filter by matching build stage. Cannot be used with `stage`."
 // @param match query string false "Filter by matching on any supported fields."
-// @success 200 {object} []response.Build
+// @success 200 {object} response.PaginatedBuilds
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
@@ -212,8 +212,7 @@ func (m buildModule) getBuildListHandler(c *gin.Context) {
 		where.AddFieldName(database.BuildColumns.StatusID)
 	}
 
-	var dbBuilds []database.Build
-	err = m.Database.
+	query := m.Database.
 		Clauses(orderBySlice.ClauseIfNone(defaultGetBuildsOrderBy)).
 		Where(&database.Build{
 			ProjectID:   where.Uint(database.BuildFields.ProjectID, params.ProjectID),
@@ -224,7 +223,6 @@ func (m buildModule) getBuildListHandler(c *gin.Context) {
 			StatusID:    statusID,
 		}, where.NonNilFieldNames()...).
 		Scopes(
-			optionalLimitOffsetScope(params.Limit, params.Offset),
 			optionalTimeRangeScope(database.BuildColumns.ScheduledOn, params.ScheduledAfter, params.ScheduledBefore),
 			optionalTimeRangeScope(database.BuildColumns.CompletedOn, params.FinishedAfter, params.FinishedBefore),
 			whereLikeScope(map[string]*string{
@@ -238,6 +236,12 @@ func (m buildModule) getBuildListHandler(c *gin.Context) {
 				database.BuildColumns.GitBranch,
 				database.BuildColumns.Stage,
 			),
+		)
+
+	var dbBuilds []database.Build
+	err = query.
+		Scopes(
+			optionalLimitOffsetScope(params.Limit, params.Offset),
 		).
 		Find(&dbBuilds).
 		Error
@@ -245,7 +249,16 @@ func (m buildModule) getBuildListHandler(c *gin.Context) {
 		ginutil.WriteDBReadError(c, err, "Failed fetching list of builds from database.")
 		return
 	}
-	c.JSON(http.StatusOK, modelconv.DBBuildsToResponses(dbBuilds))
+
+	var totalCount int64
+	if err := query.Count(&totalCount).Error; err != nil {
+		ginutil.WriteDBReadError(c, err, "Failed fetching builds count from database.")
+	}
+
+	c.JSON(http.StatusOK, response.PaginatedBuilds{
+		Builds:     modelconv.DBBuildsToResponses(dbBuilds),
+		TotalCount: totalCount,
+	})
 }
 
 // getBuildLogListHandler godoc
