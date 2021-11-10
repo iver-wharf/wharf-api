@@ -56,8 +56,8 @@ var defaultGetTokensOrderBy = orderby.Column{Name: database.TokenColumns.TokenID
 // @description Verbatim filters will match on the entire string used to find exact matches,
 // @description while the matching filters are meant for searches by humans where it tries to find soft matches and is therefore inaccurate by nature.
 // @tags build
-// @param limit query int false "Number of results to return. No limit if unset or non-positive." default(100)
-// @param offset query int false "Skipped results, where 0 means from the start." minimum(0) default(0)
+// @param limit query int false "Number of results to return. No limit if unset or non-positive."
+// @param offset query int false "Skipped results, where 0 means from the start." minimum(0)
 // @param orderby query []string false "Sorting orders. Takes the property name followed by either 'asc' or 'desc'. Can be specified multiple times for more granular sorting. Defaults to `?orderby=tokenId desc`"
 // @param userName query string false "Filter by verbatim token user name."
 // @param userNameMatch query string false "Filter by matching token user name. Cannot be used with `userName`."
@@ -76,10 +76,7 @@ func (m tokenModule) getTokenListHandler(c *gin.Context) {
 		UserName *string `form:"userName"`
 
 		UserNameMatch *string `form:"userNameMatch" binding:"excluded_with=UserNameMatch"`
-	}{
-		Limit:  100,
-		Offset: 0,
-	}
+	}{}
 	if err := c.ShouldBindQuery(&params); err != nil {
 		ginutil.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading query parameters.")
 		return

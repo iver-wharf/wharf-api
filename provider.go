@@ -56,8 +56,8 @@ var defaultGetProvidersOrderBy = orderby.Column{Name: database.ProviderColumns.P
 // @description Verbatim filters will match on the entire string used to find exact matches,
 // @description while the matching filters are meant for searches by humans where it tries to find soft matches and is therefore inaccurate by nature.
 // @tags build
-// @param limit query int false "Number of results to return. No limit if unset or non-positive." default(100)
-// @param offset query int false "Skipped results, where 0 means from the start." minimum(0) default(0)
+// @param limit query int false "Number of results to return. No limit if unset or non-positive."
+// @param offset query int false "Skipped results, where 0 means from the start." minimum(0)
 // @param orderby query []string false "Sorting orders. Takes the property name followed by either 'asc' or 'desc'. Can be specified multiple times for more granular sorting. Defaults to `?orderby=providerId desc`"
 // @param name query string false "Filter by verbatim provider name."
 // @param url query string false "Filter by verbatim provider URL."
@@ -83,10 +83,7 @@ func (m providerModule) getProviderListHandler(c *gin.Context) {
 		URLMatch  *string `form:"urlMatch" binding:"excluded_with=URL"`
 
 		Match *string `form:"match"`
-	}{
-		Limit:  100,
-		Offset: 0,
-	}
+	}{}
 	if err := c.ShouldBindQuery(&params); err != nil {
 		ginutil.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading query parameters.")
 		return
