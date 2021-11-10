@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/iver-wharf/wharf-api/internal/ptrconv"
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/iver-wharf/wharf-api/pkg/modelconv"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
@@ -21,8 +22,22 @@ type ProjectUpdate struct {
 	GroupName       string `json:"groupName"`
 	Description     string `json:"description"`
 	AvatarURL       string `json:"avatarUrl"`
-	TokenID         uint   `json:"tokenId"`
-	ProviderID      uint   `json:"providerId"`
+	TokenID         uint   `json:"tokenId" extensions:"x-nullable"`
+	ProviderID      uint   `json:"providerId" extensions:"x-nullable"`
+	BuildDefinition string `json:"buildDefinition"`
+	GitURL          string `json:"gitUrl"`
+}
+
+// ProjectSearch holds values used in verbatim searches for projects using the
+// deprecated endpoint
+// 	POST /projects/search
+type ProjectSearch struct {
+	Name            string `json:"name"`
+	GroupName       string `json:"groupName"`
+	Description     string `json:"description"`
+	AvatarURL       string `json:"avatarUrl"`
+	TokenID         uint   `json:"tokenId" minimum:"0" extensions:"x-nullable"`
+	ProviderID      uint   `json:"providerId" minimum:"0" extensions:"x-nullable"`
 	BuildDefinition string `json:"buildDefinition"`
 	GitURL          string `json:"gitUrl"`
 }
@@ -34,10 +49,82 @@ type ProjectModule struct {
 
 // Register adds all deprecated endpoints to a given Gin router group.
 func (m ProjectModule) Register(g *gin.RouterGroup) {
+	projects := g.Group("/projects")
+	{
+		projects.GET("", m.getProjectListHandler)
+		projects.POST("/search", m.searchProjectListHandler)
+	}
+
 	project := g.Group("/project")
 	{
 		project.PUT("", m.updateProjectHandler)
 	}
+}
+
+// getProjectListHandler godoc
+// @id oldGetProjectList
+// @deprecated
+// @summary Returns all projects from database
+// @description Deprecated since v5.0.0. Planned for removal in v6.0.0.
+// @description Use GET /project instead.
+// @tags project
+// @success 200 {object} []response.Project
+// @failure 502 {object} problem.Response "Database is unreachable"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @router /projects [get]
+func (m ProjectModule) getProjectListHandler(c *gin.Context) {
+	var dbProjects []database.Project
+	err := m.databaseProjectPreloaded().
+		Find(&dbProjects).
+		Error
+	if err != nil {
+		ginutil.WriteDBReadError(c, err, "Failed fetching list of projects from database.")
+		return
+	}
+	resProjects := modelconv.DBProjectsToResponses(dbProjects)
+	c.JSON(http.StatusOK, resProjects)
+}
+
+// searchProjectListHandler godoc
+// @id oldSearchProjectList
+// @deprecated
+// @summary Search for projects from database
+// @description Deprecated since v5.0.0. Planned for removal in v6.0.0.
+// @description Use GET /project instead.
+// @tags project
+// @param project body ProjectSearch _ "Project search criteria"
+// @success 200 {object} []response.Project
+// @failure 502 {object} problem.Response "Database is unreachable"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @router /projects/search [post]
+func (m ProjectModule) searchProjectListHandler(c *gin.Context) {
+	var reqProjectSearch ProjectSearch
+	if err := c.ShouldBindJSON(&reqProjectSearch); err != nil {
+		ginutil.WriteInvalidBindError(c, err,
+			"One or more parameters failed to parse when reading the request body for the project object to search with.")
+		return
+	}
+	var dbProjects []database.Project
+	err := m.Database.
+		Where(&database.Project{
+			Name:            reqProjectSearch.Name,
+			GroupName:       reqProjectSearch.GroupName,
+			Description:     reqProjectSearch.Description,
+			AvatarURL:       reqProjectSearch.AvatarURL,
+			TokenID:         ptrconv.UintZeroNil(reqProjectSearch.TokenID),
+			ProviderID:      ptrconv.UintZeroNil(reqProjectSearch.ProviderID),
+			BuildDefinition: reqProjectSearch.BuildDefinition,
+			GitURL:          reqProjectSearch.GitURL,
+		}).
+		Preload(database.ProjectFields.Provider).
+		Find(&dbProjects).
+		Error
+	if err != nil {
+		ginutil.WriteDBReadError(c, err, "Failed searching for projects in database.")
+		return
+	}
+	resProjects := modelconv.DBProjectsToResponses(dbProjects)
+	c.JSON(http.StatusOK, resProjects)
 }
 
 // updateProjectHandler godoc
@@ -97,8 +184,8 @@ func (m ProjectModule) updateProjectHandler(c *gin.Context) {
 				GroupName:       reqProjectUpdate.GroupName,
 				Description:     reqProjectUpdate.Description,
 				AvatarURL:       reqProjectUpdate.AvatarURL,
-				TokenID:         reqProjectUpdate.TokenID,
-				ProviderID:      reqProjectUpdate.ProviderID,
+				TokenID:         ptrconv.UintZeroNil(reqProjectUpdate.TokenID),
+				ProviderID:      ptrconv.UintZeroNil(reqProjectUpdate.ProviderID),
 				BuildDefinition: reqProjectUpdate.BuildDefinition,
 				GitURL:          reqProjectUpdate.GitURL,
 			}
@@ -123,8 +210,8 @@ func (m ProjectModule) updateProjectHandler(c *gin.Context) {
 	dbExistingProject.GroupName = reqProjectUpdate.GroupName
 	dbExistingProject.Description = reqProjectUpdate.Description
 	dbExistingProject.AvatarURL = reqProjectUpdate.AvatarURL
-	dbExistingProject.TokenID = reqProjectUpdate.TokenID
-	dbExistingProject.ProviderID = reqProjectUpdate.ProviderID
+	dbExistingProject.TokenID = ptrconv.UintZeroNil(reqProjectUpdate.TokenID)
+	dbExistingProject.ProviderID = ptrconv.UintZeroNil(reqProjectUpdate.ProviderID)
 	dbExistingProject.BuildDefinition = reqProjectUpdate.BuildDefinition
 	dbExistingProject.GitURL = reqProjectUpdate.GitURL
 

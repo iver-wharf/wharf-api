@@ -84,18 +84,6 @@ const (
 	BuildFailed BuildStatus = "Failed"
 )
 
-// ProjectSearch holds values used in verbatim searches for providers.
-type ProjectSearch struct {
-	Name            string `json:"name"`
-	GroupName       string `json:"groupName"`
-	Description     string `json:"description"`
-	AvatarURL       string `json:"avatarUrl"`
-	TokenID         uint   `json:"tokenId" minimum:"0"`
-	ProviderID      uint   `json:"providerId" minimum:"0"`
-	BuildDefinition string `json:"buildDefinition"`
-	GitURL          string `json:"gitUrl"`
-}
-
 // Project specifies fields when creating a new project.
 type Project struct {
 	Name            string `json:"name" validate:"required" binding:"required"`
