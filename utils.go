@@ -132,38 +132,44 @@ func (b gormClauseBuilder) likeExprsFromSliceSameValue(value *string, keys ...st
 	return expressions
 }
 
+func (b gormClauseBuilder) likeExpr(key string, value *string) clause.Expression {
+	if value == nil || *value == "" {
+		return nil
+	}
+	var sqlString string
+	if b.dialect == DBDriverPostgres {
+		// ILIKE is the case insensitive LIKE in PostgreSQL
+		// https://www.postgresql.org/docs/9.6/functions-matching.html#FUNCTIONS-LIKE
+		sqlString = key + ` ILIKE ? ESCAPE '\'`
+	} else {
+		// Sqlite is always case-insensitive
+		// https://www.sqlite.org/lang_expr.html#like
+		sqlString = key + ` LIKE ? ESCAPE '\'`
+	}
+	return clause.Expr{
+		SQL:  sqlString,
+		Vars: []interface{}{newLikeContainsValue(*value)},
+	}
+}
+
+// newLikeContainsValue generates an SQL value for a LIKE query, and escapes all
+// special LIKE characters such as %, ?, _, and \ itself. Examples:
+// 	"foo" // => "%foo%"
+// 	"ab%cd" // => "%ab\%cd%"
+func newLikeContainsValue(value string) string {
+	if value == "" {
+		return "%"
+	}
+	var varBuilder strings.Builder
+	varBuilder.WriteByte('%')
+	sqlLikeEscaper.WriteString(&varBuilder, value)
+	varBuilder.WriteByte('%')
+	return varBuilder.String()
+}
+
 var sqlLikeEscaper = strings.NewReplacer(
 	`\`, `\\`,
 	`?`, `\?`,
 	`_`, `\_`,
 	`%`, `\%`,
 )
-
-func (b gormClauseBuilder) likeExpr(key string, value *string) clause.Expression {
-	if value == nil || *value == "" {
-		return nil
-	}
-	var sqlBuilder strings.Builder
-	sqlBuilder.WriteString(key)
-	sqlBuilder.WriteByte(' ')
-	switch b.dialect {
-	case DBDriverPostgres:
-		// Case insensitive LIKE
-		// https://www.postgresql.org/docs/9.6/functions-matching.html#FUNCTIONS-LIKE
-		sqlBuilder.WriteString("ILIKE")
-	default:
-		// Sqlite is always case-insensitive
-		// https://www.sqlite.org/lang_expr.html#like
-		sqlBuilder.WriteString("LIKE")
-	}
-	sqlBuilder.WriteString(` ? ESCAPE '\'`)
-
-	var varBuilder strings.Builder
-	varBuilder.WriteByte('%')
-	sqlLikeEscaper.WriteString(&varBuilder, *value)
-	varBuilder.WriteByte('%')
-	return clause.Expr{
-		SQL:  sqlBuilder.String(),
-		Vars: []interface{}{varBuilder.String()},
-	}
-}

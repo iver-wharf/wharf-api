@@ -58,3 +58,38 @@ func TestFindDefaultGroupFail(t *testing.T) {
 
 	assert.False(t, ok)
 }
+
+func TestNewLikeContainsValue(t *testing.T) {
+	testCases := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{
+			name:  "empty string",
+			input: "",
+			want:  "%",
+		},
+		{
+			name:  "special chars",
+			input: "foo%bar?moo_doo",
+			want:  `%foo\%bar\?moo\_doo%`,
+		},
+		{
+			name:  "escape",
+			input: `foo\\bar`,
+			want:  `%foo\\\\bar%`,
+		},
+		{
+			name:  "escaped special char",
+			input: `foo\%bar`,
+			want:  `%foo\\\%bar%`,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := newLikeContainsValue(tc.input)
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}
