@@ -23,11 +23,6 @@ type buildModule struct {
 }
 
 func (m buildModule) Register(g *gin.RouterGroup) {
-	builds := g.Group("/builds")
-	{
-		builds.POST("/search", m.searchBuildListHandler)
-	}
-
 	build := g.Group("/build/:buildId")
 	{
 		build.GET("", m.getBuildHandler)
@@ -122,18 +117,6 @@ func (m buildModule) getLogs(buildID uint) ([]database.Log, error) {
 		return []database.Log{}, err
 	}
 	return dbLogs, nil
-}
-
-// searchBuildListHandler godoc
-// @id searchBuildList
-// @summary NOT IMPLEMENTED YET
-// @tags build
-// @accept json
-// @produce json
-// @success 501 "Not Implemented"
-// @router /builds/search [post]
-func (m buildModule) searchBuildListHandler(c *gin.Context) {
-	c.Status(http.StatusNotImplemented)
 }
 
 // getBuildLogListHandler godoc
