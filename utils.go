@@ -21,6 +21,13 @@ func contains(items []string, value string) bool {
 	return false
 }
 
+func fallbackString(value, fallback string) string {
+	if value == "" {
+		return fallback
+	}
+	return value
+}
+
 func findDefaultBranch(branches []database.Branch) (database.Branch, bool) {
 	for _, branch := range branches {
 		if branch.Default {

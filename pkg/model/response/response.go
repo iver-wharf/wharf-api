@@ -171,6 +171,14 @@ type Project struct {
 	ParsedBuildDefinition interface{} `json:"build" swaggertype:"object" extensions:"x-nullable"`
 }
 
+// ProjectOverrides holds field overrides for a project.
+type ProjectOverrides struct {
+	ProjectID   uint   `json:"projectId" minimum:"0"`
+	Description string `json:"description"`
+	AvatarURL   string `json:"avatarUrl"`
+	GitURL      string `json:"gitUrl"`
+}
+
 // Provider holds metadata about a connection to a remote provider. Some of
 // importance are the URL field of where to find the remote, and the token field
 // used to authenticate.

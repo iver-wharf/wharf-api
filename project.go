@@ -46,6 +46,8 @@ func (m projectModule) Register(g *gin.RouterGroup) {
 		project.DELETE("/:projectId", m.deleteProjectHandler)
 		project.PUT("/:projectId", m.updateProjectHandler)
 		project.POST("/:projectId/:stage/run", m.startProjectBuildHandler)
+		project.GET("/:projectId/override", m.getProjectOverridesHandler)
+		project.PUT("/:projectId/override", m.updateProjectOverridesHandler)
 	}
 }
 
@@ -361,6 +363,47 @@ func (m projectModule) updateProjectHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, resProject)
 }
 
+// getProjectOverridesHandler godoc
+// @id updateProjectOverrides
+// @summary Get project overrides
+// @description Get values for a project's overridable fields.
+// @description Meant for manual overrides.
+// @description Overridden field will take precedence when retreiving the project or in newly started builds,
+// @description but will stay unaffected by regular project updates.
+// @tags project
+// @accept json
+// @produce json
+// @param projectId path uint true "project ID" minimum(0)
+// @success 200 {object} response.ProjectOverrides
+// @failure 400 {object} problem.Response "Bad request, such as invalid body JSON"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 404 {object} problem.Response "Project to update was not found"
+// @failure 502 {object} problem.Response "Database is unreachable"
+// @router /project/{projectId}/override [get]
+func (m projectModule) getProjectOverridesHandler(c *gin.Context) {
+}
+
+// updateProjectOverridesHandler godoc
+// @id updateProjectOverrides
+// @summary Update project overrides in database
+// @description Updates a project by replacing all of its overridable fields.
+// @description Meant for manual overrides.
+// @description Overridden field will take precedence when retreiving the project or in newly started builds,
+// @description but will stay unaffected by regular project updates.
+// @tags project
+// @accept json
+// @produce json
+// @param projectId path uint true "project ID" minimum(0)
+// @param project body request.ProjectUpdate _ "New project overrides" //TODO
+// @success 200 {object} response.ProjectOverrides
+// @failure 400 {object} problem.Response "Bad request, such as invalid body JSON"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 404 {object} problem.Response "Project to update was not found"
+// @failure 502 {object} problem.Response "Database is unreachable"
+// @router /project/{projectId}/override [put]
+func (m projectModule) updateProjectOverridesHandler(c *gin.Context) {
+}
+
 // startProjectBuildHandler godoc
 // @id startProjectBuild
 // @summary Responsible for run stage environment for selected project
@@ -516,7 +559,8 @@ func databaseProjectPreloaded(db *gorm.DB) *gorm.DB {
 		Preload(database.ProjectFields.Branches, func(db *gorm.DB) *gorm.DB {
 			return db.Order(database.BranchColumns.BranchID)
 		}).
-		Preload(database.ProjectFields.Token)
+		Preload(database.ProjectFields.Token).
+		Preload(database.ProjectFields.Overrides)
 }
 
 func (m projectModule) SaveBuildParams(dbParams []database.BuildParam) error {
@@ -647,7 +691,7 @@ func getDBJobParams(
 		{Type: "string", Name: "RUN_STAGES", Value: dbBuild.Stage},
 		{Type: "string", Name: "BUILD_REF", Value: strconv.FormatUint(uint64(dbBuild.BuildID), 10)},
 		{Type: "string", Name: "VARS", Value: string(v)},
-		{Type: "string", Name: "GIT_FULLURL", Value: dbProject.GitURL},
+		{Type: "string", Name: "GIT_FULLURL", Value: fallbackString(dbProject.Overrides.GitURL, dbProject.GitURL)},
 		{Type: "string", Name: "GIT_TOKEN", Value: token},
 		{Type: "string", Name: "WHARF_PROJECT_ID", Value: strconv.FormatUint(uint64(dbProject.ProjectID), 10)},
 		{Type: "string", Name: "WHARF_INSTANCE", Value: wharfInstanceID},

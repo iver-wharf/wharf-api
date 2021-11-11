@@ -36,14 +36,14 @@ func DBProjectToResponse(dbProject database.Project) response.Project {
 		ProjectID:             dbProject.ProjectID,
 		Name:                  dbProject.Name,
 		GroupName:             dbProject.GroupName,
-		Description:           dbProject.Description,
-		AvatarURL:             dbProject.AvatarURL,
+		Description:           fallbackString(dbProject.Overrides.Description, dbProject.Description),
+		AvatarURL:             fallbackString(dbProject.Overrides.AvatarURL, dbProject.AvatarURL),
 		TokenID:               ptrconv.UintPtr(dbProject.TokenID),
 		ProviderID:            ptrconv.UintPtr(dbProject.ProviderID),
 		Provider:              resProviderPtr,
 		BuildDefinition:       dbProject.BuildDefinition,
 		Branches:              DBBranchesToResponses(dbProject.Branches),
-		GitURL:                dbProject.GitURL,
+		GitURL:                fallbackString(dbProject.Overrides.GitURL, dbProject.GitURL),
 		ParsedBuildDefinition: parsedBuildDef,
 	}
 }
