@@ -15,7 +15,7 @@ import (
 // Largely taken from https://developer.okta.com/blog/2021/01/04/offline-jwt-validation-with-go
 
 func GetOidcPublicKeys(config OICDConfig) *map[string]*rsa.PublicKey {
-	rsakeys := make(map[string]*rsa.PublicKey)
+	rsaKeys := make(map[string]*rsa.PublicKey)
 	var body map[string]interface{}
 	resp, err := http.Get(config.KeysURL)
 	if err != nil {
@@ -33,14 +33,14 @@ func GetOidcPublicKeys(config OICDConfig) *map[string]*rsa.PublicKey {
 		number, _ := base64.RawURLEncoding.DecodeString(key["n"].(string))
 		rsakey.N = new(big.Int).SetBytes(number)
 		rsakey.E = 65537
-		rsakeys[kid] = rsakey
+		rsaKeys[kid] = rsakey
 	}
-	return &rsakeys
+	return &rsaKeys
 }
 
-func VerifyTokenMiddleware(config OICDConfig, rsakeys *map[string]*rsa.PublicKey) gin.HandlerFunc {
+func VerifyTokenMiddleware(config OICDConfig, rsaKeys *map[string]*rsa.PublicKey) gin.HandlerFunc {
 	return func (ginContext *gin.Context) {
-		if *rsakeys == nil {
+		if *rsaKeys == nil {
 			log.Warn().Message("RsaKeys for OIDC have not been set (http:500).")
 			ginContext.AbortWithStatus(http.StatusInternalServerError)
 		}
@@ -49,11 +49,10 @@ func VerifyTokenMiddleware(config OICDConfig, rsakeys *map[string]*rsa.PublicKey
 		tokenString := ginContext.Request.Header.Get("Authorization")
 		if !strings.HasPrefix(tokenString, "Bearer ") {
 			ginContext.AbortWithStatus(http.StatusUnauthorized)
-			return
 		}
 		tokenString = strings.TrimPrefix(tokenString, "Bearer ")
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			return (*rsakeys)[token.Header["kid"].(string)], nil
+			return (*rsaKeys)[token.Header["kid"].(string)], nil
 		})
 		if err != nil {
 			errorMessage = err.Error()
