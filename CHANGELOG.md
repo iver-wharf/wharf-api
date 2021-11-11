@@ -44,9 +44,21 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Deprecated POST search endpoints that took the search queries from the HTTP
   request body. They are still supported, but may be removed in the next major
   release (v6.0.0). Please refer to the new endpoints that use query parameter
-  instead. (#99)
+  instead. (#99, #109)
 
-  - Use `GET /project` instead of `GET /projects` or `POST /projects/search`
+  - Use new `GET /project` instead of `GET /projects` or `POST /projects/search`
+  - Use new `GET /build` instead of `GET /projects/{projectId}/builds` or `POST /builds/search`
+  - Use new `GET /provider` instead of `GET /providers` or `POST /providers/search`
+  - Use new `GET /token` instead of `GET /tokens` or `POST /tokens/search`
+  - Use new `GET /build/{buildId}/artifact` instead of `GET /build/{buildId}/artifacts`
+
+- Added new GET endpoints to get list of objects (as mentioned in note above),
+  with large set of query parameters. Major difference with their "plural"
+  GET counterparts, they all return paginated results instead, as well as a
+  `"totalCount"` field for the overall query.
+
+  By default all these new endpoints use a default limit of 100, but this can
+  be disabled by specifying `?limit=0`. (#109)
 
 - Added support for Sqlite. Default database driver is still Postgres.
 
