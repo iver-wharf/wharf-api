@@ -26,13 +26,14 @@ func GetOidcPublicKeys(config OICDConfig) *map[string]*rsa.PublicKey {
 		log.Error().WithError(err).Message("Failed to decode login JWT Keys.")
 	}
 	log.Debug().Message("Updating keys for oidc.")
+	rsaExponent := 65537
 	for _, bodykey := range body["keys"].([]interface{}) {
 		key := bodykey.(map[string]interface{})
 		kid := key["kid"].(string)
 		rsakey := new(rsa.PublicKey)
 		number, _ := base64.RawURLEncoding.DecodeString(key["n"].(string))
 		rsakey.N = new(big.Int).SetBytes(number)
-		rsakey.E = 65537
+		rsakey.E = rsaExponent
 		rsaKeys[kid] = rsakey
 	}
 	return &rsaKeys
