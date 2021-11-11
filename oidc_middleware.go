@@ -47,29 +47,29 @@ func VerifyTokenMiddleware(config OICDConfig, rsakeys *map[string]*rsa.PublicKey
 		isValid := false
 		errorMessage := ""
 		tokenString := ginContext.Request.Header.Get("Authorization")
-		if strings.HasPrefix(tokenString, "Bearer ") {
-			tokenString = strings.TrimPrefix(tokenString, "Bearer ")
-			token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-				return (*rsakeys)[token.Header["kid"].(string)], nil
-			})
-			if err != nil {
-				errorMessage = err.Error()
-			} else if !token.Valid {
-				errorMessage = "Invalid token"
-			} else if token.Header["alg"] == nil {
-				errorMessage = "alg must be defined"
-			} else if token.Claims.(jwt.MapClaims)["aud"] != config.AudienceURL {
-				errorMessage = "Invalid aud"
-			} else if !strings.Contains(token.Claims.(jwt.MapClaims)["iss"].(string), config.IssuerURL) {
-				errorMessage = "Invalid iss"
-			} else {
-				isValid = true
-			}
-			if !isValid {
-				ginContext.String(http.StatusForbidden, errorMessage)
-				ginContext.AbortWithStatus(http.StatusUnauthorized)
-			}
+		if !strings.HasPrefix(tokenString, "Bearer ") {
+			ginContext.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+		tokenString = strings.TrimPrefix(tokenString, "Bearer ")
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			return (*rsakeys)[token.Header["kid"].(string)], nil
+		})
+		if err != nil {
+			errorMessage = err.Error()
+		} else if !token.Valid {
+			errorMessage = "Invalid token"
+		} else if token.Header["alg"] == nil {
+			errorMessage = "alg must be defined"
+		} else if token.Claims.(jwt.MapClaims)["aud"] != config.AudienceURL {
+			errorMessage = "Invalid aud"
+		} else if !strings.Contains(token.Claims.(jwt.MapClaims)["iss"].(string), config.IssuerURL) {
+			errorMessage = "Invalid iss"
 		} else {
+			isValid = true
+		}
+		if !isValid {
+			ginContext.String(http.StatusForbidden, errorMessage)
 			ginContext.AbortWithStatus(http.StatusUnauthorized)
 		}
 	}
