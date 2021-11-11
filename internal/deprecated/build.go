@@ -25,6 +25,7 @@ func (m BuildModule) Register(g *gin.RouterGroup) {
 // @deprecated
 // @description This endpoint has not been implemented!
 // @description Deprecated since v5.0.0. Planned for removal in v6.0.0.
+// @description Use `GET /build` instead.
 // @summary NOT IMPLEMENTED YET
 // @tags build
 // @accept json

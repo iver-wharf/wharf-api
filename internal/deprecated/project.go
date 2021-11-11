@@ -70,7 +70,7 @@ func (m ProjectModule) Register(g *gin.RouterGroup) {
 // @deprecated
 // @summary Returns all projects from database
 // @description Deprecated since v5.0.0. Planned for removal in v6.0.0.
-// @description Use GET /project instead.
+// @description Use `GET /project` instead.
 // @tags project
 // @success 200 {object} []response.Project
 // @failure 502 {object} problem.Response "Database is unreachable"
@@ -94,7 +94,7 @@ func (m ProjectModule) getProjectListHandler(c *gin.Context) {
 // @deprecated
 // @summary Search for projects from database
 // @description Deprecated since v5.0.0. Planned for removal in v6.0.0.
-// @description Use GET /project instead.
+// @description Use `GET /project` instead.
 // @tags project
 // @param project body ProjectSearch _ "Project search criteria"
 // @success 200 {object} []response.Project
