@@ -57,13 +57,13 @@ func VerifyTokenMiddleware(config OICDConfig, rsaKeys *map[string]*rsa.PublicKey
 		if err != nil {
 			errorMessage = err.Error()
 		} else if !token.Valid {
-			errorMessage = "Invalid token"
+			errorMessage = "Invalid access bearer token."
 		} else if token.Header["alg"] == nil {
-			errorMessage = "alg must be defined"
+			errorMessage = "Missing 'alg' field in authorization JWT header."
 		} else if token.Claims.(jwt.MapClaims)["aud"] != config.AudienceURL {
-			errorMessage = "Invalid aud"
+			errorMessage = "Invalid 'aud' field in authorization JWT header."
 		} else if !strings.Contains(token.Claims.(jwt.MapClaims)["iss"].(string), config.IssuerURL) {
-			errorMessage = "Invalid iss"
+			errorMessage = "Invalid 'iss' field in authorization JWT header."
 		} else {
 			isValid = true
 		}
