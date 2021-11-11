@@ -21,7 +21,7 @@ func (m BuildModule) Register(g *gin.RouterGroup) {
 }
 
 // searchBuildListHandler godoc
-// @id searchBuildList
+// @id oldSearchBuildList
 // @deprecated
 // @description This endpoint has not been implemented!
 // @description Deprecated since v5.0.0. Planned for removal in v6.0.0.
