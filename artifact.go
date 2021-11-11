@@ -52,7 +52,7 @@ var defaultGetArtifactsOrderBy = orderby.Column{Name: database.ArtifactColumns.A
 // @param orderby query []string false "Sorting orders. Takes the property name followed by either 'asc' or 'desc'. Can be specified multiple times for more granular sorting. Defaults to `?orderby=artifactId desc`"
 // @param name query string false "Filter by verbatim artifact name."
 // @param fileName query string false "Filter by verbatim artifact file name."
-// @param environmentMatch query string false "Filter by matching artifact name. Cannot be used with `name`."
+// @param nameMatch query string false "Filter by matching artifact name. Cannot be used with `name`."
 // @param fileNameMatch query string false "Filter by matching artifact file name. Cannot be used with `fileName`."
 // @param match query string false "Filter by matching on any supported fields."
 // @success 200 {object} response.PaginatedArtifacts
