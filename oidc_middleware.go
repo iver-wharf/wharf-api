@@ -12,9 +12,10 @@ import (
 
 	"github.com/golang-jwt/jwt"
 )
+
 // Largely taken from https://developer.okta.com/blog/2021/01/04/offline-jwt-validation-with-go
 
-func GetOidcPublicKeys(config OICDConfig) *map[string]*rsa.PublicKey {
+func GetOidcPublicKeys(config OIDCConfig) *map[string]*rsa.PublicKey {
 	rsaKeys := make(map[string]*rsa.PublicKey)
 	var body map[string]interface{}
 	resp, err := http.Get(config.KeysURL)
@@ -39,7 +40,7 @@ func GetOidcPublicKeys(config OICDConfig) *map[string]*rsa.PublicKey {
 	return &rsaKeys
 }
 
-func VerifyTokenMiddleware(config OICDConfig, rsaKeys *map[string]*rsa.PublicKey) gin.HandlerFunc {
+func VerifyTokenMiddleware(config OIDCConfig, rsaKeys *map[string]*rsa.PublicKey) gin.HandlerFunc {
 	return func (ginContext *gin.Context) {
 		if *rsaKeys == nil {
 			log.Warn().Message("RsaKeys for OIDC have not been set (http:500).")
@@ -75,8 +76,8 @@ func VerifyTokenMiddleware(config OICDConfig, rsaKeys *map[string]*rsa.PublicKey
 	}
 }
 
-// As a standard OICD login provider keys should be checked for updates ever 1 day 1 hour.
-func SubscribeToKeyURLUpdates(config OICDConfig, rsakeys *map[string]*rsa.PublicKey) {
+// As a standard OIDC login provider keys should be checked for updates ever 1 day 1 hour.
+func SubscribeToKeyURLUpdates(config OIDCConfig, rsakeys *map[string]*rsa.PublicKey) {
 	fetchOidcKeysTicker := time.NewTicker(time.Hour * 25)
 	go func() {
 		for {

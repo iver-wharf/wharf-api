@@ -115,7 +115,7 @@ type HTTPConfig struct {
 	// tokens sent through the Authorization header for all requests.
 	//
 	// Added in v5.0.0.
-	OIDC OICDConfig
+	OIDC OIDCConfig
 
 }
 
@@ -139,8 +139,8 @@ type CORSConfig struct {
 	AllowOrigins []string
 }
 
-// OICDConfig holds settings for the HTTP server's OIDC access token validation settings.
-type OICDConfig struct {
+// OIDCConfig holds settings for the HTTP server's OIDC access token validation settings.
+type OIDCConfig struct {
 
 	// Enable this functions as a switch to enable or disable the validation of OIDC
 	// access bearer tokens.
