@@ -11,8 +11,8 @@ import (
 // TimeMetadata contains fields of when an object was created/added to the
 // database, and when any field was last updated.
 type TimeMetadata struct {
-	UpdatedAt time.Time `json:"updatedAt" format:"date-time"`
-	CreatedAt time.Time `json:"createdAt" format:"date-time"`
+	UpdatedAt *time.Time `json:"updatedAt" format:"date-time" extensions:"x-nullable"`
+	CreatedAt *time.Time `json:"createdAt" format:"date-time" extensions:"x-nullable"`
 }
 
 // Artifact holds the binary data as well as metadata about that binary such as

@@ -32,8 +32,8 @@ import (
 //
 // Docs: https://gorm.io/docs/models.html#Creating-Updating-Time-Unix-Milli-Nano-Seconds-Tracking
 type TimeMetadata struct {
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	CreatedAt *time.Time `gorm:"nullable"`
+	UpdatedAt *time.Time `gorm:"nullable"`
 }
 
 // ProviderFields holds the Go struct field names for each field.
