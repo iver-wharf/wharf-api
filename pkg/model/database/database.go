@@ -348,9 +348,11 @@ type Param struct {
 // column, which does not support the regular Go field names.
 var ArtifactColumns = struct {
 	ArtifactID string
+	Name       string
 	FileName   string
 }{
 	ArtifactID: "artifact_id",
+	Name:       "name",
 	FileName:   "file_name",
 }
 
@@ -358,8 +360,12 @@ var ArtifactColumns = struct {
 // Useful in GORM .Where() statements to only select certain fields or in GORM
 // Preload statements to select the correct field to preload.
 var ArtifactFields = struct {
+	BuildID  string
+	Name     string
 	FileName string
 }{
+	BuildID:  "BuildID",
+	Name:     "Name",
 	FileName: "FileName",
 }
 

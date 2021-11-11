@@ -8,6 +8,19 @@ import (
 	"gopkg.in/guregu/null.v4"
 )
 
+// ArtifactJSONFields holds the JSON field names for each field.
+// Useful in ordering statements to map the correct field to the correct
+// database column.
+var ArtifactJSONFields = struct {
+	ArtifactID string
+	Name       string
+	FileName   string
+}{
+	ArtifactID: "artifactsId",
+	Name:       "name",
+	FileName:   "fileName",
+}
+
 // Artifact holds the binary data as well as metadata about that binary such as
 // the file name and which build it belongs to.
 type Artifact struct {
@@ -125,6 +138,13 @@ type Log struct {
 	BuildID   uint      `json:"buildId" minimum:"0"`
 	Message   string    `json:"message"`
 	Timestamp time.Time `json:"timestamp" format:"date-time"`
+}
+
+// PaginatedArtifacts is a list of artifacts as well as the explicit total count
+// field.
+type PaginatedArtifacts struct {
+	Artifacts  []Artifact `json:"artifacts"`
+	TotalCount int64      `json:"totalCount"`
 }
 
 // PaginatedBuilds is a list of builds as well as an explicit total count field.
