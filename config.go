@@ -142,19 +142,28 @@ type CORSConfig struct {
 // OICDConfig holds settings for the HTTP server's OIDC access token validation settings.
 type OICDConfig struct {
 
-	Enable bool
-
-	// OICDMetadataURL
-	//
-	// Sample URL https://login.microsoftonline.com/common/v2.0/.well-known/openid-configuration
+	// Enable this functions as a switch to enable or disable the validation of OIDC
+	// access bearer tokens.
 	//
 	// Added in v5.0.0.
-	MetadataURL string
+	Enable bool
 
+	// IssuerURL an integral part of the access token. It should be checked such that
+	// only allowed OIDC targets can pass token validation.
+	//
+	// Added in v5.0.0.
 	IssuerURL string
 
+	// AudienceURL an integral part of the access token. It should be checked such that
+	// only the allowed application within a OIDC target can pass validation.
+	//
+	// Added in v5.0.0.
 	AudienceURL string
 
+	// KeysURL an integral part of the access token. It should be checked such that
+	// only OIDC targets with the expected keys pass validation.
+	//
+	// Added in v5.0.0.
 	KeysURL string
 }
 
