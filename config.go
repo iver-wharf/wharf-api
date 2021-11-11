@@ -109,8 +109,7 @@ type HTTPConfig struct {
 	// Added in v4.2.0.
 	BasicAuth string
 
-	// OIDC
-	// SHOULD be use with HTTPS/SSL (unsecure without)
+	// OIDC SHOULD be use with HTTPS/SSL (unsecure without)
 	// Requires CORS set to specific origins.
 	// Return unauthorized on http requests unless valid OIDC access
 	// tokens sent through the Authorization header for all requests.
