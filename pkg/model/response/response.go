@@ -168,6 +168,7 @@ type Project struct {
 	BuildDefinition       string      `json:"buildDefinition"`
 	Branches              []Branch    `json:"branches"`
 	GitURL                string      `json:"gitUrl"`
+	RemoteProjectID       string      `json:"remoteProjectId"`
 	ParsedBuildDefinition interface{} `json:"build" swaggertype:"object" extensions:"x-nullable"`
 }
 

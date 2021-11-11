@@ -135,6 +135,7 @@ type Project struct {
 	BuildDefinition string    `gorm:"not null;default:''"`
 	Branches        []Branch  `gorm:"foreignKey:ProjectID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	GitURL          string    `gorm:"not null;default:''"`
+	RemoteProjectID string    `gorm:"not null;default:''"`
 }
 
 // BranchFields holds the Go struct field names for each field.
