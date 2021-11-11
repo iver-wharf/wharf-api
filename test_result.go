@@ -97,8 +97,9 @@ func (m buildTestResultModule) createBuildTestResultHandler(c *gin.Context) {
 		dbAllDetails = append(dbAllDetails, dbDetails...)
 
 		resArtifactMetadataList = append(resArtifactMetadataList, response.ArtifactMetadata{
-			FileName:   dbArtifact.FileName,
-			ArtifactID: dbArtifact.ArtifactID,
+			TimeMetadata: modelconv.DBTimeMetadataToResponse(dbArtifact.TimeMetadata),
+			FileName:     dbArtifact.FileName,
+			ArtifactID:   dbArtifact.ArtifactID,
 		})
 	}
 

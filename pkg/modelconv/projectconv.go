@@ -33,6 +33,7 @@ func DBProjectToResponse(dbProject database.Project) response.Project {
 			Message("Failed to parse build-definition.")
 	}
 	return response.Project{
+		TimeMetadata:          DBTimeMetadataToResponse(dbProject.TimeMetadata),
 		ProjectID:             dbProject.ProjectID,
 		Name:                  dbProject.Name,
 		GroupName:             dbProject.GroupName,

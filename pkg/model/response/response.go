@@ -8,9 +8,17 @@ import (
 	"gopkg.in/guregu/null.v4"
 )
 
+// TimeMetadata contains fields of when an object was created/added to the
+// database, and when any field was last updated.
+type TimeMetadata struct {
+	UpdatedAt time.Time `json:"updatedAt" format:"date-time"`
+	CreatedAt time.Time `json:"createdAt" format:"date-time"`
+}
+
 // Artifact holds the binary data as well as metadata about that binary such as
 // the file name and which build it belongs to.
 type Artifact struct {
+	TimeMetadata
 	ArtifactID uint   `json:"artifactId" minimum:"0"`
 	BuildID    uint   `json:"buildId" minimum:"0"`
 	Name       string `json:"name"`
@@ -19,12 +27,14 @@ type Artifact struct {
 
 // ArtifactMetadata contains the file name and artifact ID of an Artifact.
 type ArtifactMetadata struct {
+	TimeMetadata
 	FileName   string `json:"fileName"`
 	ArtifactID uint   `json:"artifactId" minimum:"0"`
 }
 
 // Branch holds details about a project's branch.
 type Branch struct {
+	TimeMetadata
 	BranchID  uint   `json:"branchId" minimum:"0"`
 	ProjectID uint   `json:"projectId" minimum:"0"`
 	Name      string `json:"name"`
@@ -65,6 +75,7 @@ var BuildJSONFields = struct {
 // Build holds data about the state of a build. Which parameters was used to
 // start it, what status it holds, et.al.
 type Build struct {
+	TimeMetadata
 	BuildID               uint                  `json:"buildId" minimum:"0"`
 	StatusID              int                   `json:"statusId" enums:"0,1,2,3"`
 	Status                BuildStatus           `json:"status" enums:"Scheduling,Running,Completed,Failed"`
@@ -157,6 +168,7 @@ var ProjectJSONFields = struct {
 
 // Project holds details about a project.
 type Project struct {
+	TimeMetadata
 	ProjectID             uint        `json:"projectId" minimum:"0"`
 	Name                  string      `json:"name"`
 	GroupName             string      `json:"groupName"`
@@ -175,6 +187,7 @@ type Project struct {
 // importance are the URL field of where to find the remote, and the token field
 // used to authenticate.
 type Provider struct {
+	TimeMetadata
 	ProviderID uint         `json:"providerId" minimum:"0"`
 	Name       ProviderName `json:"name" enums:"azuredevops,gitlab,github"`
 	URL        string       `json:"url"`
@@ -218,6 +231,7 @@ const (
 
 // TestResultDetail contains data about a single test in a test result file.
 type TestResultDetail struct {
+	TimeMetadata
 	TestResultDetailID uint             `json:"testResultDetailId" minimum:"0"`
 	ArtifactID         uint             `json:"artifactId" minimum:"0"`
 	BuildID            uint             `json:"buildId" minimum:"0"`
@@ -251,6 +265,7 @@ const (
 
 // TestResultSummary contains data about a single test result file.
 type TestResultSummary struct {
+	TimeMetadata
 	TestResultSummaryID uint   `json:"testResultSummaryId" minimum:"0"`
 	FileName            string `json:"fileName"`
 	ArtifactID          uint   `json:"artifactId" minimum:"0"`
@@ -273,6 +288,7 @@ type TestsResults struct {
 
 // Token holds credentials for a remote provider.
 type Token struct {
+	TimeMetadata
 	TokenID  uint   `json:"tokenId" minimum:"0"`
 	Token    string `json:"token" format:"password"`
 	UserName string `json:"userName"`

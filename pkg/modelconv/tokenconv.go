@@ -18,8 +18,9 @@ func DBTokensToResponses(dbTokens []database.Token) []response.Token {
 // DBTokenToResponse converts a database token to a response token.
 func DBTokenToResponse(dbToken database.Token) response.Token {
 	return response.Token{
-		TokenID:  dbToken.TokenID,
-		Token:    dbToken.Token,
-		UserName: dbToken.UserName,
+		TimeMetadata: DBTimeMetadataToResponse(dbToken.TimeMetadata),
+		TokenID:      dbToken.TokenID,
+		Token:        dbToken.Token,
+		UserName:     dbToken.UserName,
 	}
 }

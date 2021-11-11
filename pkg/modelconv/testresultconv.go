@@ -19,6 +19,7 @@ func DBTestResultSummariesToResponses(dbSummaries []database.TestResultSummary) 
 // response test result summary.
 func DBTestResultSummaryToResponse(dbSummary database.TestResultSummary) response.TestResultSummary {
 	return response.TestResultSummary{
+		TimeMetadata:        DBTimeMetadataToResponse(dbSummary.TimeMetadata),
 		TestResultSummaryID: dbSummary.TestResultSummaryID,
 		FileName:            dbSummary.FileName,
 		ArtifactID:          dbSummary.ArtifactID,
@@ -44,6 +45,7 @@ func DBTestResultDetailsToResponses(dbDetails []database.TestResultDetail) []res
 // response test result detail.
 func DBTestResultDetailToResponse(dbDetail database.TestResultDetail) response.TestResultDetail {
 	return response.TestResultDetail{
+		TimeMetadata:       DBTimeMetadataToResponse(dbDetail.TimeMetadata),
 		TestResultDetailID: dbDetail.TestResultDetailID,
 		ArtifactID:         dbDetail.ArtifactID,
 		BuildID:            dbDetail.BuildID,
