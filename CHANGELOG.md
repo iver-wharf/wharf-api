@@ -174,6 +174,8 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   - `test_result_summary.file_name`
   - `token.user_name`
 
+- Added new field `RemoteProjectID` to the project model. (#112)
+
 ## v4.2.0 (2021-09-10)
 
 - Added support for the TZ environment variable (setting timezones ex.

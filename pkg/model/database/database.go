@@ -74,6 +74,7 @@ type Token struct {
 // Preload statements to select the correct field to preload.
 var ProjectFields = struct {
 	ProjectID       string
+	RemoteProjectID string
 	Name            string
 	GroupName       string
 	Description     string
@@ -104,19 +105,21 @@ var ProjectFields = struct {
 // Useful in GORM .Order() statements to order the results based on a specific
 // column, which does not support the regular Go field names.
 var ProjectColumns = struct {
-	ProjectID   string
-	Name        string
-	GroupName   string
-	Description string
-	TokenID     string
-	GitURL      string
+	ProjectID       string
+	RemoteProjectID string
+	Name            string
+	GroupName       string
+	Description     string
+	TokenID         string
+	GitURL          string
 }{
-	ProjectID:   "project_id",
-	Name:        "name",
-	GroupName:   "group_name",
-	Description: "description",
-	TokenID:     "token_id",
-	GitURL:      "git_url",
+	ProjectID:       "project_id",
+	RemoteProjectID: "remote_project_id",
+	Name:            "name",
+	GroupName:       "group_name",
+	Description:     "description",
+	TokenID:         "token_id",
+	GitURL:          "git_url",
 }
 
 // Project holds data about an imported project. A lot of the data is expected
@@ -124,6 +127,7 @@ var ProjectColumns = struct {
 // and avatar.
 type Project struct {
 	ProjectID       uint      `gorm:"primaryKey"`
+	RemoteProjectID string    `gorm:"not null;default:''"`
 	Name            string    `gorm:"size:500;not null"`
 	GroupName       string    `gorm:"size:500;not null;default:''"`
 	Description     string    `gorm:"size:500;not null;default:''"`
@@ -135,7 +139,6 @@ type Project struct {
 	BuildDefinition string    `gorm:"not null;default:''"`
 	Branches        []Branch  `gorm:"foreignKey:ProjectID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	GitURL          string    `gorm:"not null;default:''"`
-	RemoteProjectID string    `gorm:"not null;default:''"`
 }
 
 // BranchFields holds the Go struct field names for each field.

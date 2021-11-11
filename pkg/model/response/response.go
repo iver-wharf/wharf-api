@@ -142,22 +142,25 @@ type Ping struct {
 // Useful in ordering statements to map the correct field to the correct
 // database column.
 var ProjectJSONFields = struct {
-	ProjectID   string
-	Name        string
-	GroupName   string
-	Description string
-	GitURL      string
+	ProjectID       string
+	RemoteProjectID string
+	Name            string
+	GroupName       string
+	Description     string
+	GitURL          string
 }{
-	ProjectID:   "projectId",
-	Name:        "name",
-	GroupName:   "groupName",
-	Description: "description",
-	GitURL:      "gitUrl",
+	ProjectID:       "projectId",
+	RemoteProjectID: "remoteProjectId",
+	Name:            "name",
+	GroupName:       "groupName",
+	Description:     "description",
+	GitURL:          "gitUrl",
 }
 
 // Project holds details about a project.
 type Project struct {
 	ProjectID             uint        `json:"projectId" minimum:"0"`
+	RemoteProjectID       string      `json:"remoteProjectId"`
 	Name                  string      `json:"name"`
 	GroupName             string      `json:"groupName"`
 	Description           string      `json:"description"`
@@ -168,7 +171,6 @@ type Project struct {
 	BuildDefinition       string      `json:"buildDefinition"`
 	Branches              []Branch    `json:"branches"`
 	GitURL                string      `json:"gitUrl"`
-	RemoteProjectID       string      `json:"remoteProjectId"`
 	ParsedBuildDefinition interface{} `json:"build" swaggertype:"object" extensions:"x-nullable"`
 }
 
