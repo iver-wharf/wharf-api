@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/iver-wharf/wharf-api/internal/wherefields"
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
@@ -51,8 +50,8 @@ var defaultGetTokensOrderBy = orderby.Column{Name: database.TokenColumns.TokenID
 // @description Verbatim filters will match on the entire string used to find exact matches,
 // @description while the matching filters are meant for searches by humans where it tries to find soft matches and is therefore inaccurate by nature.
 // @tags token
-// @param limit query int false "Number of results to return. No limit if unset or non-positive."
-// @param offset query int false "Skipped results, where 0 means from the start." minimum(0)
+// @param limit query int false "Number of results to return. No limit if unset or non-positive. Required if `offset` is used." default(100)
+// @param offset query int false "Skipped results, where 0 means from the start." minimum(0) default(0)
 // @param orderby query []string false "Sorting orders. Takes the property name followed by either 'asc' or 'desc'. Can be specified multiple times for more granular sorting. Defaults to `?orderby=tokenId desc`"
 // @param userName query string false "Filter by verbatim token user name."
 // @param userNameMatch query string false "Filter by matching token user name. Cannot be used with `userName`."
@@ -63,26 +62,18 @@ var defaultGetTokensOrderBy = orderby.Column{Name: database.TokenColumns.TokenID
 // @router /token [get]
 func (m tokenModule) getTokenListHandler(c *gin.Context) {
 	var params = struct {
-		Limit  int `form:"limit"`
-		Offset int `form:"offset" binding:"min=0"`
+		commonGetQueryParams
 
-		OrderBy []string `form:"orderby"`
-
-		UserName *string `form:"userName"`
-
+		UserName      *string `form:"userName"`
 		UserNameMatch *string `form:"userNameMatch" binding:"excluded_with=UserNameMatch"`
-	}{}
-	if err := c.ShouldBindQuery(&params); err != nil {
-		ginutil.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading query parameters.")
+	}{
+		commonGetQueryParams: defaultCommonGetQueryParams,
+	}
+	if !bindCommonGetQueryParams(c, &params) {
 		return
 	}
-	orderBySlice, err := orderby.ParseSlice(params.OrderBy, tokenJSONToColumns)
-	if err != nil {
-		joinedOrders := strings.Join(params.OrderBy, ", ")
-		ginutil.WriteInvalidParamError(c, err, "orderby", fmt.Sprintf(
-			"Failed parsing the %d sort ordering values: %s",
-			len(params.OrderBy),
-			joinedOrders))
+	orderBySlice, ok := parseCommonOrderBySlice(c, params.OrderBy, tokenJSONToColumns)
+	if !ok {
 		return
 	}
 
@@ -99,18 +90,11 @@ func (m tokenModule) getTokenListHandler(c *gin.Context) {
 		)
 
 	var dbTokens []database.Token
-	err = query.
-		Scopes(optionalLimitOffsetScope(params.Limit, params.Offset)).
-		Find(&dbTokens).
-		Error
+	var totalCount int64
+	err := findDBPaginatedSliceAndTotalCount(query, params.Limit, params.Offset, &dbTokens, &totalCount)
 	if err != nil {
 		ginutil.WriteDBReadError(c, err, "Failed fetching list of tokens from database.")
 		return
-	}
-
-	var totalCount int64
-	if err := query.Count(&totalCount).Error; err != nil {
-		ginutil.WriteDBReadError(c, err, "Failed fetching tokens count from database.")
 	}
 
 	c.JSON(http.StatusOK, response.PaginatedTokens{

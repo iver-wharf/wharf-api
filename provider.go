@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"strings"
 
 	"net/http"
 
@@ -56,8 +55,8 @@ var defaultGetProvidersOrderBy = orderby.Column{Name: database.ProviderColumns.P
 // @description Verbatim filters will match on the entire string used to find exact matches,
 // @description while the matching filters are meant for searches by humans where it tries to find soft matches and is therefore inaccurate by nature.
 // @tags build
-// @param limit query int false "Number of results to return. No limit if unset or non-positive."
-// @param offset query int false "Skipped results, where 0 means from the start." minimum(0)
+// @param limit query int false "Number of results to return. No limit if unset or non-positive. Required if `offset` is used." default(100)
+// @param offset query int false "Skipped results, where 0 means from the start." minimum(0) default(0)
 // @param orderby query []string false "Sorting orders. Takes the property name followed by either 'asc' or 'desc'. Can be specified multiple times for more granular sorting. Defaults to `?orderby=providerId desc`"
 // @param name query string false "Filter by verbatim provider name."
 // @param url query string false "Filter by verbatim provider URL."
@@ -71,10 +70,7 @@ var defaultGetProvidersOrderBy = orderby.Column{Name: database.ProviderColumns.P
 // @router /provider [get]
 func (m providerModule) getProviderListHandler(c *gin.Context) {
 	var params = struct {
-		Limit  int `form:"limit"`
-		Offset int `form:"offset" binding:"min=0"`
-
-		OrderBy []string `form:"orderby"`
+		commonGetQueryParams
 
 		Name *string `form:"name"`
 		URL  *string `form:"url"`
@@ -83,18 +79,14 @@ func (m providerModule) getProviderListHandler(c *gin.Context) {
 		URLMatch  *string `form:"urlMatch" binding:"excluded_with=URL"`
 
 		Match *string `form:"match"`
-	}{}
-	if err := c.ShouldBindQuery(&params); err != nil {
-		ginutil.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading query parameters.")
+	}{
+		commonGetQueryParams: defaultCommonGetQueryParams,
+	}
+	if !bindCommonGetQueryParams(c, &params) {
 		return
 	}
-	orderBySlice, err := orderby.ParseSlice(params.OrderBy, providerJSONToColumns)
-	if err != nil {
-		joinedOrders := strings.Join(params.OrderBy, ", ")
-		ginutil.WriteInvalidParamError(c, err, "orderby", fmt.Sprintf(
-			"Failed parsing the %d sort ordering values: %s",
-			len(params.OrderBy),
-			joinedOrders))
+	orderBySlice, ok := parseCommonOrderBySlice(c, params.OrderBy, providerJSONToColumns)
+	if !ok {
 		return
 	}
 
@@ -118,18 +110,11 @@ func (m providerModule) getProviderListHandler(c *gin.Context) {
 		)
 
 	var dbProviders []database.Provider
-	err = query.
-		Scopes(optionalLimitOffsetScope(params.Limit, params.Offset)).
-		Find(&dbProviders).
-		Error
+	var totalCount int64
+	err := findDBPaginatedSliceAndTotalCount(query, params.Limit, params.Offset, &dbProviders, &totalCount)
 	if err != nil {
 		ginutil.WriteDBReadError(c, err, "Failed fetching list of providers from database.")
 		return
-	}
-
-	var totalCount int64
-	if err := query.Count(&totalCount).Error; err != nil {
-		ginutil.WriteDBReadError(c, err, "Failed fetching providers count from database.")
 	}
 
 	c.JSON(http.StatusOK, response.PaginatedProviders{

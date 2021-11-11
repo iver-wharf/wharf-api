@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"strings"
 	"time"
 
 	"net/http"
@@ -123,7 +122,7 @@ var defaultGetBuildsOrderBy = orderby.Column{Name: database.BuildColumns.BuildID
 // @description Verbatim filters will match on the entire string used to find exact matches,
 // @description while the matching filters are meant for searches by humans where it tries to find soft matches and is therefore inaccurate by nature.
 // @tags build
-// @param limit query int false "Number of results to return. No limit if unset or non-positive." default(100)
+// @param limit query int false "Number of results to return. No limit if unset or non-positive. Required if `offset` is used." default(100)
 // @param offset query int false "Skipped results, where 0 means from the start." minimum(0) default(0)
 // @param orderby query []string false "Sorting orders. Takes the property name followed by either 'asc' or 'desc'. Can be specified multiple times for more granular sorting. Defaults to `?orderby=buildId desc`"
 // @param projectId query uint false "Filter by project ID."
@@ -148,10 +147,7 @@ var defaultGetBuildsOrderBy = orderby.Column{Name: database.BuildColumns.BuildID
 // @router /build [get]
 func (m buildModule) getBuildListHandler(c *gin.Context) {
 	var params = struct {
-		Limit  int `form:"limit"`
-		Offset int `form:"offset" binding:"min=0"`
-
-		OrderBy []string `form:"orderby"`
+		commonGetQueryParams
 
 		ScheduledAfter  *time.Time `form:"scheduledAfter"`
 		ScheduledBefore *time.Time `form:"scheduledBefore"`
@@ -174,27 +170,19 @@ func (m buildModule) getBuildListHandler(c *gin.Context) {
 
 		Match *string `form:"match"`
 	}{
-		Limit:  100,
-		Offset: 0,
+		commonGetQueryParams: defaultCommonGetQueryParams,
 	}
-	if err := c.ShouldBindQuery(&params); err != nil {
-		ginutil.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading query parameters.")
+	if !bindCommonGetQueryParams(c, &params) {
 		return
 	}
-	orderBySlice, err := orderby.ParseSlice(params.OrderBy, buildJSONToColumns)
-	if err != nil {
-		joinedOrders := strings.Join(params.OrderBy, ", ")
-		ginutil.WriteInvalidParamError(c, err, "orderby", fmt.Sprintf(
-			"Failed parsing the %d sort ordering values: %s",
-			len(params.OrderBy),
-			joinedOrders))
+	orderBySlice, ok := parseCommonOrderBySlice(c, params.OrderBy, buildJSONToColumns)
+	if !ok {
 		return
 	}
 
 	var where wherefields.Collection
 
 	var statusID database.BuildStatus
-	var ok bool
 	if params.StatusID != nil {
 		statusID = database.BuildStatus(*params.StatusID)
 		if !statusID.IsValid() {
@@ -241,18 +229,11 @@ func (m buildModule) getBuildListHandler(c *gin.Context) {
 		)
 
 	var dbBuilds []database.Build
-	err = query.
-		Scopes(optionalLimitOffsetScope(params.Limit, params.Offset)).
-		Find(&dbBuilds).
-		Error
+	var totalCount int64
+	err := findDBPaginatedSliceAndTotalCount(query, params.Limit, params.Offset, &dbBuilds, &totalCount)
 	if err != nil {
 		ginutil.WriteDBReadError(c, err, "Failed fetching list of builds from database.")
 		return
-	}
-
-	var totalCount int64
-	if err := query.Count(&totalCount).Error; err != nil {
-		ginutil.WriteDBReadError(c, err, "Failed fetching builds count from database.")
 	}
 
 	c.JSON(http.StatusOK, response.PaginatedBuilds{
