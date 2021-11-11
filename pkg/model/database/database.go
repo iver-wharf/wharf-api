@@ -27,6 +27,15 @@ import (
 // One seems to take precedence, but to make sure and to keep the code
 // consistent we add it to both referencing fields.
 
+// timeMetadata contains fields that GORM will recognize and update
+// automatically for us.
+//
+// Docs: https://gorm.io/docs/models.html#Creating-Updating-Time-Unix-Milli-Nano-Seconds-Tracking
+type timeMetadata struct {
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
 // ProviderFields holds the Go struct field names for each field.
 // Useful in GORM .Where() statements to only select certain fields or in GORM
 // Preload statements to select the correct field to preload.
@@ -44,6 +53,7 @@ var ProviderFields = struct {
 // importance are the URL field of where to find the remote, and the token field
 // used to authenticate.
 type Provider struct {
+	timeMetadata
 	ProviderID uint   `gorm:"primaryKey"`
 	Name       string `gorm:"size:20;not null"`
 	URL        string `gorm:"size:500;not null"`
@@ -64,6 +74,7 @@ var TokenFields = struct {
 
 // Token holds credentials for a remote provider.
 type Token struct {
+	timeMetadata
 	TokenID  uint   `gorm:"primaryKey"`
 	Token    string `gorm:"size:500;not null"`
 	UserName string `gorm:"size:500;not null;default:''"`
@@ -123,6 +134,7 @@ var ProjectColumns = struct {
 // to be populated with data from the remote provider, such as the description
 // and avatar.
 type Project struct {
+	timeMetadata
 	ProjectID       uint      `gorm:"primaryKey"`
 	Name            string    `gorm:"size:500;not null"`
 	GroupName       string    `gorm:"size:500;not null;default:''"`
@@ -166,6 +178,7 @@ var BranchColumns = struct {
 // Branch is a single branch in the VCS that can be targeted during builds.
 // For example a Git branch.
 type Branch struct {
+	timeMetadata
 	BranchID  uint     `gorm:"primaryKey"`
 	ProjectID uint     `gorm:"not null;index:branch_idx_project_id"`
 	Project   *Project `gorm:"foreignKey:ProjectID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
@@ -212,6 +225,7 @@ var BuildColumns = struct {
 // Build holds data about the state of a build. Which parameters was used to
 // start it, what status it holds, et.al.
 type Build struct {
+	timeMetadata
 	BuildID             uint                `gorm:"primaryKey"`
 	StatusID            BuildStatus         `gorm:"not null"`
 	ProjectID           uint                `gorm:"not null;index:build_idx_project_id"`
@@ -322,6 +336,7 @@ var ArtifactFields = struct {
 // Artifact holds the binary data as well as metadata about that binary such as
 // the file name and which build it belongs to.
 type Artifact struct {
+	timeMetadata
 	ArtifactID uint   `gorm:"primaryKey"`
 	BuildID    uint   `gorm:"not null;index:artifact_idx_build_id"`
 	Build      *Build `gorm:"foreignKey:BuildID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
@@ -341,6 +356,7 @@ var TestResultSummaryFields = struct {
 
 // TestResultSummary contains data about a single test result file.
 type TestResultSummary struct {
+	timeMetadata
 	TestResultSummaryID uint      `gorm:"primaryKey"`
 	FileName            string    `gorm:"not null;default:''"`
 	ArtifactID          uint      `gorm:"not null;index:testresultsummary_idx_artifact_id"`
@@ -367,6 +383,7 @@ const (
 
 // TestResultDetail contains data about a single test in a test result file.
 type TestResultDetail struct {
+	timeMetadata
 	TestResultDetailID uint             `gorm:"primaryKey"`
 	ArtifactID         uint             `gorm:"not null;index:testresultdetail_idx_artifact_id"`
 	Artifact           *Artifact        `gorm:"foreignKey:ArtifactID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
