@@ -18,6 +18,15 @@ func (m BuildModule) Register(g *gin.RouterGroup) {
 	{
 		builds.POST("/search", m.searchBuildListHandler)
 	}
+
+	build := g.Group("/build")
+	{
+		buildByID := build.Group("/:buildId")
+		{
+			artifacts := artifactModule{m.Database}
+			artifacts.Register(buildByID)
+		}
+	}
 }
 
 // searchBuildListHandler godoc
