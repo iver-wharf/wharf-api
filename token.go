@@ -23,11 +23,6 @@ type tokenModule struct {
 }
 
 func (m tokenModule) Register(g *gin.RouterGroup) {
-	tokens := g.Group("/tokens")
-	{
-		tokens.POST("/search", m.searchTokenListHandler)
-	}
-
 	token := g.Group("/token")
 	{
 		token.GET("", m.getTokenListHandler)
@@ -55,7 +50,7 @@ var defaultGetTokensOrderBy = orderby.Column{Name: database.TokenColumns.TokenID
 // @description List all tokens, or a window of tokens using the `limit` and `offset` query parameters. Allows optional filtering parameters.
 // @description Verbatim filters will match on the entire string used to find exact matches,
 // @description while the matching filters are meant for searches by humans where it tries to find soft matches and is therefore inaccurate by nature.
-// @tags build
+// @tags token
 // @param limit query int false "Number of results to return. No limit if unset or non-positive."
 // @param offset query int false "Skipped results, where 0 means from the start." minimum(0)
 // @param orderby query []string false "Sorting orders. Takes the property name followed by either 'asc' or 'desc'. Can be specified multiple times for more granular sorting. Defaults to `?orderby=tokenId desc`"
@@ -147,47 +142,6 @@ func (m tokenModule) getTokenHandler(c *gin.Context) {
 
 	resToken := modelconv.DBTokenToResponse(dbToken)
 	c.JSON(http.StatusOK, resToken)
-}
-
-// searchTokenListHandler godoc
-// @id searchTokenList
-// @summary Returns arrays of tokens that match to search criteria.
-// @description Returns arrays of tokens that match to search criteria.
-// @description It takes into consideration only token string and user name.
-// @tags token
-// @accept json
-// @produce json
-// @param token body request.TokenSearch _ "Token search criteria"
-// @success 200 {object} []response.Token
-// @failure 400 {object} problem.Response "Bad request"
-// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
-// @failure 502 {object} problem.Response "Database is unreachable"
-// @router /tokens/search [post]
-func (m tokenModule) searchTokenListHandler(c *gin.Context) {
-	var reqToken request.Token
-	if err := c.ShouldBindJSON(&reqToken); err != nil {
-		ginutil.WriteInvalidBindError(c, err,
-			"One or more parameters failed to parse when reading the request body for the token object to search with.")
-		return
-	}
-
-	var dbTokens []database.Token
-	err := m.Database.
-		Where(&database.Token{
-			Token:    reqToken.Token,
-			UserName: reqToken.UserName,
-		}, database.TokenFields.Token, database.TokenFields.UserName).
-		Find(&dbTokens).
-		Error
-	if err != nil {
-		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
-			"Failed searching for token by value and with username %q in database.",
-			reqToken.UserName))
-		return
-	}
-
-	resTokens := modelconv.DBTokensToResponses(dbTokens)
-	c.JSON(http.StatusOK, resTokens)
 }
 
 // createTokenHandler godoc
