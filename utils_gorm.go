@@ -45,7 +45,7 @@ func optionalLimitOffsetScope(limit, offset int) func(*gorm.DB) *gorm.DB {
 	if limit <= 0 {
 		return gormIdentityScope
 	}
-	if offset <= 0 {
+	if offset < 0 {
 		offset = 0
 	}
 	return func(db *gorm.DB) *gorm.DB {

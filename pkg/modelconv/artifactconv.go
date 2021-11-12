@@ -15,8 +15,8 @@ func DBArtifactToResponse(dbArtifact database.Artifact) response.Artifact {
 	}
 }
 
-// DBArtifactsToResponses converts a slice of database branches to a slice of
-// response branches.
+// DBArtifactsToResponses converts a slice of database artifacts to a slice of
+// response artifacts.
 func DBArtifactsToResponses(dbArtifacts []database.Artifact) []response.Artifact {
 	resArtifacts := make([]response.Artifact, len(dbArtifacts))
 	for i, dbArtifact := range dbArtifacts {

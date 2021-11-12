@@ -16,7 +16,7 @@ var ArtifactJSONFields = struct {
 	Name       string
 	FileName   string
 }{
-	ArtifactID: "artifactsId",
+	ArtifactID: "artifactId",
 	Name:       "name",
 	FileName:   "fileName",
 }
