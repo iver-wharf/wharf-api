@@ -373,7 +373,6 @@ func (m projectModule) updateProjectHandler(c *gin.Context) {
 // @description Overridden field will take precedence when retreiving the project or in newly started builds,
 // @description but will stay unaffected by regular project updates.
 // @tags project
-// @accept json
 // @produce json
 // @param projectId path uint true "project ID" minimum(0)
 // @success 200 {object} response.ProjectOverrides
