@@ -65,7 +65,7 @@ var defaultGetProjectsOrderBy = orderby.Column{Name: database.ProjectColumns.Pro
 // @description while the matching filters are meant for searches by humans where it tries to find soft matches and is therefore inaccurate by nature.
 // @tags project
 // @param orderby query []string false "Sorting orders. Takes the property name followed by either 'asc' or 'desc'. Can be specified multiple times for more granular sorting. Defaults to `?orderby=projectId desc`"
-// @param limit query int false "Number of results to return. No limit if unset or non-positive. Required if `offset` is used." default(100)
+// @param limit query int false "Number of results to return. No limiting is applied if empty (`?limit=`) or non-positive (`?limit=0`). Required if `offset` is used." default(100)
 // @param offset query int false "Skipped results, where 0 means from the start." minimum(0) default(0)
 // @param name query string false "Filter by verbatim project name."
 // @param groupName query string false "Filter by verbatim project group."
