@@ -75,3 +75,14 @@ func ParseBuildDefinition(buildDef string) (interface{}, error) {
 	}
 	return parsed, nil
 }
+
+// DBProjectOverridesToResponse converts a database project's overrides to a
+// response project's overrides.
+func DBProjectOverridesToResponse(dbProjectOverrides database.ProjectOverrides) response.ProjectOverrides {
+	return response.ProjectOverrides{
+		ProjectID:   dbProjectOverrides.ProjectID,
+		Description: dbProjectOverrides.Description,
+		AvatarURL:   dbProjectOverrides.AvatarURL,
+		GitURL:      dbProjectOverrides.GitURL,
+	}
+}

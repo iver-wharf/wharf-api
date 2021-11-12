@@ -108,6 +108,13 @@ type ProjectUpdate struct {
 	GitURL          string `json:"gitUrl"`
 }
 
+// ProjectOverridesUpdate specifies fields when updating a project's overrides.
+type ProjectOverridesUpdate struct {
+	Description string `json:"description"`
+	AvatarURL   string `json:"avatarUrl"`
+	GitURL      string `json:"gitUrl"`
+}
+
 // ProviderName is an enum of different providers that are available over at
 // https://github.com/iver-wharf
 type ProviderName string

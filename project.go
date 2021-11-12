@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"strconv"
@@ -48,6 +49,7 @@ func (m projectModule) Register(g *gin.RouterGroup) {
 		project.POST("/:projectId/:stage/run", m.startProjectBuildHandler)
 		project.GET("/:projectId/override", m.getProjectOverridesHandler)
 		project.PUT("/:projectId/override", m.updateProjectOverridesHandler)
+		project.DELETE("/:projectId/override", m.deleteProjectOverridesHandler)
 	}
 }
 
@@ -381,6 +383,29 @@ func (m projectModule) updateProjectHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /project/{projectId}/override [get]
 func (m projectModule) getProjectOverridesHandler(c *gin.Context) {
+	projectID, ok := ginutil.ParseParamUint(c, "projectId")
+	if !ok {
+		return
+	}
+
+	var dbProjectOverrides database.ProjectOverrides
+	err := m.Database.
+		Where(&database.ProjectOverrides{
+			ProjectID: projectID,
+		}).
+		First(&dbProjectOverrides).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		// fake that it exists
+		dbProjectOverrides.ProjectID = projectID
+	} else if err != nil {
+		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
+			"Failed reading project overrides for project with ID %d to database.",
+			projectID))
+		return
+	}
+
+	resProject := modelconv.DBProjectOverridesToResponse(dbProjectOverrides)
+	c.JSON(http.StatusOK, resProject)
 }
 
 // updateProjectOverridesHandler godoc
@@ -394,7 +419,7 @@ func (m projectModule) getProjectOverridesHandler(c *gin.Context) {
 // @accept json
 // @produce json
 // @param projectId path uint true "project ID" minimum(0)
-// @param project body request.ProjectUpdate _ "New project overrides" //TODO
+// @param overrides body request.ProjectOverridesUpdate _ "New project overrides"
 // @success 200 {object} response.ProjectOverrides
 // @failure 400 {object} problem.Response "Bad request, such as invalid body JSON"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
@@ -402,6 +427,73 @@ func (m projectModule) getProjectOverridesHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /project/{projectId}/override [put]
 func (m projectModule) updateProjectOverridesHandler(c *gin.Context) {
+	projectID, ok := ginutil.ParseParamUint(c, "projectId")
+	if !ok {
+		return
+	}
+	var reqOverridesUpdate request.ProjectOverridesUpdate
+	err := c.ShouldBindJSON(&reqOverridesUpdate)
+	if err != nil {
+		ginutil.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading the request body.")
+		return
+	}
+
+	var dbProjectOverrides database.ProjectOverrides
+	err = m.Database.
+		Where(&database.ProjectOverrides{
+			ProjectID: projectID,
+		}).
+		FirstOrCreate(&dbProjectOverrides).Error
+	if err != nil {
+		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
+			"Failed reading project overrides for project with ID %d to database.",
+			projectID))
+		return
+	}
+
+	dbProjectOverrides.Description = reqOverridesUpdate.Description
+	dbProjectOverrides.AvatarURL = reqOverridesUpdate.AvatarURL
+	dbProjectOverrides.GitURL = reqOverridesUpdate.GitURL
+
+	if err := m.Database.Save(&dbProjectOverrides).Error; err != nil {
+		ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
+			"Failed writing project overrides for project with ID %d to database.",
+			projectID))
+		return
+	}
+
+	resProject := modelconv.DBProjectOverridesToResponse(dbProjectOverrides)
+	c.JSON(http.StatusOK, resProject)
+}
+
+// deleteProjectOverridesHandler godoc
+// @id deleteProjectOverrides
+// @summary Delete project's overrides with selected project ID
+// @description This will revert all overrides to the specified project.
+// @description Equivalent to running `PUT /project/{projectId}/overrides` with all fields set to `null`.
+// @tags project
+// @param projectId path uint true "project ID" minimum(0)
+// @success 204 "Deleted"
+// @failure 502 {object} problem.Response "Database is unreachable"
+// @failure 400 {object} problem.Response "Bad request"
+// @failure 404 {object} problem.Response "Project to delete overrides from is not found"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @router /project/{projectId}/override [delete]
+func (m projectModule) deleteProjectOverridesHandler(c *gin.Context) {
+	projectID, ok := ginutil.ParseParamUint(c, "projectId")
+	if !ok {
+		return
+	}
+	err := m.Database.
+		Where(&database.ProjectOverrides{
+			ProjectID: projectID,
+		}).
+		Delete(&database.ProjectOverrides{}).Error
+	if err != nil {
+		ginutil.WriteDBWriteError(c, err, fmt.Sprintf("Failed deleting project overrides for project with ID %d from database.", projectID))
+		return
+	}
+	c.Status(http.StatusNoContent)
 }
 
 // startProjectBuildHandler godoc
