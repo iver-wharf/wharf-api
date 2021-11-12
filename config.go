@@ -121,6 +121,13 @@ type CORSConfig struct {
 	//
 	// Added in v4.2.0.
 	AllowAllOrigins bool
+
+	// AllowOrigins enables CORS and allows the list of origins in the
+	// HTTP request origins when set. Practically speaking, this
+	// results in the HTTP header "Access-Control-Allow-Origin".
+	//
+	// Added in v5.0.0.
+	AllowOrigins []string
 }
 
 // CertConfig holds settings for certificates verification used when talking
