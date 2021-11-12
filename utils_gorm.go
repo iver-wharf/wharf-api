@@ -12,8 +12,8 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-func findDBPaginatedSliceAndTotalCount(dbQuery *gorm.DB, limit, offset int, slice interface{}, totalCount *int64) error {
-	err := dbQuery.Scopes(optionalLimitOffsetScope(limit, offset)).Find(slice).Error
+func findDBPaginatedSliceAndTotalCount(dbQuery *gorm.DB, limit, offset int, slicePtr interface{}, totalCount *int64) error {
+	err := dbQuery.Scopes(optionalLimitOffsetScope(limit, offset)).Find(slicePtr).Error
 	if err != nil {
 		return err
 	}
