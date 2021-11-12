@@ -1,10 +1,18 @@
+# Swaggo generated files
 /docs/
+
+# Editor files
 *.swp
-*.exe
-.idea
+.idea/
+.vscode/
+
+# NPM
 /node_modules/
 /package-lock.json
-*.db
 
+# Binaries
+*.db
+*.tar
+*.tar.gz
+*.exe
 /wharf-api
-/wharf-api.exe
