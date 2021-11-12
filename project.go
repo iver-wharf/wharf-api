@@ -47,7 +47,7 @@ func (m projectModule) Register(g *gin.RouterGroup) {
 	}
 }
 
-var projectJSONToColumns = map[string]string{
+var projectJSONToColumns = map[string]database.SafeSQLName{
 	response.ProjectJSONFields.ProjectID:   database.ProjectColumns.ProjectID,
 	response.ProjectJSONFields.Name:        database.ProjectColumns.Name,
 	response.ProjectJSONFields.GroupName:   database.ProjectColumns.GroupName,
@@ -121,7 +121,7 @@ func (m projectModule) getProjectListHandler(c *gin.Context) {
 			GitURL:     where.String(database.ProjectFields.GitURL, params.GitURL),
 		}, where.NonNilFieldNames()...).
 		Scopes(
-			whereLikeScope(map[string]*string{
+			whereLikeScope(map[database.SafeSQLName]*string{
 				database.ProjectColumns.Name:        params.NameMatch,
 				database.ProjectColumns.GroupName:   params.GroupNameMatch,
 				database.ProjectColumns.Description: params.DescriptionMatch,

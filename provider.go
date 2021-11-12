@@ -35,7 +35,7 @@ func (m providerModule) Register(g *gin.RouterGroup) {
 	}
 }
 
-var providerJSONToColumns = map[string]string{
+var providerJSONToColumns = map[string]database.SafeSQLName{
 	response.ProviderJSONFields.ProviderID: database.ProviderColumns.ProviderID,
 	response.ProviderJSONFields.Name:       database.ProviderColumns.Name,
 	response.ProviderJSONFields.URL:        database.ProviderColumns.URL,
@@ -93,7 +93,7 @@ func (m providerModule) getProviderListHandler(c *gin.Context) {
 			URL:  where.String(database.ProviderFields.URL, params.URL),
 		}, where.NonNilFieldNames()...).
 		Scopes(
-			whereLikeScope(map[string]*string{
+			whereLikeScope(map[database.SafeSQLName]*string{
 				database.ProviderColumns.Name: params.NameMatch,
 				database.ProviderColumns.URL:  params.URLMatch,
 			}),

@@ -35,7 +35,7 @@ func (m tokenModule) Register(g *gin.RouterGroup) {
 	}
 }
 
-var tokenJSONToColumns = map[string]string{
+var tokenJSONToColumns = map[string]database.SafeSQLName{
 	response.TokenJSONFields.TokenID:  database.TokenColumns.TokenID,
 	response.TokenJSONFields.Token:    database.TokenColumns.Token,
 	response.TokenJSONFields.UserName: database.TokenColumns.UserName,
@@ -84,7 +84,7 @@ func (m tokenModule) getTokenListHandler(c *gin.Context) {
 			UserName: where.String(database.TokenFields.UserName, params.UserName),
 		}, where.NonNilFieldNames()...).
 		Scopes(
-			whereLikeScope(map[string]*string{
+			whereLikeScope(map[database.SafeSQLName]*string{
 				database.TokenColumns.UserName: params.UserNameMatch,
 			}),
 		)

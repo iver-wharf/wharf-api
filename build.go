@@ -102,7 +102,7 @@ func (m buildModule) getBuildHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, resBuild)
 }
 
-var buildJSONToColumns = map[string]string{
+var buildJSONToColumns = map[string]database.SafeSQLName{
 	response.BuildJSONFields.BuildID:     database.BuildColumns.BuildID,
 	response.BuildJSONFields.Environment: database.BuildColumns.Environment,
 	response.BuildJSONFields.CompletedOn: database.BuildColumns.CompletedOn,
@@ -190,7 +190,7 @@ func (m buildModule) getBuildListHandler(c *gin.Context) {
 			ginutil.WriteInvalidParamError(c, err, "statusId", fmt.Sprintf("Invalid build status ID: %d", *params.StatusID))
 			return
 		}
-		where.AddFieldName(database.BuildColumns.StatusID)
+		where.AddFieldName(database.BuildFields.StatusID)
 	} else if params.Status != nil {
 		reqStatusID := request.BuildStatus(*params.Status)
 		statusID, ok = modelconv.ReqBuildStatusToDatabase(reqStatusID)
@@ -199,7 +199,7 @@ func (m buildModule) getBuildListHandler(c *gin.Context) {
 			ginutil.WriteInvalidParamError(c, err, "status", fmt.Sprintf("Invalid build status: %q", *params.Status))
 			return
 		}
-		where.AddFieldName(database.BuildColumns.StatusID)
+		where.AddFieldName(database.BuildFields.StatusID)
 	}
 
 	query := m.Database.
@@ -215,7 +215,7 @@ func (m buildModule) getBuildListHandler(c *gin.Context) {
 		Scopes(
 			optionalTimeRangeScope(database.BuildColumns.ScheduledOn, params.ScheduledAfter, params.ScheduledBefore),
 			optionalTimeRangeScope(database.BuildColumns.CompletedOn, params.FinishedAfter, params.FinishedBefore),
-			whereLikeScope(map[string]*string{
+			whereLikeScope(map[database.SafeSQLName]*string{
 				database.BuildColumns.Environment: params.EnvironmentMatch,
 				database.BuildColumns.GitBranch:   params.GitBranchMatch,
 				database.BuildColumns.Stage:       params.StageMatch,

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -56,18 +57,18 @@ func optionalLimitOffsetScope(limit, offset int) func(*gorm.DB) *gorm.DB {
 	}
 }
 
-func optionalTimeRangeScope(column string, min, max *time.Time) func(*gorm.DB) *gorm.DB {
+func optionalTimeRangeScope(column database.SafeSQLName, min, max *time.Time) func(*gorm.DB) *gorm.DB {
 	if min == nil && max == nil {
 		return gormIdentityScope
 	}
 	return func(db *gorm.DB) *gorm.DB {
 		switch {
 		case min == nil:
-			return db.Where(column+" < ?", *max)
+			return db.Where(string(column)+" < ?", *max)
 		case max == nil:
-			return db.Where(column+" > ?", *min)
+			return db.Where(string(column)+" > ?", *min)
 		default:
-			return db.Where(column+" BETWEEN ? AND ?", *min, *max)
+			return db.Where(string(column)+" BETWEEN ? AND ?", *min, *max)
 		}
 	}
 }
@@ -76,7 +77,7 @@ func gormIdentityScope(db *gorm.DB) *gorm.DB {
 	return db
 }
 
-func whereLikeScope(pairs map[string]*string) func(*gorm.DB) *gorm.DB {
+func whereLikeScope(pairs map[database.SafeSQLName]*string) func(*gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		b := newGormClauseBuilder(db.Dialector)
 		expressions := b.likeExprsFromMap(pairs)
@@ -87,7 +88,7 @@ func whereLikeScope(pairs map[string]*string) func(*gorm.DB) *gorm.DB {
 	}
 }
 
-func whereAnyLikeScope(value *string, keys ...string) func(*gorm.DB) *gorm.DB {
+func whereAnyLikeScope(value *string, keys ...database.SafeSQLName) func(*gorm.DB) *gorm.DB {
 	if value == nil || *value == "" {
 		return gormIdentityScope
 	}
@@ -109,7 +110,7 @@ func newGormClauseBuilder(dialector gorm.Dialector) gormClauseBuilder {
 	return gormClauseBuilder{dialect: DBDriver(dialector.Name())}
 }
 
-func (b gormClauseBuilder) likeExprsFromMap(pairs map[string]*string) []clause.Expression {
+func (b gormClauseBuilder) likeExprsFromMap(pairs map[database.SafeSQLName]*string) []clause.Expression {
 	if len(pairs) == 0 {
 		return nil
 	}
@@ -122,7 +123,7 @@ func (b gormClauseBuilder) likeExprsFromMap(pairs map[string]*string) []clause.E
 	return expressions
 }
 
-func (b gormClauseBuilder) likeExprsFromSliceSameValue(value *string, keys ...string) []clause.Expression {
+func (b gormClauseBuilder) likeExprsFromSliceSameValue(value *string, keys ...database.SafeSQLName) []clause.Expression {
 	if len(keys) == 0 {
 		return nil
 	}
@@ -138,7 +139,7 @@ func (b gormClauseBuilder) likeExprsFromSliceSameValue(value *string, keys ...st
 	return expressions
 }
 
-func (b gormClauseBuilder) likeExpr(key string, value *string) clause.Expression {
+func (b gormClauseBuilder) likeExpr(key database.SafeSQLName, value *string) clause.Expression {
 	if value == nil || *value == "" {
 		return nil
 	}
@@ -146,11 +147,11 @@ func (b gormClauseBuilder) likeExpr(key string, value *string) clause.Expression
 	if b.dialect == DBDriverPostgres {
 		// ILIKE is the case insensitive LIKE in PostgreSQL
 		// https://www.postgresql.org/docs/9.6/functions-matching.html#FUNCTIONS-LIKE
-		sqlString = key + ` ILIKE ? ESCAPE '\'`
+		sqlString = string(key) + ` ILIKE ? ESCAPE '\'`
 	} else {
 		// Sqlite is always case-insensitive
 		// https://www.sqlite.org/lang_expr.html#like
-		sqlString = key + ` LIKE ? ESCAPE '\'`
+		sqlString = string(key) + ` LIKE ? ESCAPE '\'`
 	}
 	return clause.Expr{
 		SQL:  sqlString,

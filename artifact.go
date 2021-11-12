@@ -31,7 +31,7 @@ func (m artifactModule) Register(g *gin.RouterGroup) {
 	g.GET("/tests-results", m.getBuildTestResultListHandler)
 }
 
-var artifactJSONToColumns = map[string]string{
+var artifactJSONToColumns = map[string]database.SafeSQLName{
 	response.ArtifactJSONFields.ArtifactID: database.ArtifactColumns.ArtifactID,
 	response.ArtifactJSONFields.Name:       database.ArtifactColumns.Name,
 	response.ArtifactJSONFields.FileName:   database.ArtifactColumns.FileName,
@@ -97,7 +97,7 @@ func (m artifactModule) getBuildArtifactListHandler(c *gin.Context) {
 			FileName: where.String(database.ArtifactFields.FileName, params.FileName),
 		}, where.NonNilFieldNames()...).
 		Scopes(
-			whereLikeScope(map[string]*string{
+			whereLikeScope(map[database.SafeSQLName]*string{
 				database.ArtifactColumns.Name:     params.NameMatch,
 				database.ArtifactColumns.FileName: params.FileNameMatch,
 			}),

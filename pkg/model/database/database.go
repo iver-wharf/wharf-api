@@ -27,6 +27,13 @@ import (
 // One seems to take precedence, but to make sure and to keep the code
 // consistent we add it to both referencing fields.
 
+// SafeSQLName represents a value that is safe to use as an SQL table or column
+// name without the need of escaping.
+//
+// It is merely semantical and has no validation attached. Values of this type
+// should never be constructed from user input.
+type SafeSQLName string
+
 // ProviderFields holds the Go struct field names for each field.
 // Useful in GORM .Where() statements to only select certain fields or in GORM
 // Preload statements to select the correct field to preload.
@@ -46,10 +53,10 @@ var ProviderFields = struct {
 // Useful in GORM .Order() statements to order the results based on a specific
 // column, which does not support the regular Go field names.
 var ProviderColumns = struct {
-	ProviderID string
-	Name       string
-	URL        string
-	TokenID    string
+	ProviderID SafeSQLName
+	Name       SafeSQLName
+	URL        SafeSQLName
+	TokenID    SafeSQLName
 }{
 	ProviderID: "provider_id",
 	Name:       "name",
@@ -85,9 +92,9 @@ var TokenFields = struct {
 // Useful in GORM .Order() statements to order the results based on a specific
 // column, which does not support the regular Go field names.
 var TokenColumns = struct {
-	TokenID  string
-	Token    string
-	UserName string
+	TokenID  SafeSQLName
+	Token    SafeSQLName
+	UserName SafeSQLName
 }{
 	TokenID:  "token_id",
 	Token:    "token",
@@ -136,12 +143,12 @@ var ProjectFields = struct {
 // Useful in GORM .Order() statements to order the results based on a specific
 // column, which does not support the regular Go field names.
 var ProjectColumns = struct {
-	ProjectID   string
-	Name        string
-	GroupName   string
-	Description string
-	TokenID     string
-	GitURL      string
+	ProjectID   SafeSQLName
+	Name        SafeSQLName
+	GroupName   SafeSQLName
+	Description SafeSQLName
+	TokenID     SafeSQLName
+	GitURL      SafeSQLName
 }{
 	ProjectID:   "project_id",
 	Name:        "name",
@@ -188,8 +195,8 @@ var BranchFields = struct {
 // Useful in GORM .Order() statements to order the results based on a specific
 // column, which does not support the regular Go field names.
 var BranchColumns = struct {
-	BranchID string
-	Name     string
+	BranchID SafeSQLName
+	Name     SafeSQLName
 }{
 	BranchID: "branch_id",
 	Name:     "name",
@@ -212,6 +219,7 @@ type Branch struct {
 // Preload statements to select the correct field to preload.
 var BuildFields = struct {
 	ProjectID           string
+	StatusID            string
 	GitBranch           string
 	Environment         string
 	Stage               string
@@ -220,6 +228,7 @@ var BuildFields = struct {
 	TestResultSummaries string
 }{
 	ProjectID:           "ProjectID",
+	StatusID:            "StatusID",
 	GitBranch:           "GitBranch",
 	Environment:         "Environment",
 	Stage:               "Stage",
@@ -232,15 +241,15 @@ var BuildFields = struct {
 // Useful in GORM .Order() statements to order the results based on a specific
 // column, which does not support the regular Go field names.
 var BuildColumns = struct {
-	BuildID     string
-	StatusID    string
-	ScheduledOn string
-	StartedOn   string
-	CompletedOn string
-	GitBranch   string
-	Environment string
-	Stage       string
-	IsInvalid   string
+	BuildID     SafeSQLName
+	StatusID    SafeSQLName
+	ScheduledOn SafeSQLName
+	StartedOn   SafeSQLName
+	CompletedOn SafeSQLName
+	GitBranch   SafeSQLName
+	Environment SafeSQLName
+	Stage       SafeSQLName
+	IsInvalid   SafeSQLName
 }{
 	BuildID:     "build_id",
 	StatusID:    "status_id",
@@ -347,9 +356,9 @@ type Param struct {
 // Useful in GORM .Order() statements to order the results based on a specific
 // column, which does not support the regular Go field names.
 var ArtifactColumns = struct {
-	ArtifactID string
-	Name       string
-	FileName   string
+	ArtifactID SafeSQLName
+	Name       SafeSQLName
+	FileName   SafeSQLName
 }{
 	ArtifactID: "artifact_id",
 	Name:       "name",

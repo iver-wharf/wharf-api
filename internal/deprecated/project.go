@@ -131,7 +131,7 @@ func (m ProjectModule) searchProjectListHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, resProjects)
 }
 
-var buildJSONToColumns = map[string]string{
+var buildJSONToColumns = map[string]database.SafeSQLName{
 	response.BuildJSONFields.BuildID:     database.BuildColumns.BuildID,
 	response.BuildJSONFields.Environment: database.BuildColumns.Environment,
 	response.BuildJSONFields.CompletedOn: database.BuildColumns.CompletedOn,

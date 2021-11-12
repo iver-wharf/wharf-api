@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/iver-wharf/wharf-api/pkg/orderby"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 )
@@ -29,7 +30,7 @@ func bindCommonGetQueryParams(c *gin.Context, params interface{}) bool {
 	return true
 }
 
-func parseCommonOrderBySlice(c *gin.Context, orders []string, fieldToColumnNames map[string]string) (orderby.Slice, bool) {
+func parseCommonOrderBySlice(c *gin.Context, orders []string, fieldToColumnNames map[string]database.SafeSQLName) (orderby.Slice, bool) {
 	orderBySlice, err := orderby.ParseSlice(orders, fieldToColumnNames)
 	if err != nil {
 		joinedOrders := strings.Join(orders, ", ")
