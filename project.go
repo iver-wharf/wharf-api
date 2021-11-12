@@ -366,7 +366,7 @@ func (m projectModule) updateProjectHandler(c *gin.Context) {
 }
 
 // getProjectOverridesHandler godoc
-// @id updateProjectOverrides
+// @id getProjectOverrides
 // @summary Get project overrides
 // @description Get values for a project's overridable fields.
 // @description Meant for manual overrides.
