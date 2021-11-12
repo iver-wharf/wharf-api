@@ -141,9 +141,10 @@ type Project struct {
 	Overrides ProjectOverrides `gorm:"foreignKey:ProjectID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 }
 
+// ProjectOverrides holds data about a project's overridden values.
 type ProjectOverrides struct {
 	ProjectOverridesID uint   `gorm:"primaryKey"`
-	ProjectID          uint   `gorm:"uniqueIndex:project_override_idx_project_id"`
+	ProjectID          uint   `gorm:"uniqueIndex:project_overrides_idx_project_id"`
 	Description        string `gorm:"size:500;not null;default:''"`
 	AvatarURL          string `gorm:"size:500;not null;default:''"`
 	GitURL             string `gorm:"not null;default:''"`
