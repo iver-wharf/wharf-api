@@ -15,7 +15,10 @@ RUN deploy/update-version.sh version.yaml \
 		&& make test
 
 FROM alpine:3.14 AS final
-RUN apk add --no-cache ca-certificates tzdata
+RUN apk add --no-cache ca-certificates tzdata \
+    && apk add --no-cache --upgrade \
+        # CVE-2021-42374 & CVE 2021-42375: https://github.com/alpinelinux/docker-alpine/issues/213
+        busybox>=1.33.1-r5
 WORKDIR /app
 COPY --from=build /src/main ./
 ENTRYPOINT ["/app/main"]
