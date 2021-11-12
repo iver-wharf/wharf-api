@@ -174,6 +174,13 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   - `test_result_summary.file_name`
   - `token.user_name`
 
+- Security fix by changing version of `busybox` and `ssl_client` from 1.33.1-r3
+  to at least v1.33.1-r6 in `alpine` Docker base image to resolve
+  [CVE-2021-42374](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-42374)
+  and [CVE-2021-42375](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-42375),
+  as that package has not yet been updated in the upstream `alpine` Docker
+  image. (#115)
+
 ## v4.2.0 (2021-09-10)
 
 - Added support for the TZ environment variable (setting timezones ex.
