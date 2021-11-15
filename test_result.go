@@ -151,7 +151,7 @@ func (m buildTestResultModule) getBuildAllTestResultDetailListHandler(c *gin.Con
 
 	resDetails := modelconv.DBTestResultDetailsToResponses(dbDetails)
 	c.JSON(http.StatusOK, response.PaginatedTestResultDetails{
-		Details:    resDetails,
+		List:       resDetails,
 		TotalCount: int64(len(resDetails)),
 	})
 }
@@ -190,7 +190,7 @@ func (m buildTestResultModule) getBuildAllTestResultSummaryListHandler(c *gin.Co
 	}
 
 	c.JSON(http.StatusOK, response.PaginatedTestResultSummaries{
-		Summaries:  resSummaries,
+		List:       resSummaries,
 		TotalCount: int64(len(resSummaries)),
 	})
 }
@@ -269,7 +269,7 @@ func (m buildTestResultModule) getBuildTestResultDetailListHandler(c *gin.Contex
 
 	resDetails := modelconv.DBTestResultDetailsToResponses(dbDetails)
 	c.JSON(http.StatusOK, response.PaginatedTestResultDetails{
-		Details:    resDetails,
+		List:       resDetails,
 		TotalCount: int64(len(dbDetails)),
 	})
 }

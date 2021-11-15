@@ -237,7 +237,7 @@ func (m buildModule) getBuildListHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response.PaginatedBuilds{
-		Builds:     modelconv.DBBuildsToResponses(dbBuilds),
+		List:       modelconv.DBBuildsToResponses(dbBuilds),
 		TotalCount: totalCount,
 	})
 }

@@ -143,48 +143,48 @@ type Log struct {
 // PaginatedArtifacts is a list of artifacts as well as the explicit total count
 // field.
 type PaginatedArtifacts struct {
-	Artifacts  []Artifact `json:"artifacts"`
+	List       []Artifact `json:"list"`
 	TotalCount int64      `json:"totalCount"`
 }
 
 // PaginatedBuilds is a list of builds as well as an explicit total count field.
 type PaginatedBuilds struct {
-	Builds     []Build `json:"builds"`
+	List       []Build `json:"list"`
 	TotalCount int64   `json:"totalCount"`
 }
 
 // PaginatedProjects is a list of projects as well as the explicit total count
 // field.
 type PaginatedProjects struct {
-	Projects   []Project `json:"projects"`
+	List       []Project `json:"list"`
 	TotalCount int64     `json:"totalCount"`
 }
 
 // PaginatedTokens is a list of tokens as well as the explicit total count
 // field.
 type PaginatedTokens struct {
-	Tokens     []Token `json:"tokens"`
+	List       []Token `json:"list"`
 	TotalCount int64   `json:"totalCount"`
 }
 
 // PaginatedProviders is a list of providers as well as the explicit total count
 // field.
 type PaginatedProviders struct {
-	Providers  []Provider `json:"providers"`
+	List       []Provider `json:"list"`
 	TotalCount int64      `json:"totalCount"`
 }
 
 // PaginatedProviders is a list of providers as well as the explicit total count
 // field.
 type PaginatedTestResultDetails struct {
-	Details    []TestResultDetail `json:"details"`
+	List       []TestResultDetail `json:"list"`
 	TotalCount int64              `json:"totalCount"`
 }
 
 // PaginatedProviders is a list of providers as well as the explicit total count
 // field.
 type PaginatedTestResultSummaries struct {
-	Summaries  []TestResultSummary `json:"summaries"`
+	List       []TestResultSummary `json:"list"`
 	TotalCount int64               `json:"totalCount"`
 }
 

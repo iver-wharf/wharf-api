@@ -98,7 +98,7 @@ func (m tokenModule) getTokenListHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response.PaginatedTokens{
-		Tokens:     modelconv.DBTokensToResponses(dbTokens),
+		List:       modelconv.DBTokensToResponses(dbTokens),
 		TotalCount: totalCount,
 	})
 }
