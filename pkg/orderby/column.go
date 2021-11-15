@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"gorm.io/gorm/clause"
 )
 
@@ -20,11 +21,14 @@ var (
 	// ErrInvalidField is returned when parsing an orderby column against a map
 	// of accepted values, and none matched.
 	ErrInvalidField = errors.New("invalid or unsupported ordering field")
+	// ErrNilParseMap is returned when parsing but the map that was passed was
+	// nil.
+	ErrNilParseMap = errors.New("field->column names map is nil")
 )
 
 // Column specifies a column or field to be sorted and its sorting direction.
 type Column struct {
-	Name      string
+	Name      database.SafeSQLName
 	Direction Direction
 }
 
@@ -37,7 +41,7 @@ func (o Column) String() string {
 func (o Column) clauseOrderByColumn() clause.OrderByColumn {
 	return clause.OrderByColumn{
 		Column: clause.Column{
-			Name: o.Name,
+			Name: string(o.Name),
 		},
 		Desc: o.Direction == Desc,
 	}
@@ -55,7 +59,7 @@ func (o Column) Clause() clause.Expression {
 
 // Parse interprets an ordering/sorting definition and optionally translates the
 // inputted field name using a map.
-func Parse(query string, fieldToColumnNames map[string]string) (Column, error) {
+func Parse(query string, fieldToColumnNames map[string]database.SafeSQLName) (Column, error) {
 	field, direction, err := scanQueryForOrderBy(query)
 	if err != nil {
 		return Column{}, fmt.Errorf("failed scanning orderby string: %w", err)
@@ -76,7 +80,7 @@ func scanQueryForOrderBy(query string) (field, direction string, err error) {
 	return
 }
 
-func parseFromFieldAndDirection(field, directionStr string, fieldToColumnNames map[string]string) (Column, error) {
+func parseFromFieldAndDirection(field, directionStr string, fieldToColumnNames map[string]database.SafeSQLName) (Column, error) {
 	column, err := mapOrderByField(field, fieldToColumnNames)
 	if err != nil {
 		return Column{}, fmt.Errorf("failed mapping field name to column name: %w", err)
@@ -90,9 +94,9 @@ func parseFromFieldAndDirection(field, directionStr string, fieldToColumnNames m
 	return Column{Name: column, Direction: direction}, nil
 }
 
-func mapOrderByField(field string, fieldToColumnNames map[string]string) (string, error) {
+func mapOrderByField(field string, fieldToColumnNames map[string]database.SafeSQLName) (database.SafeSQLName, error) {
 	if fieldToColumnNames == nil {
-		return field, nil
+		return "", ErrNilParseMap
 	}
 	column, ok := fieldToColumnNames[field]
 	if !ok {

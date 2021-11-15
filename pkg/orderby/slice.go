@@ -3,6 +3,7 @@ package orderby
 import (
 	"strings"
 
+	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"gorm.io/gorm/clause"
 )
 
@@ -48,7 +49,7 @@ func (slice Slice) ClauseIfNone(ifNone Column) clause.Expression {
 
 // ParseSlice returns a new slice where each element has been interpreted by the
 // Parse function, or the error of the first failed parsing.
-func ParseSlice(queries []string, fieldToColumnNames map[string]string) (Slice, error) {
+func ParseSlice(queries []string, fieldToColumnNames map[string]database.SafeSQLName) (Slice, error) {
 	sqlOrderings := make([]Column, len(queries))
 	for i, qo := range queries {
 		orderBy, err := Parse(qo, fieldToColumnNames)

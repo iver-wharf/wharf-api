@@ -3,12 +3,18 @@ package orderby
 import (
 	"testing"
 
+	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
+func TestParse_errorOnNilMap(t *testing.T) {
+	unwanted, err := Parse("foo asc", nil)
+	assert.ErrorIs(t, err, ErrNilParseMap, "unexpected result:", unwanted)
+}
+
 func TestParse_ErrorPath(t *testing.T) {
-	fieldToColumnNames := map[string]string{
+	fieldToColumnNames := map[string]database.SafeSQLName{
 		"buildId": "build_id",
 	}
 	testCases := []struct {
@@ -61,13 +67,13 @@ func TestParse_ErrorPath(t *testing.T) {
 }
 
 func TestParse_HappyPath(t *testing.T) {
-	fieldToColumnNames := map[string]string{
+	fieldToColumnNames := map[string]database.SafeSQLName{
 		"buildId": "build_id",
 	}
 	testCases := []struct {
 		name     string
 		input    string
-		namesMap map[string]string
+		namesMap map[string]database.SafeSQLName
 		want     Column
 	}{
 		{
@@ -81,24 +87,6 @@ func TestParse_HappyPath(t *testing.T) {
 			input:    "buildId desc",
 			namesMap: fieldToColumnNames,
 			want:     Column{"build_id", Desc},
-		},
-		{
-			name:     "valid unmapped asc",
-			input:    "buildId asc",
-			namesMap: nil,
-			want:     Column{"buildId", Asc},
-		},
-		{
-			name:     "valid unmapped desc",
-			input:    "buildId desc",
-			namesMap: nil,
-			want:     Column{"buildId", Desc},
-		},
-		{
-			name:     "separated by tab",
-			input:    "buildId\tdesc",
-			namesMap: nil,
-			want:     Column{"buildId", Desc},
 		},
 		{
 			name:     "excess whitespace",

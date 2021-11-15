@@ -3,6 +3,7 @@ package orderby_test
 import (
 	"fmt"
 
+	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/iver-wharf/wharf-api/pkg/orderby"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -48,7 +49,7 @@ func ExampleParseDirection() {
 }
 
 func ExampleParse() {
-	fieldToColumnNames := map[string]string{
+	fieldToColumnNames := map[string]database.SafeSQLName{
 		"buildId": "build_id",
 	}
 	fields := []string{
@@ -68,28 +69,6 @@ func ExampleParse() {
 	// Sort by "build_id asc"
 	// Sort by "build_id desc"
 	// Invalid sort order: failed mapping field name to column name: "foobar": invalid or unsupported ordering field
-	// Invalid sort order: failed parsing ordering direction: "foo": invalid direction, only 'asc' or 'desc' supported
-}
-
-func ExampleParse_withoutNameMapping() {
-	fields := []string{
-		"buildId asc",
-		"  buildId   desc  ",
-		"foobar asc",
-		"buildId foo",
-	}
-	for _, field := range fields {
-		// leave second argument as nil
-		if order, err := orderby.Parse(field, nil); err != nil {
-			fmt.Printf("Invalid sort order: %v\n", err)
-		} else {
-			fmt.Printf("Sort by %q\n", order)
-		}
-	}
-	// Output:
-	// Sort by "buildId asc"
-	// Sort by "buildId desc"
-	// Sort by "foobar asc"
 	// Invalid sort order: failed parsing ordering direction: "foo": invalid direction, only 'asc' or 'desc' supported
 }
 

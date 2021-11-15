@@ -27,6 +27,13 @@ import (
 // One seems to take precedence, but to make sure and to keep the code
 // consistent we add it to both referencing fields.
 
+// SafeSQLName represents a value that is safe to use as an SQL table or column
+// name without the need of escaping.
+//
+// It is merely semantical and has no validation attached. Values of this type
+// should never be constructed from user input.
+type SafeSQLName string
+
 // ProviderFields holds the Go struct field names for each field.
 // Useful in GORM .Where() statements to only select certain fields or in GORM
 // Preload statements to select the correct field to preload.
@@ -105,13 +112,13 @@ var ProjectFields = struct {
 // Useful in GORM .Order() statements to order the results based on a specific
 // column, which does not support the regular Go field names.
 var ProjectColumns = struct {
-	ProjectID       string
-	RemoteProjectID string
-	Name            string
-	GroupName       string
-	Description     string
-	TokenID         string
-	GitURL          string
+	ProjectID       SafeSQLName
+	RemoteProjectID SafeSQLName
+	Name            SafeSQLName
+	GroupName       SafeSQLName
+	Description     SafeSQLName
+	TokenID         SafeSQLName
+	GitURL          SafeSQLName
 }{
 	ProjectID:       "project_id",
 	RemoteProjectID: "remote_project_id",
@@ -160,8 +167,8 @@ var BranchFields = struct {
 // Useful in GORM .Order() statements to order the results based on a specific
 // column, which does not support the regular Go field names.
 var BranchColumns = struct {
-	BranchID string
-	Name     string
+	BranchID SafeSQLName
+	Name     SafeSQLName
 }{
 	BranchID: "branch_id",
 	Name:     "name",
@@ -194,14 +201,14 @@ var BuildFields = struct {
 // Useful in GORM .Order() statements to order the results based on a specific
 // column, which does not support the regular Go field names.
 var BuildColumns = struct {
-	BuildID     string
-	StatusID    string
-	ScheduledOn string
-	StartedOn   string
-	CompletedOn string
-	Environment string
-	Stage       string
-	IsInvalid   string
+	BuildID     SafeSQLName
+	StatusID    SafeSQLName
+	ScheduledOn SafeSQLName
+	StartedOn   SafeSQLName
+	CompletedOn SafeSQLName
+	Environment SafeSQLName
+	Stage       SafeSQLName
+	IsInvalid   SafeSQLName
 }{
 	BuildID:     "build_id",
 	StatusID:    "status_id",
@@ -307,8 +314,8 @@ type Param struct {
 // Useful in GORM .Order() statements to order the results based on a specific
 // column, which does not support the regular Go field names.
 var ArtifactColumns = struct {
-	ArtifactID string
-	FileName   string
+	ArtifactID SafeSQLName
+	FileName   SafeSQLName
 }{
 	ArtifactID: "artifact_id",
 	FileName:   "file_name",
