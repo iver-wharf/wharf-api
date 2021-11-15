@@ -174,15 +174,15 @@ type PaginatedProviders struct {
 	TotalCount int64      `json:"totalCount"`
 }
 
-// PaginatedProviders is a list of providers as well as the explicit total count
-// field.
+// PaginatedTestResultDetails is a list of test result details as well as the
+// explicit total count field.
 type PaginatedTestResultDetails struct {
 	List       []TestResultDetail `json:"list"`
 	TotalCount int64              `json:"totalCount"`
 }
 
-// PaginatedProviders is a list of providers as well as the explicit total count
-// field.
+// PaginatedTestResultSummaries is a list of test result summaries as well as
+// the explicit total count field.
 type PaginatedTestResultSummaries struct {
 	List       []TestResultSummary `json:"list"`
 	TotalCount int64               `json:"totalCount"`
