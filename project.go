@@ -39,8 +39,6 @@ func (m projectModule) Register(g *gin.RouterGroup) {
 	{
 		project.GET("", m.getProjectListHandler)
 		project.POST("", m.createProjectHandler)
-		project.PUT("/:projectId", m.updateProjectHandler)
-		project.POST("/:projectId/:stage/run", m.startProjectBuildHandler)
 
 		projectByID := project.Group("/:projectId")
 		{
