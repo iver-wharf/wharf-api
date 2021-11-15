@@ -1,5 +1,7 @@
 package wherefields
 
+import "gopkg.in/guregu/null.v4"
+
 // Collection stores field names of non-nil values. Meant to be used with the
 // GORM .Where() clause.
 type Collection struct {
@@ -12,8 +14,19 @@ func (sc *Collection) NonNilFieldNames() []interface{} {
 	return sc.fieldNames
 }
 
-func (sc *Collection) addFieldName(field string) {
+// AddFieldName adds a string that will be returned later by NonNilFieldNames.
+func (sc *Collection) AddFieldName(field string) {
 	sc.fieldNames = append(sc.fieldNames, field)
+}
+
+// Int stores the field name if the value was non-nil and returns the value of
+// the field, or zero (0) if it was nil.
+func (sc *Collection) Int(field string, value *int) int {
+	if value == nil {
+		return 0
+	}
+	sc.AddFieldName(field)
+	return *value
 }
 
 // Uint stores the field name if the value was non-nil and returns the value of
@@ -22,7 +35,7 @@ func (sc *Collection) Uint(field string, value *uint) uint {
 	if value == nil {
 		return 0
 	}
-	sc.addFieldName(field)
+	sc.AddFieldName(field)
 	return *value
 }
 
@@ -32,7 +45,7 @@ func (sc *Collection) UintPtrZeroNil(field string, value *uint) *uint {
 	if value == nil {
 		return nil
 	}
-	sc.addFieldName(field)
+	sc.AddFieldName(field)
 	if *value == 0 {
 		return nil
 	}
@@ -45,6 +58,29 @@ func (sc *Collection) String(field string, value *string) string {
 	if value == nil {
 		return ""
 	}
-	sc.addFieldName(field)
+	sc.AddFieldName(field)
+	return *value
+}
+
+// NullStringEmptyNull stores the field name if the value was non-nil and
+// returns the value of the field and translates empty ("") to null.
+func (sc *Collection) NullStringEmptyNull(field string, value *string) null.String {
+	if value == nil {
+		return null.String{}
+	}
+	sc.AddFieldName(field)
+	if *value == "" {
+		return null.String{}
+	}
+	return null.StringFrom(*value)
+}
+
+// Bool stores the field name if the value was non-nil and returns the value
+// of the field, or false if it was nil.
+func (sc *Collection) Bool(field string, value *bool) bool {
+	if value == nil {
+		return false
+	}
+	sc.AddFieldName(field)
 	return *value
 }

@@ -10,9 +10,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/iver-wharf/wharf-api/internal/ctxparser"
+	"github.com/iver-wharf/wharf-api/internal/wherefields"
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/iver-wharf/wharf-api/pkg/model/response"
 	"github.com/iver-wharf/wharf-api/pkg/modelconv"
+	"github.com/iver-wharf/wharf-api/pkg/orderby"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"gorm.io/gorm"
 )
@@ -22,47 +24,105 @@ type artifactModule struct {
 }
 
 func (m artifactModule) Register(g *gin.RouterGroup) {
-	g.GET("/artifacts", m.getBuildArtifactListHandler)
+	g.GET("/artifact", m.getBuildArtifactListHandler)
 	g.GET("/artifact/:artifactId", m.getBuildArtifactHandler)
 	g.POST("/artifact", m.createBuildArtifactHandler)
 	// deprecated
 	g.GET("/tests-results", m.getBuildTestResultListHandler)
 }
 
+var artifactJSONToColumns = map[string]database.SafeSQLName{
+	response.ArtifactJSONFields.ArtifactID: database.ArtifactColumns.ArtifactID,
+	response.ArtifactJSONFields.Name:       database.ArtifactColumns.Name,
+	response.ArtifactJSONFields.FileName:   database.ArtifactColumns.FileName,
+}
+
+var defaultGetArtifactsOrderBy = orderby.Column{Name: database.ArtifactColumns.ArtifactID, Direction: orderby.Desc}
+
 // getBuildArtifactListHandler godoc
 // @id getBuildArtifactList
 // @summary Get list of build artifacts
+// @description List all build artifacts, or a window of build artifacts using the `limit` and `offset` query parameters. Allows optional filtering parameters.
+// @description Verbatim filters will match on the entire string used to find exact matches,
+// @description while the matching filters are meant for searches by humans where it tries to find soft matches and is therefore inaccurate by nature.
 // @tags artifact
 // @param buildId path uint true "Build ID" minimum(0)
-// @success 200 {object} []response.Artifact
+// @param limit query int false "Number of results to return. No limiting is applied if empty (`?limit=`) or non-positive (`?limit=0`). Required if `offset` is used." default(100)
+// @param offset query int false "Skipped results, where 0 means from the start." minimum(0) default(0)
+// @param orderby query []string false "Sorting orders. Takes the property name followed by either 'asc' or 'desc'. Can be specified multiple times for more granular sorting. Defaults to `?orderby=artifactId desc`"
+// @param name query string false "Filter by verbatim artifact name."
+// @param fileName query string false "Filter by verbatim artifact file name."
+// @param nameMatch query string false "Filter by matching artifact name. Cannot be used with `name`."
+// @param fileNameMatch query string false "Filter by matching artifact file name. Cannot be used with `fileName`."
+// @param match query string false "Filter by matching on any supported fields."
+// @success 200 {object} response.PaginatedArtifacts
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
-// @router /build/{buildId}/artifacts [get]
+// @router /build/{buildId}/artifact [get]
 func (m artifactModule) getBuildArtifactListHandler(c *gin.Context) {
 	buildID, ok := ginutil.ParseParamUint(c, "buildId")
 	if !ok {
 		return
 	}
+	var params = struct {
+		commonGetQueryParams
 
-	dbArtifacts := []database.Artifact{}
-	err := m.Database.
-		Where(&database.Artifact{BuildID: buildID}).
-		Find(&dbArtifacts).
-		Error
-	if err != nil {
-		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
-			"Failed fetching artifacts for build with ID %d from database.",
-			buildID))
+		Name     *string `form:"name"`
+		FileName *string `form:"fileName"`
+
+		NameMatch     *string `form:"nameMatch" binding:"excluded_with=Name"`
+		FileNameMatch *string `form:"fileNameMatch" binding:"excluded_with=FileName"`
+
+		Match *string `form:"match"`
+	}{
+		commonGetQueryParams: defaultCommonGetQueryParams,
+	}
+	if !bindCommonGetQueryParams(c, &params) {
+		return
+	}
+	orderBySlice, ok := parseCommonOrderBySlice(c, params.OrderBy, artifactJSONToColumns)
+	if !ok {
 		return
 	}
 
-	resArtifacts := make([]response.Artifact, len(dbArtifacts))
-	for i, dbArtifact := range dbArtifacts {
-		resArtifacts[i] = modelconv.DBArtifactToResponse(dbArtifact)
+	var where wherefields.Collection
+	where.AddFieldName(database.ArtifactFields.BuildID)
+
+	query := m.Database.
+		Clauses(orderBySlice.ClauseIfNone(defaultGetArtifactsOrderBy)).
+		Where(&database.Artifact{
+			BuildID:  buildID,
+			Name:     where.String(database.ArtifactFields.Name, params.Name),
+			FileName: where.String(database.ArtifactFields.FileName, params.FileName),
+		}, where.NonNilFieldNames()...).
+		Scopes(
+			whereLikeScope(map[database.SafeSQLName]*string{
+				database.ArtifactColumns.Name:     params.NameMatch,
+				database.ArtifactColumns.FileName: params.FileNameMatch,
+			}),
+			whereAnyLikeScope(
+				params.Match,
+				database.ArtifactColumns.Name,
+				database.ArtifactColumns.FileName,
+			),
+		)
+
+	var dbArtifacts []database.Artifact
+	var totalCount int64
+	err := findDBPaginatedSliceAndTotalCount(query, params.Limit, params.Offset, &dbArtifacts, &totalCount)
+	if err != nil {
+		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
+			"Failed fetching list of artifacts for build with ID %d from database.",
+			buildID,
+		))
+		return
 	}
 
-	c.JSON(http.StatusOK, resArtifacts)
+	c.JSON(http.StatusOK, response.PaginatedArtifacts{
+		Artifacts:  modelconv.DBArtifactsToResponses(dbArtifacts),
+		TotalCount: totalCount,
+	})
 }
 
 // getBuildArtifactHandler godoc

@@ -1,13 +1,28 @@
-.git
-.gitignore
-
-.dockerignore
-Dockerfile
-
-.wharf-ci.yml
+# Swaggo generated files
 docs
-.idea
 
+# Editor files
+**/*.swp
+.idea
+.vscode
+
+# NPM
+node_modules
 package.json
 package-lock.json
-node_modules
+
+# Binaries
+*.db
+*.tar
+*.tar.gz
+**/*.exe
+wharf-api
+
+# Git
+.git
+
+# Configs
+.gitignore
+.dockerignore
+Dockerfile
+.wharf-ci.yml

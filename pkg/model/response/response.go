@@ -15,6 +15,19 @@ type TimeMetadata struct {
 	CreatedAt *time.Time `json:"createdAt" format:"date-time" extensions:"x-nullable"`
 }
 
+// ArtifactJSONFields holds the JSON field names for each field.
+// Useful in ordering statements to map the correct field to the correct
+// database column.
+var ArtifactJSONFields = struct {
+	ArtifactID string
+	Name       string
+	FileName   string
+}{
+	ArtifactID: "artifactId",
+	Name:       "name",
+	FileName:   "fileName",
+}
+
 // Artifact holds the binary data as well as metadata about that binary such as
 // the file name and which build it belongs to.
 type Artifact struct {
@@ -138,10 +151,38 @@ type Log struct {
 	Timestamp time.Time `json:"timestamp" format:"date-time"`
 }
 
+// PaginatedArtifacts is a list of artifacts as well as the explicit total count
+// field.
+type PaginatedArtifacts struct {
+	Artifacts  []Artifact `json:"artifacts"`
+	TotalCount int64      `json:"totalCount"`
+}
+
 // PaginatedBuilds is a list of builds as well as an explicit total count field.
 type PaginatedBuilds struct {
 	Builds     []Build `json:"builds"`
 	TotalCount int64   `json:"totalCount"`
+}
+
+// PaginatedProjects is a list of projects as well as the explicit total count
+// field.
+type PaginatedProjects struct {
+	Projects   []Project `json:"projects"`
+	TotalCount int64     `json:"totalCount"`
+}
+
+// PaginatedTokens is a list of tokens as well as the explicit total count
+// field.
+type PaginatedTokens struct {
+	Tokens     []Token `json:"tokens"`
+	TotalCount int64   `json:"totalCount"`
+}
+
+// PaginatedProviders is a list of providers as well as the explicit total count
+// field.
+type PaginatedProviders struct {
+	Providers  []Provider `json:"providers"`
+	TotalCount int64      `json:"totalCount"`
 }
 
 // Ping pongs.
@@ -184,6 +225,21 @@ type Project struct {
 	Branches              []Branch    `json:"branches"`
 	GitURL                string      `json:"gitUrl"`
 	ParsedBuildDefinition interface{} `json:"build" swaggertype:"object" extensions:"x-nullable"`
+}
+
+// ProviderJSONFields holds the JSON field names for each field.
+// Useful in ordering statements to map the correct field to the correct
+// database column.
+var ProviderJSONFields = struct {
+	ProviderID string
+	Name       string
+	URL        string
+	TokenID    string
+}{
+	ProviderID: "providerId",
+	Name:       "name",
+	URL:        "url",
+	TokenID:    "tokenId",
 }
 
 // Provider holds metadata about a connection to a remote provider. Some of
@@ -287,6 +343,19 @@ type TestsResults struct {
 	Passed uint       `json:"passed"`
 	Failed uint       `json:"failed"`
 	Status TestStatus `json:"status" enums:"Success,Failed,No tests"`
+}
+
+// TokenJSONFields holds the JSON field names for each field.
+// Useful in ordering statements to map the correct field to the correct
+// database column.
+var TokenJSONFields = struct {
+	TokenID  string
+	Token    string
+	UserName string
+}{
+	TokenID:  "tokenId",
+	Token:    "token",
+	UserName: "userName",
 }
 
 // Token holds credentials for a remote provider.

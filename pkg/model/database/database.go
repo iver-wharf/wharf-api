@@ -47,13 +47,30 @@ type SafeSQLName string
 // Useful in GORM .Where() statements to only select certain fields or in GORM
 // Preload statements to select the correct field to preload.
 var ProviderFields = struct {
-	Name    string
-	URL     string
-	TokenID string
+	ProviderID string
+	Name       string
+	URL        string
+	TokenID    string
 }{
-	Name:    "Name",
-	URL:     "URL",
-	TokenID: "TokenID",
+	ProviderID: "ProviderID",
+	Name:       "Name",
+	URL:        "URL",
+	TokenID:    "TokenID",
+}
+
+// ProviderColumns holds the DB column names for each field.
+// Useful in GORM .Order() statements to order the results based on a specific
+// column, which does not support the regular Go field names.
+var ProviderColumns = struct {
+	ProviderID SafeSQLName
+	Name       SafeSQLName
+	URL        SafeSQLName
+	TokenID    SafeSQLName
+}{
+	ProviderID: "provider_id",
+	Name:       "name",
+	URL:        "url",
+	TokenID:    "token_id",
 }
 
 // Provider holds metadata about a connection to a remote provider. Some of
@@ -72,11 +89,26 @@ type Provider struct {
 // Useful in GORM .Where() statements to only select certain fields or in GORM
 // Preload statements to select the correct field to preload.
 var TokenFields = struct {
+	TokenID  string
 	Token    string
 	UserName string
 }{
+	TokenID:  "TokenID",
 	Token:    "Token",
 	UserName: "UserName",
+}
+
+// TokenColumns holds the DB column names for each field.
+// Useful in GORM .Order() statements to order the results based on a specific
+// column, which does not support the regular Go field names.
+var TokenColumns = struct {
+	TokenID  SafeSQLName
+	Token    SafeSQLName
+	UserName SafeSQLName
+}{
+	TokenID:  "token_id",
+	Token:    "token",
+	UserName: "user_name",
 }
 
 // Token holds credentials for a remote provider.
@@ -203,9 +235,21 @@ type Branch struct {
 // Useful in GORM .Where() statements to only select certain fields or in GORM
 // Preload statements to select the correct field to preload.
 var BuildFields = struct {
+	ProjectID           string
+	StatusID            string
+	GitBranch           string
+	Environment         string
+	Stage               string
+	IsInvalid           string
 	Params              string
 	TestResultSummaries string
 }{
+	ProjectID:           "ProjectID",
+	StatusID:            "StatusID",
+	GitBranch:           "GitBranch",
+	Environment:         "Environment",
+	Stage:               "Stage",
+	IsInvalid:           "IsInvalid",
 	Params:              "Params",
 	TestResultSummaries: "TestResultSummaries",
 }
@@ -219,6 +263,7 @@ var BuildColumns = struct {
 	ScheduledOn SafeSQLName
 	StartedOn   SafeSQLName
 	CompletedOn SafeSQLName
+	GitBranch   SafeSQLName
 	Environment SafeSQLName
 	Stage       SafeSQLName
 	IsInvalid   SafeSQLName
@@ -228,6 +273,7 @@ var BuildColumns = struct {
 	ScheduledOn: "scheduled_on",
 	StartedOn:   "started_on",
 	CompletedOn: "completed_on",
+	GitBranch:   "git_branch",
 	Environment: "environment",
 	Stage:       "stage",
 	IsInvalid:   "is_invalid",
@@ -329,9 +375,11 @@ type Param struct {
 // column, which does not support the regular Go field names.
 var ArtifactColumns = struct {
 	ArtifactID SafeSQLName
+	Name       SafeSQLName
 	FileName   SafeSQLName
 }{
 	ArtifactID: "artifact_id",
+	Name:       "name",
 	FileName:   "file_name",
 }
 
@@ -339,8 +387,12 @@ var ArtifactColumns = struct {
 // Useful in GORM .Where() statements to only select certain fields or in GORM
 // Preload statements to select the correct field to preload.
 var ArtifactFields = struct {
+	BuildID  string
+	Name     string
 	FileName string
 }{
+	BuildID:  "BuildID",
+	Name:     "Name",
 	FileName: "FileName",
 }
 
