@@ -15,6 +15,7 @@ import (
 
 // Largely taken from https://developer.okta.com/blog/2021/01/04/offline-jwt-validation-with-go
 
+// GetOidcPublicKeys return the public keys of the currently set WHARF_HTTP_OIDC_KeysURL.
 func GetOidcPublicKeys(config OIDCConfig) *map[string]*rsa.PublicKey {
 	rsaKeys := make(map[string]*rsa.PublicKey)
 	var body map[string]interface{}
@@ -40,6 +41,9 @@ func GetOidcPublicKeys(config OIDCConfig) *map[string]*rsa.PublicKey {
 	return &rsaKeys
 }
 
+// VerifyTokenMiddleware is a gin middleware function that enforces validity of the access bearer token on every
+// request. This uses the environment vars WHARF_HTTP_OIDC_IssuerURL and WHARF_HTTP_OIDC_AudienceURL as limiters
+// that control the variety of tokens that pass validation.
 func VerifyTokenMiddleware(config OIDCConfig, rsaKeys *map[string]*rsa.PublicKey) gin.HandlerFunc {
 	return func (ginContext *gin.Context) {
 		if *rsaKeys == nil {
@@ -76,6 +80,7 @@ func VerifyTokenMiddleware(config OIDCConfig, rsaKeys *map[string]*rsa.PublicKey
 	}
 }
 
+// SubscribeToKeyURLUpdates ensures new keys are fetched as necessary.
 // As a standard OIDC login provider keys should be checked for updates ever 1 day 1 hour.
 func SubscribeToKeyURLUpdates(config OIDCConfig, rsakeys *map[string]*rsa.PublicKey) {
 	fetchOidcKeysTicker := time.NewTicker(time.Hour * 25)
