@@ -142,25 +142,25 @@ type CORSConfig struct {
 // OIDCConfig holds settings for the HTTP server's OIDC access token validation settings.
 type OIDCConfig struct {
 
-	// Enable this functions as a switch to enable or disable the validation of OIDC
+	// Enable functions as a switch to enable or disable the validation of OIDC
 	// access bearer tokens.
 	//
 	// Added in v5.0.0.
 	Enable bool
 
-	// IssuerURL an integral part of the access token. It should be checked such that
+	// IssuerURL is an integral part of the access token. It should be checked such that
 	// only allowed OIDC targets can pass token validation.
 	//
 	// Added in v5.0.0.
 	IssuerURL string
 
-	// AudienceURL an integral part of the access token. It should be checked such that
+	// AudienceURL is an integral part of the access token. It should be checked such that
 	// only the allowed application within a OIDC target can pass validation.
 	//
 	// Added in v5.0.0.
 	AudienceURL string
 
-	// KeysURL an integral part of the access token. It should be checked such that
+	// KeysURL is an integral part of the access token. It should be checked such that
 	// only OIDC targets with the expected keys pass validation.
 	//
 	// Added in v5.0.0.
