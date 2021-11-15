@@ -34,7 +34,7 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Deprecated PUT endpoints that took the object ID from the HTTP request body.
   They are still supported, but may be removed in the next major release
   (v6.0.0). Please refer to the new endpoints that takes the ID from the URL
-  path. (#88, #91, #94, #97)
+  path. (#88, #91, #94, #97, #113)
 
   - Use `PUT /project/{projectId}` instead of `PUT /project`
   - Use `PUT /provider/{providerId}` instead of `PUT /provider`
@@ -173,6 +173,8 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   - `project.group_name`
   - `test_result_summary.file_name`
   - `token.user_name`
+
+- Added new field `RemoteProjectID` to the project model. (#112)
 
 - Added endpoints to allow setting manual overrides for a project. These
   overrides are used in responses from `GET /project` and other, as well as in

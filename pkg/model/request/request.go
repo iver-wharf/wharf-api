@@ -94,6 +94,7 @@ type Project struct {
 	ProviderID      uint   `json:"providerId" minimum:"0"`
 	BuildDefinition string `json:"buildDefinition"`
 	GitURL          string `json:"gitUrl"`
+	RemoteProjectID string `json:"remoteProjectId"`
 }
 
 // ProjectUpdate specifies fields when updating a project.
