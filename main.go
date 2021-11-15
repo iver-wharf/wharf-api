@@ -112,15 +112,16 @@ func main() {
 	setupBasicAuth(r, config)
 
 	modules := []httpModule{
-		projectModule{Database: db, Config: &config},
-		buildModule{Database: db},
-		tokenModule{Database: db},
 		branchModule{Database: db},
+		buildModule{Database: db},
+		projectModule{Database: db, Config: &config},
 		providerModule{Database: db},
-		deprecated.ProjectModule{Database: db},
-		deprecated.TokenModule{Database: db},
+		tokenModule{Database: db},
 		deprecated.BranchModule{Database: db},
+		deprecated.BuildModule{Database: db},
+		deprecated.ProjectModule{Database: db},
 		deprecated.ProviderModule{Database: db},
+		deprecated.TokenModule{Database: db},
 	}
 
 	api := r.Group("/api")
