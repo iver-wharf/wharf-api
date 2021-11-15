@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v4"
 )
 
 // Largely taken from https://developer.okta.com/blog/2021/01/04/offline-jwt-validation-with-go
