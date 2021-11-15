@@ -4,11 +4,14 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/iver-wharf/wharf-api/internal/ptrconv"
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
+	"github.com/iver-wharf/wharf-api/pkg/model/response"
 	"github.com/iver-wharf/wharf-api/pkg/modelconv"
+	"github.com/iver-wharf/wharf-api/pkg/orderby"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"gorm.io/gorm"
 )
@@ -53,6 +56,7 @@ func (m ProjectModule) Register(g *gin.RouterGroup) {
 	{
 		projects.GET("", m.getProjectListHandler)
 		projects.POST("/search", m.searchProjectListHandler)
+		projects.GET("/:projectId/builds", m.getProjectBuildListHandler)
 	}
 
 	project := g.Group("/project")
@@ -66,7 +70,7 @@ func (m ProjectModule) Register(g *gin.RouterGroup) {
 // @deprecated
 // @summary Returns all projects from database
 // @description Deprecated since v5.0.0. Planned for removal in v6.0.0.
-// @description Use GET /project instead.
+// @description Use `GET /project` instead.
 // @tags project
 // @success 200 {object} []response.Project
 // @failure 502 {object} problem.Response "Database is unreachable"
@@ -90,7 +94,7 @@ func (m ProjectModule) getProjectListHandler(c *gin.Context) {
 // @deprecated
 // @summary Search for projects from database
 // @description Deprecated since v5.0.0. Planned for removal in v6.0.0.
-// @description Use GET /project instead.
+// @description Use `GET /project` instead.
 // @tags project
 // @param project body ProjectSearch _ "Project search criteria"
 // @success 200 {object} []response.Project
@@ -125,6 +129,80 @@ func (m ProjectModule) searchProjectListHandler(c *gin.Context) {
 	}
 	resProjects := modelconv.DBProjectsToResponses(dbProjects)
 	c.JSON(http.StatusOK, resProjects)
+}
+
+var buildJSONToColumns = map[string]database.SafeSQLName{
+	response.BuildJSONFields.BuildID:     database.BuildColumns.BuildID,
+	response.BuildJSONFields.Environment: database.BuildColumns.Environment,
+	response.BuildJSONFields.CompletedOn: database.BuildColumns.CompletedOn,
+	response.BuildJSONFields.ScheduledOn: database.BuildColumns.ScheduledOn,
+	response.BuildJSONFields.StartedOn:   database.BuildColumns.StartedOn,
+	response.BuildJSONFields.Stage:       database.BuildColumns.Stage,
+	response.BuildJSONFields.StatusID:    database.BuildColumns.StatusID,
+	response.BuildJSONFields.IsInvalid:   database.BuildColumns.IsInvalid,
+}
+
+// getProjectBuildListHandler godoc
+// @id oldGetProjectBuildList
+// @deprecated
+// @summary Get slice of builds.
+// @description Deprecated since v5.0.0. Planned for removal in v6.0.0.
+// @description Use `GET /build?projectId=123` instead.
+// @tags project
+// @param projectId path uint true "project ID" minimum(0)
+// @param limit query string true "number of fetched branches"
+// @param offset query string true "PK of last branch taken"
+// @param orderby query []string false "Sorting orders. Takes the property name followed by either 'asc' or 'desc'. Can be specified multiple times for more granular sorting. Defaults to `?orderby=buildId desc`"
+// @success 200 {object} response.PaginatedBuilds
+// @failure 400 {object} problem.Response "Bad request"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 502 {object} problem.Response "Database is unreachable"
+// @router /projects/{projectId}/builds [get]
+func (m ProjectModule) getProjectBuildListHandler(c *gin.Context) {
+	projectID, ok := ginutil.ParseParamUint(c, "projectId")
+	if !ok {
+		return
+	}
+	limit, ok := ginutil.ParseQueryInt(c, "limit")
+	if !ok {
+		return
+	}
+	offset, ok := ginutil.ParseQueryInt(c, "offset")
+	if !ok {
+		return
+	}
+	orderByQueryParams := c.QueryArray("orderby")
+	orderBySlice, err := orderby.ParseSlice(orderByQueryParams, buildJSONToColumns)
+	if err != nil {
+		joinedOrders := strings.Join(orderByQueryParams, ", ")
+		ginutil.WriteInvalidParamError(c, err, "orderby", fmt.Sprintf(
+			"Failed parsing the %d sort ordering values: %s",
+			len(orderByQueryParams),
+			joinedOrders))
+		return
+	}
+
+	dbBuilds, err := m.getBuilds(projectID, limit, offset, orderBySlice)
+	if err != nil {
+		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
+			"Failed fetching builds for project with ID %d from database.",
+			projectID))
+		return
+	}
+
+	count, err := m.getBuildsCount(projectID)
+	if err != nil {
+		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
+			"Failed fetching build count for project with ID %d from database.",
+			projectID))
+		return
+	}
+
+	resPaginated := response.PaginatedBuilds{
+		Builds:     modelconv.DBBuildsToResponses(dbBuilds),
+		TotalCount: count,
+	}
+	c.JSON(http.StatusOK, resPaginated)
 }
 
 // updateProjectHandler godoc
@@ -224,6 +302,35 @@ func (m ProjectModule) updateProjectHandler(c *gin.Context) {
 
 	resProject := modelconv.DBProjectToResponse(dbExistingProject)
 	c.JSON(http.StatusOK, resProject)
+}
+
+var defaultGetBuildsOrderBy = orderby.Column{Name: database.BuildColumns.BuildID, Direction: orderby.Desc}
+
+func (m ProjectModule) getBuilds(projectID uint, limit int, offset int, orderBySlice orderby.Slice) ([]database.Build, error) {
+	var dbBuilds []database.Build
+	var query = m.Database.
+		Where(&database.Build{ProjectID: projectID}).
+		Preload(database.BuildFields.TestResultSummaries).
+		Limit(limit).
+		Offset(offset).
+		Clauses(orderBySlice.ClauseIfNone(defaultGetBuildsOrderBy))
+	if err := query.Find(&dbBuilds).Error; err != nil {
+		return nil, err
+	}
+
+	return dbBuilds, nil
+}
+
+func (m ProjectModule) getBuildsCount(projectID uint) (int64, error) {
+	var count int64
+	if err := m.Database.
+		Model(&database.Build{}).
+		Where(&database.Build{ProjectID: projectID}).
+		Count(&count).
+		Error; err != nil {
+		return 0, err
+	}
+	return count, nil
 }
 
 func (m ProjectModule) findProjectByID(id uint) (database.Project, error) {

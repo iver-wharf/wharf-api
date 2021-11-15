@@ -14,3 +14,13 @@ func DBArtifactToResponse(dbArtifact database.Artifact) response.Artifact {
 		FileName:   dbArtifact.FileName,
 	}
 }
+
+// DBArtifactsToResponses converts a slice of database artifacts to a slice of
+// response artifacts.
+func DBArtifactsToResponses(dbArtifacts []database.Artifact) []response.Artifact {
+	resArtifacts := make([]response.Artifact, len(dbArtifacts))
+	for i, dbArtifact := range dbArtifacts {
+		resArtifacts[i] = DBArtifactToResponse(dbArtifact)
+	}
+	return resArtifacts
+}

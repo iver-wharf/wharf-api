@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
+	"github.com/iver-wharf/wharf-api/pkg/model/request"
 	"github.com/iver-wharf/wharf-api/pkg/modelconv"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"gorm.io/gorm"
@@ -28,10 +29,83 @@ type TokenModule struct {
 
 // Register adds all deprecated endpoints to a given Gin router group.
 func (m TokenModule) Register(g *gin.RouterGroup) {
+	tokens := g.Group("/tokens")
+	{
+		tokens.GET("", m.getTokenListHandler)
+		tokens.POST("/search", m.searchTokenListHandler)
+	}
+
 	token := g.Group("/token")
 	{
 		token.PUT("", m.updateTokenHandler)
 	}
+}
+
+// getTokenListHandler godoc
+// @id oldGetTokenList
+// @deprecated
+// @summary Returns first 100 tokens
+// @description Deprecated since v5.0.0. Planned for removal in v6.0.0.
+// @description Use `GET /token` instead.
+// @tags token
+// @success 200 {object} []response.Token
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 502 {object} problem.Response "Database is unreachable"
+// @router /tokens [get]
+func (m TokenModule) getTokenListHandler(c *gin.Context) {
+	var dbTokens []database.Token
+	err := m.Database.Limit(100).Find(&dbTokens).Error
+	if err != nil {
+		ginutil.WriteDBReadError(c, err, "Failed fetching list of tokens from database.")
+		return
+	}
+
+	resTokens := modelconv.DBTokensToResponses(dbTokens)
+	c.JSON(http.StatusOK, resTokens)
+}
+
+// searchTokenListHandler godoc
+// @id oldSearchTokenList
+// @deprecated
+// @summary Returns arrays of tokens that match to search criteria.
+// @description Returns arrays of tokens that match to search criteria.
+// @description It takes into consideration only token string and user name.
+// @description Deprecated since v5.0.0. Planned for removal in v6.0.0.
+// @description Use `GET /token` instead.
+// @tags token
+// @accept json
+// @produce json
+// @param token body request.TokenSearch _ "Token search criteria"
+// @success 200 {object} []response.Token
+// @failure 400 {object} problem.Response "Bad request"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 502 {object} problem.Response "Database is unreachable"
+// @router /tokens/search [post]
+func (m TokenModule) searchTokenListHandler(c *gin.Context) {
+	var reqToken request.Token
+	if err := c.ShouldBindJSON(&reqToken); err != nil {
+		ginutil.WriteInvalidBindError(c, err,
+			"One or more parameters failed to parse when reading the request body for the token object to search with.")
+		return
+	}
+
+	var dbTokens []database.Token
+	err := m.Database.
+		Where(&database.Token{
+			Token:    reqToken.Token,
+			UserName: reqToken.UserName,
+		}, database.TokenFields.Token, database.TokenFields.UserName).
+		Find(&dbTokens).
+		Error
+	if err != nil {
+		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
+			"Failed searching for token by value and with username %q in database.",
+			reqToken.UserName))
+		return
+	}
+
+	resTokens := modelconv.DBTokensToResponses(dbTokens)
+	c.JSON(http.StatusOK, resTokens)
 }
 
 // updateTokenHandler godoc

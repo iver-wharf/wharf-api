@@ -33,19 +33,17 @@ type projectModule struct {
 }
 
 func (m projectModule) Register(g *gin.RouterGroup) {
-	projects := g.Group("/projects")
-	{
-		projects.GET("/:projectId/builds", m.getProjectBuildListHandler)
-	}
-
 	project := g.Group("/project")
 	{
 		project.GET("", m.getProjectListHandler)
-		project.GET("/:projectId", m.getProjectHandler)
 		project.POST("", m.createProjectHandler)
-		project.DELETE("/:projectId", m.deleteProjectHandler)
-		project.PUT("/:projectId", m.updateProjectHandler)
-		project.POST("/:projectId/:stage/run", m.startProjectBuildHandler)
+		projectByID := project.Group("/:projectId")
+		{
+			projectByID.GET("", m.getProjectHandler)
+			projectByID.DELETE("", m.deleteProjectHandler)
+			projectByID.PUT("", m.updateProjectHandler)
+			projectByID.POST("/:stage/run", m.startProjectBuildHandler)
+		}
 	}
 }
 
@@ -57,6 +55,8 @@ var projectJSONToColumns = map[string]database.SafeSQLName{
 	response.ProjectJSONFields.GitURL:      database.ProjectColumns.GitURL,
 }
 
+var defaultGetProjectsOrderBy = orderby.Column{Name: database.ProjectColumns.ProjectID, Direction: orderby.Desc}
+
 // getProjectListHandler godoc
 // @id getProjectList
 // @summary Returns all projects from database
@@ -65,8 +65,8 @@ var projectJSONToColumns = map[string]database.SafeSQLName{
 // @description while the matching filters are meant for searches by humans where it tries to find soft matches and is therefore inaccurate by nature.
 // @tags project
 // @param orderby query []string false "Sorting orders. Takes the property name followed by either 'asc' or 'desc'. Can be specified multiple times for more granular sorting. Defaults to `?orderby=projectId desc`"
-// @param limit query int false "Number of results to return. No limit if unset or non-positive. Required if `offset` is used."
-// @param offset query int false "Skipped results, where 0 means from the start." minimum(0)
+// @param limit query int false "Number of results to return. No limiting is applied if empty (`?limit=`) or non-positive (`?limit=0`). Required if `offset` is used." default(100)
+// @param offset query int false "Skipped results, where 0 means from the start." minimum(0) default(0)
 // @param name query string false "Filter by verbatim project name."
 // @param groupName query string false "Filter by verbatim project group."
 // @param description query string false "Filter by verbatim description."
@@ -78,16 +78,13 @@ var projectJSONToColumns = map[string]database.SafeSQLName{
 // @param descriptionMatch query string false "Filter by matching description. Cannot be used with `description`."
 // @param gitUrlMatch query string false "Filter by matching Git URL. Cannot be used with `gitUrl`."
 // @param match query string false "Filter by matching on any supported fields."
-// @success 200 {object} []response.Project
+// @success 200 {object} response.PaginatedProjects
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @router /project [get]
 func (m projectModule) getProjectListHandler(c *gin.Context) {
 	var params = struct {
-		Limit  int `form:"limit" binding:"required_with=Offset"`
-		Offset int `form:"offset" binding:"min=0"`
-
-		OrderBy []string `form:"orderby"`
+		commonGetQueryParams
 
 		Name        *string `form:"name"`
 		GroupName   *string `form:"groupName"`
@@ -102,23 +99,19 @@ func (m projectModule) getProjectListHandler(c *gin.Context) {
 		GitURLMatch      *string `form:"gitUrlMatch" binding:"excluded_with=GitURL"`
 
 		Match *string `form:"match"`
-	}{}
-	if err := c.ShouldBindQuery(&params); err != nil {
-		ginutil.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading query parameters.")
+	}{
+		commonGetQueryParams: defaultCommonGetQueryParams,
+	}
+	if !bindCommonGetQueryParams(c, &params) {
 		return
 	}
-	orderBySlice, err := orderby.ParseSlice(params.OrderBy, projectJSONToColumns)
-	if err != nil {
-		joinedOrders := strings.Join(params.OrderBy, ", ")
-		ginutil.WriteInvalidParamError(c, err, "orderby", fmt.Sprintf(
-			"Failed parsing the %d sort ordering values: %s",
-			len(params.OrderBy),
-			joinedOrders))
+	orderBySlice, ok := parseCommonOrderBySlice(c, params.OrderBy, providerJSONToColumns)
+	if !ok {
 		return
 	}
-	var dbProjects []database.Project
+
 	var where wherefields.Collection
-	err = databaseProjectPreloaded(m.Database).
+	query := databaseProjectPreloaded(m.Database).
 		Clauses(orderBySlice.ClauseIfNone(defaultGetProjectsOrderBy)).
 		Where(&database.Project{
 			Name:       where.String(database.ProjectFields.Name, params.Name),
@@ -128,7 +121,6 @@ func (m projectModule) getProjectListHandler(c *gin.Context) {
 			GitURL:     where.String(database.ProjectFields.GitURL, params.GitURL),
 		}, where.NonNilFieldNames()...).
 		Scopes(
-			optionalLimitOffsetScope(params.Limit, params.Offset),
 			whereLikeScope(map[database.SafeSQLName]*string{
 				database.ProjectColumns.Name:        params.NameMatch,
 				database.ProjectColumns.GroupName:   params.GroupNameMatch,
@@ -142,86 +134,20 @@ func (m projectModule) getProjectListHandler(c *gin.Context) {
 				database.ProjectColumns.Description,
 				database.ProjectColumns.GitURL,
 			),
-		).
-		Find(&dbProjects).
-		Error
+		)
+
+	var dbProjects []database.Project
+	var totalCount int64
+	err := findDBPaginatedSliceAndTotalCount(query, params.Limit, params.Offset, &dbProjects, &totalCount)
 	if err != nil {
 		ginutil.WriteDBReadError(c, err, "Failed fetching list of projects from database.")
 		return
 	}
-	resProjects := modelconv.DBProjectsToResponses(dbProjects)
-	c.JSON(http.StatusOK, resProjects)
-}
 
-var buildJSONToColumns = map[string]database.SafeSQLName{
-	response.BuildJSONFields.BuildID:     database.BuildColumns.BuildID,
-	response.BuildJSONFields.Environment: database.BuildColumns.Environment,
-	response.BuildJSONFields.CompletedOn: database.BuildColumns.CompletedOn,
-	response.BuildJSONFields.ScheduledOn: database.BuildColumns.ScheduledOn,
-	response.BuildJSONFields.StartedOn:   database.BuildColumns.StartedOn,
-	response.BuildJSONFields.Stage:       database.BuildColumns.Stage,
-	response.BuildJSONFields.StatusID:    database.BuildColumns.StatusID,
-	response.BuildJSONFields.IsInvalid:   database.BuildColumns.IsInvalid,
-}
-
-// getProjectBuildListHandler godoc
-// @id getProjectBuildList
-// @summary Get slice of builds.
-// @tags project
-// @param projectId path uint true "project ID" minimum(0)
-// @param limit query string true "number of fetched branches"
-// @param offset query string true "PK of last branch taken"
-// @param orderby query []string false "Sorting orders. Takes the property name followed by either 'asc' or 'desc'. Can be specified multiple times for more granular sorting. Defaults to `?orderby=buildId desc`"
-// @success 200 {object} response.PaginatedBuilds
-// @failure 400 {object} problem.Response "Bad request"
-// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
-// @failure 502 {object} problem.Response "Database is unreachable"
-// @router /projects/{projectId}/builds [get]
-func (m projectModule) getProjectBuildListHandler(c *gin.Context) {
-	projectID, ok := ginutil.ParseParamUint(c, "projectId")
-	if !ok {
-		return
-	}
-	limit, ok := ginutil.ParseQueryInt(c, "limit")
-	if !ok {
-		return
-	}
-	offset, ok := ginutil.ParseQueryInt(c, "offset")
-	if !ok {
-		return
-	}
-	orderByQueryParams := c.QueryArray("orderby")
-	orderBySlice, err := orderby.ParseSlice(orderByQueryParams, buildJSONToColumns)
-	if err != nil {
-		joinedOrders := strings.Join(orderByQueryParams, ", ")
-		ginutil.WriteInvalidParamError(c, err, "orderby", fmt.Sprintf(
-			"Failed parsing the %d sort ordering values: %s",
-			len(orderByQueryParams),
-			joinedOrders))
-		return
-	}
-
-	dbBuilds, err := m.getBuilds(projectID, limit, offset, orderBySlice)
-	if err != nil {
-		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
-			"Failed fetching builds for project with ID %d from database.",
-			projectID))
-		return
-	}
-
-	count, err := m.getBuildsCount(projectID)
-	if err != nil {
-		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
-			"Failed fetching build count for project with ID %d from database.",
-			projectID))
-		return
-	}
-
-	resPaginated := response.PaginatedBuilds{
-		Builds:     modelconv.DBBuildsToResponses(dbBuilds),
-		TotalCount: count,
-	}
-	c.JSON(http.StatusOK, resPaginated)
+	c.JSON(http.StatusOK, response.PaginatedProjects{
+		Projects:   modelconv.DBProjectsToResponses(dbProjects),
+		TotalCount: totalCount,
+	})
 }
 
 // getProjectHandler godoc
@@ -662,25 +588,6 @@ func getDBJobParams(
 	}
 
 	return dbJobParams, nil
-}
-
-var defaultGetProjectsOrderBy = orderby.Column{Name: database.ProjectColumns.ProjectID, Direction: orderby.Desc}
-
-var defaultGetBuildsOrderBy = orderby.Column{Name: database.BuildColumns.BuildID, Direction: orderby.Desc}
-
-func (m projectModule) getBuilds(projectID uint, limit int, offset int, orderBySlice orderby.Slice) ([]database.Build, error) {
-	var dbBuilds []database.Build
-	var query = m.Database.
-		Where(&database.Build{ProjectID: projectID}).
-		Preload(database.BuildFields.TestResultSummaries).
-		Limit(limit).
-		Offset(offset).
-		Clauses(orderBySlice.ClauseIfNone(defaultGetBuildsOrderBy))
-	if err := query.Find(&dbBuilds).Error; err != nil {
-		return nil, err
-	}
-
-	return dbBuilds, nil
 }
 
 func (m projectModule) getBuildsCount(projectID uint) (int64, error) {

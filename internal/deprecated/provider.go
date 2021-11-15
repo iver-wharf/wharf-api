@@ -30,10 +30,110 @@ type ProviderModule struct {
 
 // Register adds all deprecated endpoints to a given Gin router group.
 func (m ProviderModule) Register(g *gin.RouterGroup) {
+	providers := g.Group("/providers")
+	{
+		providers.GET("", m.getProviderListHandler)
+		providers.POST("/search", m.searchProviderListHandler)
+	}
+
 	provider := g.Group("/provider")
 	{
 		provider.PUT("", m.updateProviderHandler)
 	}
+}
+
+// getProviderListHandler godoc
+// @id oldGetProviderList
+// @deprecated
+// @summary Returns first 100 providers
+// @description Deprecated since v5.0.0. Planned for removal in v6.0.0.
+// @description Use `GET /provider` instead.
+// @tags provider
+// @success 200 {object} []response.Provider
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 502 {object} problem.Response "Database is unreachable"
+// @router /providers [get]
+func (m ProviderModule) getProviderListHandler(c *gin.Context) {
+	var dbProviders []database.Provider
+	err := m.Database.Limit(100).Find(&dbProviders).Error
+	if err != nil {
+		ginutil.WriteDBReadError(c, err, "Failed fetching list of projects from database.")
+		return
+	}
+	resProviders := modelconv.DBProvidersToResponses(dbProviders)
+	c.JSON(http.StatusOK, resProviders)
+}
+
+// searchProviderListHandler godoc
+// @id oldSearchProviderList
+// @deprecated
+// @summary Returns arrays of providers that match to search criteria.
+// @description Returns arrays of providers that match to search criteria.
+// @description It takes into consideration name, URL and token ID.
+// @description Deprecated since v5.0.0. Planned for removal in v6.0.0.
+// @description Use `GET /provider` instead.
+// @tags provider
+// @accept json
+// @produce json
+// @param provider body request.ProviderSearch _ "provider object"
+// @success 200 {object} []response.Provider
+// @failure 400 {object} problem.Response "Bad request"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 502 {object} problem.Response "Database is unreachable"
+// @router /providers/search [post]
+func (m ProviderModule) searchProviderListHandler(c *gin.Context) {
+	var reqProvider request.ProviderSearch
+	if err := c.ShouldBindJSON(&reqProvider); err != nil {
+		ginutil.WriteInvalidBindError(c, err,
+			"One or more parameters failed to parse when reading the request body for the provider object to search with.")
+		return
+	}
+
+	validName, isValid := reqProvider.Name.ValidString()
+	if !isValid {
+		writeInvalidProviderNameProblem(c, reqProvider.Name)
+		return
+	}
+
+	var dbProviders []database.Provider
+	if reqProvider.TokenID != 0 {
+		err := m.Database.
+			Where(&database.Provider{
+				Name:    validName,
+				URL:     reqProvider.URL,
+				TokenID: reqProvider.TokenID,
+			},
+				database.ProviderFields.Name,
+				database.ProviderFields.URL,
+				database.ProviderFields.TokenID).
+			Find(&dbProviders).
+			Error
+		if err != nil {
+			ginutil.WriteDBReadError(c, err, fmt.Sprintf(
+				"Failed fetching list of providers with name %q, URL %q, and with token ID %d from database.",
+				reqProvider.Name, reqProvider.URL, reqProvider.TokenID))
+			return
+		}
+	} else {
+		err := m.Database.
+			Where(&database.Provider{
+				Name: validName,
+				URL:  reqProvider.URL,
+			},
+				database.ProviderFields.Name,
+				database.ProviderFields.URL).
+			Find(&dbProviders).
+			Error
+		if err != nil {
+			ginutil.WriteDBReadError(c, err, fmt.Sprintf(
+				"Failed fetching list of providers with name %q and URL %q from database.",
+				reqProvider.Name, reqProvider.URL))
+			return
+		}
+	}
+
+	resProviders := modelconv.DBProvidersToResponses(dbProviders)
+	c.JSON(http.StatusOK, resProviders)
 }
 
 // updateProviderHandler godoc
