@@ -45,6 +45,7 @@ func DBProjectToResponse(dbProject database.Project) response.Project {
 		BuildDefinition:       dbProject.BuildDefinition,
 		Branches:              DBBranchesToResponses(dbProject.Branches),
 		GitURL:                dbProject.GitURL,
+		RemoteProjectID:       dbProject.RemoteProjectID,
 		ParsedBuildDefinition: parsedBuildDef,
 	}
 }
@@ -60,6 +61,7 @@ func ReqProjectToDatabase(reqProject request.Project) database.Project {
 		ProviderID:      ptrconv.UintZeroNil(reqProject.ProviderID),
 		BuildDefinition: reqProject.BuildDefinition,
 		GitURL:          reqProject.GitURL,
+		RemoteProjectID: reqProject.RemoteProjectID,
 	}
 }
 

@@ -22,6 +22,8 @@ func (m BranchModule) Register(g *gin.RouterGroup) {
 	{
 		branch.GET("/:branchId", m.GetBranchHandler)
 	}
+
+	g.PUT("/branches", m.updateProjectBranchListHandler)
 }
 
 // GetBranchHandler godoc
