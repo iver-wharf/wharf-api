@@ -83,6 +83,20 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
 - Added dependency on `gorm.io/driver/sqlite`. (#86)
 
+- Added `updatedAt` and `createdAt` fields to the following models: (#111)
+
+  - `response.Artifact`
+  - `response.Branch`
+  - `response.Build`
+  - `response.Project`
+  - `response.Provider`
+  - `response.TestResultDetail`
+  - `response.TestResultSummary`
+  - `response.Token`
+
+  Objects created and updated before this patch will have the value `null`, but
+  will get a valid date on first update, such as on first refresh for a project.
+
 - Fixed bug where unable to delete a Project without first deleting all child
   objects. (#64)
 

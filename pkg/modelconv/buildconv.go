@@ -58,6 +58,7 @@ func DBBuildToResponse(dbBuild database.Build) response.Build {
 		Failed:  failed,
 	}
 	return response.Build{
+		TimeMetadata:          DBTimeMetadataToResponse(dbBuild.TimeMetadata),
 		BuildID:               dbBuild.BuildID,
 		StatusID:              int(dbBuild.StatusID),
 		Status:                DBBuildStatusToResponse(dbBuild.StatusID),

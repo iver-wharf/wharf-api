@@ -18,9 +18,10 @@ func DBProvidersToResponses(dbProviders []database.Provider) []response.Provider
 // DBProviderToResponse converts a database provider to a response provider.
 func DBProviderToResponse(dbProvider database.Provider) response.Provider {
 	return response.Provider{
-		ProviderID: dbProvider.ProviderID,
-		Name:       response.ProviderName(dbProvider.Name),
-		URL:        dbProvider.URL,
-		TokenID:    dbProvider.TokenID,
+		TimeMetadata: DBTimeMetadataToResponse(dbProvider.TimeMetadata),
+		ProviderID:   dbProvider.ProviderID,
+		Name:         response.ProviderName(dbProvider.Name),
+		URL:          dbProvider.URL,
+		TokenID:      dbProvider.TokenID,
 	}
 }

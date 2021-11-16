@@ -33,11 +33,12 @@ func DBBranchesToResponses(dbBranches []database.Branch) []response.Branch {
 // DBBranchToResponse converts a database branch to a response branch.
 func DBBranchToResponse(dbBranch database.Branch) response.Branch {
 	return response.Branch{
-		BranchID:  dbBranch.BranchID,
-		ProjectID: dbBranch.ProjectID,
-		Name:      dbBranch.Name,
-		Default:   dbBranch.Default,
-		TokenID:   dbBranch.TokenID,
+		TimeMetadata: DBTimeMetadataToResponse(dbBranch.TimeMetadata),
+		BranchID:     dbBranch.BranchID,
+		ProjectID:    dbBranch.ProjectID,
+		Name:         dbBranch.Name,
+		Default:      dbBranch.Default,
+		TokenID:      dbBranch.TokenID,
 	}
 }
 
