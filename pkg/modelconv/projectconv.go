@@ -2,7 +2,7 @@ package modelconv
 
 import (
 	"github.com/ghodss/yaml"
-	"github.com/iver-wharf/wharf-api/internal/or"
+	"github.com/iver-wharf/wharf-api/internal/coalesce"
 	"github.com/iver-wharf/wharf-api/internal/ptrconv"
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/iver-wharf/wharf-api/pkg/model/request"
@@ -37,14 +37,14 @@ func DBProjectToResponse(dbProject database.Project) response.Project {
 		ProjectID:             dbProject.ProjectID,
 		Name:                  dbProject.Name,
 		GroupName:             dbProject.GroupName,
-		Description:           or.String(dbProject.Overrides.Description, dbProject.Description),
-		AvatarURL:             or.String(dbProject.Overrides.AvatarURL, dbProject.AvatarURL),
+		Description:           coalesce.String(dbProject.Overrides.Description, dbProject.Description),
+		AvatarURL:             coalesce.String(dbProject.Overrides.AvatarURL, dbProject.AvatarURL),
 		TokenID:               ptrconv.UintPtr(dbProject.TokenID),
 		ProviderID:            ptrconv.UintPtr(dbProject.ProviderID),
 		Provider:              resProviderPtr,
 		BuildDefinition:       dbProject.BuildDefinition,
 		Branches:              DBBranchesToResponses(dbProject.Branches),
-		GitURL:                or.String(dbProject.Overrides.GitURL, dbProject.GitURL),
+		GitURL:                coalesce.String(dbProject.Overrides.GitURL, dbProject.GitURL),
 		RemoteProjectID:       dbProject.RemoteProjectID,
 		ParsedBuildDefinition: parsedBuildDef,
 	}
