@@ -42,7 +42,8 @@ func (m projectModule) Register(g *gin.RouterGroup) {
 			projectByID.GET("", m.getProjectHandler)
 			projectByID.DELETE("", m.deleteProjectHandler)
 			projectByID.PUT("", m.updateProjectHandler)
-			projectByID.POST("/:stage/run", m.startProjectBuildHandler)
+			projectByID.POST("/build", m.startProjectBuildHandler)
+			projectByID.POST("/:stage/run", m.oldStartProjectBuildHandler)
 		}
 	}
 }
@@ -287,27 +288,65 @@ func (m projectModule) updateProjectHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, resProject)
 }
 
-// startProjectBuildHandler godoc
-// @id startProjectBuild
+// oldStartProjectBuildHandler godoc
+// @id oldStartProjectBuild
+// @deprecated
 // @summary Responsible for run stage environment for selected project
+// @description Deprecated since v5.0.0. Planned for removal in v6.0.0.
+// @description Use `POST /project/{projectId}/build` instead.
 // @tags project
 // @accept json
 // @param projectId path uint true "project ID" minimum(0)
 // @param stage path string true "name of stage to run, or specify ALL to run everything"
 // @param branch query string false "branch name, uses default branch if omitted"
 // @param environment query string false "environment name"
-// @param inputs body string _ "user inputs"
+// @param inputs body string _ "user inputs" example(foo:bar)
 // @success 200 {object} response.BuildReferenceWrapper "Build scheduled"
 // @failure 400 {object} problem.Response "Bad request, such as invalid body JSON"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 404 {object} problem.Response "Project was not found"
 // @failure 502 {object} problem.Response "Database or code execution engine is unreachable"
 // @router /project/{projectId}/{stage}/run [post]
+func (m projectModule) oldStartProjectBuildHandler(c *gin.Context) {
+	// not moved to `internal/deprecated` package as it's too much
+	// code duplication
+	projectID, ok := ginutil.ParseParamUint(c, "projectId")
+	if !ok {
+		return
+	}
+	stageName := c.Param("stage")
+	m.startBuild(c, projectID, stageName)
+}
+
+// startProjectBuildHandler godoc
+// @id startProjectBuild
+// @summary Responsible for run stage environment for selected project
+// @tags project
+// @accept json
+// @param projectId path uint true "project ID" minimum(0)
+// @param stage query string false "name of stage to run, or specify ALL to run everything" default(ALL)
+// @param branch query string false "branch name, uses default branch if omitted"
+// @param environment query string false "environment name"
+// @param inputs body request.BuildInputs _ "user inputs"
+// @success 200 {object} response.BuildReferenceWrapper "Build scheduled"
+// @failure 400 {object} problem.Response "Bad request, such as invalid body JSON"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 404 {object} problem.Response "Project was not found"
+// @failure 502 {object} problem.Response "Database or code execution engine is unreachable"
+// @router /project/{projectId}/build [post]
 func (m projectModule) startProjectBuildHandler(c *gin.Context) {
 	projectID, ok := ginutil.ParseParamUint(c, "projectId")
 	if !ok {
 		return
 	}
+	stageName, hasStageName := c.GetQuery("stage")
+	if !hasStageName {
+		stageName = "ALL"
+	}
+	m.startBuild(c, projectID, stageName)
+}
+
+func (m projectModule) startBuild(c *gin.Context, projectID uint, stageName string) {
 	dbProject, ok := fetchProjectByID(c, m.Database, projectID, "when starting a new build")
 	if !ok {
 		return
@@ -321,7 +360,6 @@ func (m projectModule) startProjectBuildHandler(c *gin.Context) {
 		return
 	}
 
-	stageName := c.Param("stage")
 	env, hasEnv := c.GetQuery("environment")
 	branch, hasBranch := c.GetQuery("branch")
 
@@ -474,7 +512,7 @@ func parseDBBuildParams(buildID uint, buildDef []byte, vars []byte) ([]database.
 		WithInt("inputs", len(def.Inputs)).
 		Message("Unmarshaled build-def.")
 
-	m := make(map[string]interface{})
+	m := make(request.BuildInputs)
 	err = json.Unmarshal(vars, &m)
 	if err != nil {
 		log.Error().WithError(err).Message("Failed unmarshaling input variables JSON.")

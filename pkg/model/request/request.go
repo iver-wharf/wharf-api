@@ -84,6 +84,11 @@ const (
 	BuildFailed BuildStatus = "Failed"
 )
 
+// BuildInputs is a key-value object of input variables used when starting a new
+// build, where the key is the input variable name and the value is its string,
+// boolean, or numeric value.
+type BuildInputs map[string]interface{}
+
 // Project specifies fields when creating a new project.
 type Project struct {
 	Name            string `json:"name" validate:"required" binding:"required"`
