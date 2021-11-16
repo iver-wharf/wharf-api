@@ -113,7 +113,7 @@ func (m providerModule) getProviderListHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response.PaginatedProviders{
-		Providers:  modelconv.DBProvidersToResponses(dbProviders),
+		List:       modelconv.DBProvidersToResponses(dbProviders),
 		TotalCount: totalCount,
 	})
 }

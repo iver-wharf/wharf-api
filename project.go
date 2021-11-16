@@ -145,7 +145,7 @@ func (m projectModule) getProjectListHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response.PaginatedProjects{
-		Projects:   modelconv.DBProjectsToResponses(dbProjects),
+		List:       modelconv.DBProjectsToResponses(dbProjects),
 		TotalCount: totalCount,
 	})
 }

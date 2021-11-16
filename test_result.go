@@ -126,7 +126,7 @@ func (m buildTestResultModule) createBuildTestResultHandler(c *gin.Context) {
 // @summary Get all test result details for specified build
 // @tags test-result
 // @param buildId path uint true "Build ID" minimum(0)
-// @success 200 {object} []response.TestResultDetail
+// @success 200 {object} response.PaginatedTestResultDetails
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildId}/test-result/detail [get]
@@ -150,7 +150,10 @@ func (m buildTestResultModule) getBuildAllTestResultDetailListHandler(c *gin.Con
 	}
 
 	resDetails := modelconv.DBTestResultDetailsToResponses(dbDetails)
-	c.JSON(http.StatusOK, resDetails)
+	c.JSON(http.StatusOK, response.PaginatedTestResultDetails{
+		List:       resDetails,
+		TotalCount: int64(len(resDetails)),
+	})
 }
 
 // getBuildAllTestResultSummaryListHandler godoc
@@ -158,7 +161,7 @@ func (m buildTestResultModule) getBuildAllTestResultDetailListHandler(c *gin.Con
 // @summary Get all test result summaries for specified build
 // @tags test-result
 // @param buildId path uint true "Build ID" minimum(0)
-// @success 200 {object} []response.TestResultSummary
+// @success 200 {object} response.PaginatedTestResultSummaries
 // @failure 400 {object} problem.Response "Bad Request"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildId}/test-result/summary [get]
@@ -186,7 +189,10 @@ func (m buildTestResultModule) getBuildAllTestResultSummaryListHandler(c *gin.Co
 		resSummaries[i] = modelconv.DBTestResultSummaryToResponse(dbSummary)
 	}
 
-	c.JSON(http.StatusOK, resSummaries)
+	c.JSON(http.StatusOK, response.PaginatedTestResultSummaries{
+		List:       resSummaries,
+		TotalCount: int64(len(resSummaries)),
+	})
 }
 
 // getBuildTestResultSummaryHandler godoc
@@ -233,7 +239,7 @@ func (m buildTestResultModule) getBuildTestResultSummaryHandler(c *gin.Context) 
 // @tags test-result
 // @param buildId path uint true "Build ID" minimum(0)
 // @param artifactId path uint true "Artifact ID" minimum(0)
-// @success 200 {object} []response.TestResultDetail
+// @success 200 {object} response.PaginatedTestResultDetails
 // @failure 400 {object} problem.Response "Bad Request"
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildId}/test-result/summary/{artifactId}/detail [get]
@@ -262,7 +268,10 @@ func (m buildTestResultModule) getBuildTestResultDetailListHandler(c *gin.Contex
 	}
 
 	resDetails := modelconv.DBTestResultDetailsToResponses(dbDetails)
-	c.JSON(http.StatusOK, resDetails)
+	c.JSON(http.StatusOK, response.PaginatedTestResultDetails{
+		List:       resDetails,
+		TotalCount: int64(len(dbDetails)),
+	})
 }
 
 // getBuildAllTestResultListSummaryHandler godoc

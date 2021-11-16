@@ -120,7 +120,7 @@ func (m artifactModule) getBuildArtifactListHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response.PaginatedArtifacts{
-		Artifacts:  modelconv.DBArtifactsToResponses(dbArtifacts),
+		List:       modelconv.DBArtifactsToResponses(dbArtifacts),
 		TotalCount: totalCount,
 	})
 }

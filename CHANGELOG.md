@@ -58,7 +58,7 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   `"totalCount"` field for the overall query.
 
   By default all these new endpoints use a default limit of 100, but this can
-  be disabled by specifying `?limit=0`. (#109)
+  be disabled by specifying `?limit=0`. (#109, #118)
 
 - Added configuration of specific origins for CORS via the environment variable
   `WHARF_HTTP_CORS_ALLOWORIGINS` or the YAML key `http.cors.allowOrigins`. This
@@ -95,7 +95,7 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   - test_result_detail
   - test_result_summary
 
-- Added test-result specific endpoints: (#43)
+- Added test-result specific endpoints: (#43, #118)
 
   - `POST /build/{buildid}/test-result`
 
@@ -116,7 +116,7 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
   Use `GET /build/{buildid}/test-result/list-summary` instead. The response
   data is slightly different; it has additional properties, and does not have a
-  `status` property. (#43, #77)
+  `status` property. (#43, #77, #118)
 
 - Changed format of all endpoint's path parameters from all lowercase to
   camelCase: (#76)
