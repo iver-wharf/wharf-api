@@ -43,6 +43,7 @@ func (m projectModule) Register(g *gin.RouterGroup) {
 			projectByID.DELETE("", m.deleteProjectHandler)
 			projectByID.PUT("", m.updateProjectHandler)
 			projectByID.POST("/build", m.startProjectBuildHandler)
+			// Deprecated:
 			projectByID.POST("/:stage/run", m.oldStartProjectBuildHandler)
 		}
 	}
