@@ -38,10 +38,8 @@ type TokenUpdate struct {
 
 // Branch specifies fields when adding a new branch to a project.
 type Branch struct {
-	ProjectID uint   `json:"projectId" validate:"required" minimum:"0"`
-	Name      string `json:"name" validate:"required"`
-	Default   bool   `json:"default"`
-	TokenID   uint   `json:"tokenId" minimum:"0"`
+	Name    string `json:"name" validate:"required"`
+	Default bool   `json:"default"`
 }
 
 // BranchUpdate specifies fields for a single branch.

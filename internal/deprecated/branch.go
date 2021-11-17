@@ -62,10 +62,11 @@ func (m BranchModule) getBranchListHandler(c *gin.Context) {
 
 // Branch specifies fields when adding a new branch to a project.
 type Branch struct {
-	ProjectID uint   `json:"projectId" validate:"required" minimum:"0"`
-	Name      string `json:"name" validate:"required"`
+	BranchID  uint   `json:"branchId"`
+	ProjectID uint   `json:"projectId"`
+	Name      string `json:"name"`
 	Default   bool   `json:"default"`
-	TokenID   uint   `json:"tokenId" minimum:"0"`
+	TokenID   uint   `json:"tokenId"`
 }
 
 // createBranchHandler godoc
