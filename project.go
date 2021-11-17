@@ -320,14 +320,14 @@ func (m projectModule) oldStartProjectBuildHandler(c *gin.Context) {
 
 // startProjectBuildHandler godoc
 // @id startProjectBuild
-// @summary Responsible for run stage environment for selected project
+// @summary Start a new build for the given project, with optional build stage, build environment, or repo branch filters.
 // @tags project
 // @accept json
-// @param projectId path uint true "project ID" minimum(0)
-// @param stage query string false "name of stage to run, or specify ALL to run everything" default(ALL)
-// @param branch query string false "branch name, uses default branch if omitted"
-// @param environment query string false "environment name"
-// @param inputs body request.BuildInputs _ "user inputs"
+// @param projectId path uint true "Project ID" minimum(0)
+// @param stage query string false "Name of stage to run, or specify `ALL` to run all stages." default(ALL)
+// @param branch query string false "Branch name. Uses project's default branch if omitted"
+// @param environment query string false "Environment name filter. If left empty it will run all stages without any environment filters."
+// @param inputs body request.BuildInputs _ "Input variable values. Map of variable names (as defined in the project's `.wharf-ci.yml` file) as keys paired with their string, boolean, or numeric value."
 // @success 200 {object} response.BuildReferenceWrapper "Build scheduled"
 // @failure 400 {object} problem.Response "Bad request, such as invalid body JSON"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
