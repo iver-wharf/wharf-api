@@ -471,6 +471,7 @@ func (m buildModule) getLogs(buildID uint) ([]database.Log, error) {
 // @summary Responsible for run stage environment for selected project
 // @description Deprecated since v5.0.0. Planned for removal in v6.0.0.
 // @description Use `POST /project/{projectId}/build` instead.
+// @description Added in v0.2.4.
 // @tags project
 // @accept json
 // @param projectId path uint true "project ID" minimum(0)
