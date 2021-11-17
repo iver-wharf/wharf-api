@@ -20,33 +20,30 @@ type branchModule struct {
 }
 
 func (m branchModule) Register(g *gin.RouterGroup) {
-	branches := g.Group("/branches")
-	{
-		branches.GET("", m.getBranchListHandler)
-	}
-
 	branch := g.Group("/branch")
 	{
-		branch.POST("", m.createBranchHandler)
+		branch.POST("", m.createProjectBranchHandler)
 	}
 
 	projectBranch := g.Group("/project/:projectId/branch")
 	{
+		projectBranch.GET("", m.getProjectBranchListHandler)
 		projectBranch.PUT("", m.updateProjectBranchListHandler)
 	}
 }
 
-// getBranchListHandler godoc
+// getProjectBranchListHandler godoc
 // @id getBranchList
 // @summary NOT IMPLEMENTED YET
 // @tags branch
+// @param projectId path uint true "project ID" minimum(0)
 // @success 501 "Not Implemented"
-// @router /branches [get]
-func (m branchModule) getBranchListHandler(c *gin.Context) {
+// @router /project/{projectId}/branch [get]
+func (m branchModule) getProjectBranchListHandler(c *gin.Context) {
 	c.Status(http.StatusNotImplemented)
 }
 
-// createBranchHandler godoc
+// createProjectBranchHandler godoc
 // @id createBranch
 // @summary Create or update branch.
 // @description It finds branch by project ID, token ID and name.
@@ -56,13 +53,9 @@ func (m branchModule) getBranchListHandler(c *gin.Context) {
 // @accept json
 // @produce json
 // @param branch body request.Branch true "branch object"
-// @success 200 {object} response.Branch "Updated branch"
-// @success 201 {object} response.Branch "Added new branch"
-// @failure 400 {object} problem.Response "Bad request"
-// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
-// @failure 502 {object} problem.Response "Database is unreachable"
-// @router /branch [post]
-func (m branchModule) createBranchHandler(c *gin.Context) {
+// @success 501 "Not Implemented"
+// @router /project/{projectId}/branch [post]
+func (m branchModule) createProjectBranchHandler(c *gin.Context) {
 	var reqBranch request.Branch
 	if err := c.ShouldBindJSON(&reqBranch); err != nil {
 		ginutil.WriteInvalidBindError(c, err,
