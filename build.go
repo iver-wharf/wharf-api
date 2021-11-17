@@ -41,7 +41,7 @@ func (m buildModule) Register(g *gin.RouterGroup) {
 		buildByID := build.Group("/:buildId")
 		{
 			buildByID.GET("", m.getBuildHandler)
-			buildByID.PUT("", m.updateBuildHandler)
+			buildByID.PUT("/status", m.updateBuildStatusHandler)
 			buildByID.POST("/log", m.createBuildLogHandler)
 			buildByID.GET("/log", m.getBuildLogListHandler)
 			buildByID.GET("/stream", m.streamBuildLogHandler)
@@ -376,51 +376,15 @@ func (m buildModule) createBuildLogHandler(c *gin.Context) {
 	c.Status(http.StatusCreated)
 }
 
-// updateBuildHandler godoc
-// @id updateBuild
-// @summary Partially update specific build
+// updateBuildStatusHandler godoc
+// @id updateBuildStatus
+// @summary Update a build's status. (NOT IMPLEMENTED!)
 // @tags build
-// @param buildId path uint true "build id" minimum(0)
-// @param status query string true "Build status term" Enums(Scheduling, Running, Completed, Failed)
-// @success 200 {object} response.Build
-// @failure 400 {object} problem.Response "Bad request"
-// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
-// @failure 404 {object} problem.Response "Build not found"
-// @failure 502 {object} problem.Response "Database is unreachable"
-// @router /build/{buildId} [put]
-func (m buildModule) updateBuildHandler(c *gin.Context) {
-	buildID, ok := ginutil.ParseParamUint(c, "buildId")
-	if !ok {
-		return
-	}
-
-	status, ok := ginutil.RequireQueryString(c, "status")
-	if !ok {
-		return
-	}
-
-	statusID, ok := modelconv.ReqBuildStatusToDatabase(request.BuildStatus(status))
-	if !ok {
-		ginutil.WriteInvalidParamError(c, nil, "status", fmt.Sprintf(
-			"Unable to parse build status from %q", status))
-		return
-	}
-
-	dbBuild, err := m.updateBuildStatus(buildID, statusID)
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		ginutil.WriteDBNotFound(c, fmt.Sprintf(
-			"Build with ID %d was not found when trying to update status to %q.",
-			buildID, status))
-		return
-	} else if err != nil {
-		ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
-			"Failed updating build status to %q on build with ID %d in the database.",
-			status, buildID))
-		return
-	}
-
-	resBuild := modelconv.DBBuildToResponse(dbBuild)
-	c.JSON(http.StatusOK, resBuild)
+// @param buildId path uint true "Build ID" minimum(0)
+// @success 501 "Not Implemented"
+// @router /build/{buildId}/status [put]
+func (m buildModule) updateBuildStatusHandler(c *gin.Context) {
+	c.Status(http.StatusNotImplemented)
 }
 
 func (m buildModule) updateBuildStatus(buildID uint, statusID database.BuildStatus) (database.Build, error) {
