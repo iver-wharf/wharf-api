@@ -64,12 +64,13 @@ func (m branchModule) getProjectBranchListHandler(c *gin.Context) {
 // @id createProjectBranch
 // @summary Add branch to project.
 // @description Adds a branch to the project, and allows you to set this new branch to be the default branch.
+// @description Will ignore name collisions, and treat them as if the branch was just created anyway.
 // @tags branch
 // @accept json
 // @produce json
 // @param projectId path uint true "project ID" minimum(0)
 // @param branch body request.Branch true "Branch object"
-// @success 200 {object} response.Branch "Updated branches"
+// @success 201 {object} response.Branch "Created branch"
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 404 {object} problem.Response "Project not found"
@@ -91,22 +92,26 @@ func (m branchModule) createProjectBranchHandler(c *gin.Context) {
 		return
 	}
 	tokenID := ptrconv.UintPtr(dbProject.TokenID)
+	var dbBranch database.Branch
 	err := m.Database.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where(&database.Branch{
-			ProjectID: projectID,
-			Name:      reqBranch.Name,
-		}).FirstOrCreate(&database.Branch{
+		dbBranch = database.Branch{
 			ProjectID: projectID,
 			Default:   reqBranch.Default,
 			Name:      reqBranch.Name,
 			TokenID:   tokenID,
-		}).Error; err != nil {
+		}
+		if err := tx.Where(&database.Branch{
+			ProjectID: projectID,
+			Name:      reqBranch.Name,
+		}).FirstOrCreate(&dbBranch).Error; err != nil {
 			return err
 		}
 		if reqBranch.Default {
-			return setDefaultBranchByName(tx, projectID, reqBranch.Name)
+			if err := setDefaultBranchByName(tx, projectID, reqBranch.Name); err != nil {
+				return err
+			}
 		}
-		return nil
+		return tx.First(&dbBranch, dbBranch.BranchID).Error
 	})
 	if err != nil {
 		ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
@@ -114,6 +119,7 @@ func (m branchModule) createProjectBranchHandler(c *gin.Context) {
 			projectID))
 		return
 	}
+	c.JSON(http.StatusCreated, modelconv.DBBranchToResponse(dbBranch))
 }
 
 // updateProjectBranchListHandler godoc
