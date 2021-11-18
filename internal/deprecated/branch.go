@@ -38,7 +38,7 @@ func (m BranchModule) Register(g *gin.RouterGroup) {
 // @summary Get a branch by ID
 // @description This endpoint has not been implemented!
 // @description Deprecated since v4.3.0. Planned for removal in v6.0.0.
-// @description Added in TODO.
+// @description Added in v0.2.0.
 // @tags branch
 // @param branchId path uint true "branch ID" minimum(0)
 // @success 501 "Not Implemented"
@@ -53,7 +53,7 @@ func (m BranchModule) GetBranchHandler(c *gin.Context) {
 // @description This endpoint was never implemented!
 // @description Deprecated since v5.0.0. Planned for removal in v6.0.0.
 // @description Use `GET /project/{projectId}/branch` instead.
-// @description Added in TODO.
+// @description Added in v0.2.0.
 // @summary NOT IMPLEMENTED
 // @tags branch
 // @success 501 "Not Implemented"
@@ -80,7 +80,7 @@ type Branch struct {
 // @description If not existing new branch will be created.
 // @description Deprecated since v5.0.0. Planned for removal in v6.0.0.
 // @description Use `PUT /project/{projectId}/branch` instead.
-// @description Added in TODO.
+// @description Added in v0.2.0.
 // @tags branch
 // @accept json
 // @produce json
@@ -139,7 +139,7 @@ func (m BranchModule) createBranchHandler(c *gin.Context) {
 // @description Alters the database by removing, adding and updating until the stored branches equals the input branches.
 // @description Deprecated since v5.0.0. Planned for removal in v6.0.0.
 // @description Use PUT /project/{projectId}/branch instead.
-// @description Added in TODO.
+// @description Added in v1.0.0.
 // @tags branches
 // @accept json
 // @produce json
