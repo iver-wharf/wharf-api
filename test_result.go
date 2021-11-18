@@ -38,7 +38,7 @@ func (m buildTestResultModule) Register(r gin.IRouter) {
 // createBuildTestResultHandler godoc
 // @id createBuildTestResult
 // @summary Post test result data
-// @description Added in TODO.
+// @description Added in v5.0.0.
 // @tags test-result
 // @accept multipart/form-data
 // @param buildId path uint true "Build ID" minimum(0)
@@ -126,7 +126,7 @@ func (m buildTestResultModule) createBuildTestResultHandler(c *gin.Context) {
 // getBuildAllTestResultDetailListHandler godoc
 // @id getBuildAllTestResultDetailList
 // @summary Get all test result details for specified build
-// @description Added in TODO.
+// @description Added in v5.0.0.
 // @tags test-result
 // @param buildId path uint true "Build ID" minimum(0)
 // @success 200 {object} response.PaginatedTestResultDetails
@@ -162,7 +162,7 @@ func (m buildTestResultModule) getBuildAllTestResultDetailListHandler(c *gin.Con
 // getBuildAllTestResultSummaryListHandler godoc
 // @id getBuildAllTestResultSummaryList
 // @summary Get all test result summaries for specified build
-// @description Added in TODO.
+// @description Added in v5.0.0.
 // @tags test-result
 // @param buildId path uint true "Build ID" minimum(0)
 // @success 200 {object} response.PaginatedTestResultSummaries
@@ -202,7 +202,7 @@ func (m buildTestResultModule) getBuildAllTestResultSummaryListHandler(c *gin.Co
 // getBuildTestResultSummaryHandler godoc
 // @id getBuildTestResultSummary
 // @summary Get test result summary for specified test
-// @description Added in TODO.
+// @description Added in v5.0.0.
 // @tags test-result
 // @param buildId path uint true "Build ID" minimum(0)
 // @param artifactId path uint true "Artifact ID" minimum(0)
@@ -241,7 +241,7 @@ func (m buildTestResultModule) getBuildTestResultSummaryHandler(c *gin.Context) 
 // getBuildTestResultDetailListHandler godoc
 // @id getBuildTestResultDetailList
 // @summary Get all test result details for specified test
-// @description Added in TODO.
+// @description Added in v5.0.0.
 // @tags test-result
 // @param buildId path uint true "Build ID" minimum(0)
 // @param artifactId path uint true "Artifact ID" minimum(0)
@@ -283,7 +283,7 @@ func (m buildTestResultModule) getBuildTestResultDetailListHandler(c *gin.Contex
 // getBuildAllTestResultListSummaryHandler godoc
 // @id getBuildAllTestResultListSummary
 // @summary Get test result list summary of all tests for specified build
-// @description Added in TODO.
+// @description Added in v5.0.0.
 // @tags test-result
 // @param buildId path uint true "Build ID" minimum(0)
 // @success 200 {object} response.TestResultListSummary
