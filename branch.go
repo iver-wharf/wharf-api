@@ -47,7 +47,9 @@ func (m branchModule) getProjectBranchListHandler(c *gin.Context) {
 		return
 	}
 	var dbBranches []database.Branch
-	err := m.Database.Where(&database.Branch{ProjectID: projectID}).Find(*&dbBranches).Error
+	err := m.Database.
+		Where(&database.Branch{ProjectID: projectID}).
+		Find(&dbBranches).Error
 	if err != nil {
 		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
 			"Failed fetching list of branches for project with ID %d.",
