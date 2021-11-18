@@ -20,6 +20,19 @@ func DBBranchListToResponse(dbAllBranches []database.Branch, dbDefaultBranch *da
 	return resBranchList
 }
 
+// DBBranchListToPaginatedResponse converts a list of branches and an optional
+// default branch to a response paginated list of branches.
+func DBBranchListToPaginatedResponse(dbBranches []database.Branch, allBranchesCount int64, dbDefaultBranch *database.Branch) response.PaginatedBranches {
+	resPaginatedBranches := response.PaginatedBranches{
+		List: DBBranchesToResponses(dbBranches),
+	}
+	if dbDefaultBranch != nil {
+		resDefaultBranch := DBBranchToResponse(*dbDefaultBranch)
+		resPaginatedBranches.DefaultBranch = &resDefaultBranch
+	}
+	return resPaginatedBranches
+}
+
 // DBBranchesToResponses converts a slice of database branches to a slice of
 // response branches.
 func DBBranchesToResponses(dbBranches []database.Branch) []response.Branch {

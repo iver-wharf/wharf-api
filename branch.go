@@ -7,7 +7,6 @@ import (
 	"github.com/iver-wharf/wharf-api/internal/ptrconv"
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/iver-wharf/wharf-api/pkg/model/request"
-	"github.com/iver-wharf/wharf-api/pkg/model/response"
 	"github.com/iver-wharf/wharf-api/pkg/modelconv"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 
@@ -48,35 +47,68 @@ func (m branchModule) getProjectBranchListHandler(c *gin.Context) {
 		return
 	}
 	var dbBranches []database.Branch
-	err := m.Database. Where(database.Branch{ProjectID: projectID}). Find(*&dbBranches). Error
+	err := m.Database.Where(&database.Branch{ProjectID: projectID}).Find(*&dbBranches).Error
 	if err != nil {
 		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
 			"Failed fetching list of branches for project with ID %d.",
 			projectID))
 		return
 	}
-	c.JSON(http.StatusOK, response.PaginatedBranches{
-		List:       modelconv.DBBranchesToResponses(dbBranches),
-		TotalCount: int64(len(dbBranches)),
-	})
+	dbDefaultBranch := findDefaultDBBranch(dbBranches)
+	c.JSON(http.StatusOK, modelconv.DBBranchListToPaginatedResponse(dbBranches, int64(len(dbBranches)), dbDefaultBranch))
 }
 
 // createProjectBranchHandler godoc
 // @id createProjectBranch
-// @summary Add branch to project. (NOT IMPLEMENTED!)
+// @summary Add branch to project.
 // @description Adds a branch to the project, and allows you to set this new branch to be the default branch.
 // @tags branch
 // @accept json
 // @produce json
 // @param branch body request.Branch true "Branch object"
-// @success 501 "Not Implemented"
+// @success 200 {object} response.Branch "Updated branches"
+// @failure 400 {object} problem.Response "Bad request"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 404 {object} problem.Response "Project not found"
+// @failure 502 {object} problem.Response "Database is unreachable"
 // @router /project/{projectId}/branch [post]
 func (m branchModule) createProjectBranchHandler(c *gin.Context) {
 	projectID, ok := ginutil.ParseParamUint(c, "projectId")
 	if !ok {
 		return
 	}
-	if !checkProjectExistsByID(c, m.Database, projectID, "when fetching list of branches for project") {
+	var reqBranch request.Branch
+	if err := c.ShouldBindJSON(&reqBranch); err != nil {
+		ginutil.WriteInvalidBindError(c, err,
+			"One or more parameters failed to parse when reading the request body for branch object to create.")
+		return
+	}
+	dbProject, ok := fetchProjectByIDSlim(c, m.Database, projectID, "when creating branch for project")
+	if !ok {
+		return
+	}
+	tokenID := ptrconv.UintPtr(dbProject.TokenID)
+	err := m.Database.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where(&database.Branch{
+			ProjectID: projectID,
+			Name:      reqBranch.Name,
+		}).FirstOrCreate(&database.Branch{
+			ProjectID: projectID,
+			Default:   reqBranch.Default,
+			Name:      reqBranch.Name,
+			TokenID:   tokenID,
+		}).Error; err != nil {
+			return err
+		}
+		if reqBranch.Default {
+			return setDefaultBranchByName(tx, projectID, reqBranch.Name)
+		}
+		return nil
+	})
+	if err != nil {
+		ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
+			"Failed creating branch for project with ID %d.",
+			projectID))
 		return
 	}
 }
