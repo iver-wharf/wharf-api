@@ -83,7 +83,7 @@ const (
 )
 
 type BuildStatusUpdate struct {
-	Status BuildStatus `json:"status" enums:",Scheduling,Running,Completed,Failed"`
+	Status BuildStatus `json:"status" enums:"Scheduling,Running,Completed,Failed"`
 }
 
 // BuildInputs is a key-value object of input variables used when starting a new
