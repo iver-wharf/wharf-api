@@ -158,6 +158,13 @@ type PaginatedArtifacts struct {
 	TotalCount int64      `json:"totalCount"`
 }
 
+// PaginatedBranches is a list of branches as well as an explicit total count
+// field.
+type PaginatedBranches struct {
+	List       []Branch `json:"list"`
+	TotalCount int64    `json:"totalCount"`
+}
+
 // PaginatedBuilds is a list of builds as well as an explicit total count field.
 type PaginatedBuilds struct {
 	List       []Build `json:"list"`

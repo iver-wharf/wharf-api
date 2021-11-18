@@ -6,6 +6,7 @@ import (
 	"github.com/iver-wharf/wharf-api/internal/ptrconv"
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/iver-wharf/wharf-api/pkg/model/request"
+	"github.com/iver-wharf/wharf-api/pkg/model/response"
 	"github.com/iver-wharf/wharf-api/pkg/modelconv"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 
@@ -28,13 +29,28 @@ func (m branchModule) Register(g *gin.RouterGroup) {
 
 // getProjectBranchListHandler godoc
 // @id getProjectBranchList
-// @summary Get list of branches. (NOT IMPLEMENTED!)
+// @summary Get list of branches.
 // @tags branch
 // @param projectId path uint true "project ID" minimum(0)
-// @success 501 "Not Implemented"
+// @success 200 {object} response.PaginatedBranches "Branches"
+// @failure 400 {object} problem.Response "Bad request"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 404 {object} problem.Response "Project not found"
+// @failure 502 {object} problem.Response "Database is unreachable"
 // @router /project/{projectId}/branch [get]
 func (m branchModule) getProjectBranchListHandler(c *gin.Context) {
-	c.Status(http.StatusNotImplemented)
+	projectID, ok := ginutil.ParseParamUint(c, "projectId")
+	if !ok {
+		return
+	}
+	dbProject, ok := fetchProjectByID(c, m.Database, projectID, "when fetching list of branches for project")
+	if !ok {
+		return
+	}
+	c.JSON(http.StatusOK, response.PaginatedBranches{
+		List:       modelconv.DBBranchesToResponses(dbProject.Branches),
+		TotalCount: int64(len(dbProject.Branches)),
+	})
 }
 
 // createProjectBranchHandler godoc
