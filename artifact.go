@@ -45,7 +45,7 @@ var defaultGetArtifactsOrderBy = orderby.Column{Name: database.ArtifactColumns.A
 // @description List all build artifacts, or a window of build artifacts using the `limit` and `offset` query parameters. Allows optional filtering parameters.
 // @description Verbatim filters will match on the entire string used to find exact matches,
 // @description while the matching filters are meant for searches by humans where it tries to find soft matches and is therefore inaccurate by nature.
-// @description Added in TODO.
+// @description Added in v5.0.0.
 // @tags artifact
 // @param buildId path uint true "Build ID" minimum(0)
 // @param limit query int false "Number of results to return. No limiting is applied if empty (`?limit=`) or non-positive (`?limit=0`). Required if `offset` is used." default(100)
@@ -129,7 +129,7 @@ func (m artifactModule) getBuildArtifactListHandler(c *gin.Context) {
 // getBuildArtifactHandler godoc
 // @id getBuildArtifact
 // @summary Get build artifact
-// @description Added in TODO.
+// @description Added in v0.7.1.
 // @tags artifact
 // @param buildId path uint true "Build ID" minimum(0)
 // @param artifactId path uint true "Artifact ID" minimum(0)
@@ -181,7 +181,7 @@ func (m artifactModule) getBuildArtifactHandler(c *gin.Context) {
 // createBuildArtifactHandler godoc
 // @id createBuildArtifact
 // @summary Post build artifact
-// @description Added in TODO.
+// @description Added in v0.4.9.
 // @tags artifact
 // @accept multipart/form-data
 // @param buildId path uint true "Build ID" minimum(0)
@@ -219,7 +219,7 @@ func (m artifactModule) createBuildArtifactHandler(c *gin.Context) {
 // @deprecated
 // @summary Get build tests results from .trx files.
 // @description Deprecated, /build/{buildid}/test-result/list-summary should be used instead.
-// @description Added in TODO.
+// @description Added in v0.7.0.
 // @tags artifact
 // @param buildId path uint true "Build ID" minimum(0)
 // @success 200 {object} response.TestsResults
