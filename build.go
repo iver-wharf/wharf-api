@@ -383,12 +383,12 @@ func (m buildModule) createBuildLogHandler(c *gin.Context) {
 // @tags build
 // @param buildId path uint true "Build ID" minimum(0)
 // @param data body request.BuildStatusUpdate true "Status update"
-// @success 201 "Updated"
+// @success 204 "Updated"
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 404 {object} problem.Response "Build not found"
 // @failure 502 {object} problem.Response "Database is unreachable"
-// @router /build/{buildId}/status [patch]
+// @router /build/{buildId}/status [put]
 func (m buildModule) updateBuildStatusHandler(c *gin.Context) {
 	buildID, ok := ginutil.ParseParamUint(c, "buildId")
 	if !ok {
