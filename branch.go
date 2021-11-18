@@ -67,6 +67,7 @@ func (m branchModule) getProjectBranchListHandler(c *gin.Context) {
 // @tags branch
 // @accept json
 // @produce json
+// @param projectId path uint true "project ID" minimum(0)
 // @param branch body request.Branch true "Branch object"
 // @success 200 {object} response.Branch "Updated branches"
 // @failure 400 {object} problem.Response "Bad request"
