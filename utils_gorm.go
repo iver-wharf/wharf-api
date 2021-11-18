@@ -23,23 +23,47 @@ func findDBPaginatedSliceAndTotalCount(dbQuery *gorm.DB, limit, offset int, slic
 }
 
 func fetchDatabaseObjByID(c *gin.Context, db *gorm.DB, modelPtr interface{}, id uint, name, whenMsg string) bool {
-	var spacedWhenMsg string
-	if whenMsg != "" {
-		spacedWhenMsg = " " + whenMsg
-	}
 	if err := db.First(modelPtr, id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			ginutil.WriteDBNotFound(c, fmt.Sprintf(
-				"%s with ID %d was not found%s.",
-				strings.Title(name), id, spacedWhenMsg))
+			writeDBFetchObjByIDNotFoundProblem(c, id, name, whenMsg)
 		} else {
-			ginutil.WriteDBReadError(c, err, fmt.Sprintf(
-				"Failed fetching %s with ID %d from database%s.",
-				strings.ToLower(name), id, spacedWhenMsg))
+			writeDBFetchObjByIDErrorProblem(c, err, id, name, whenMsg)
 		}
 		return false
 	}
 	return true
+}
+
+func checkDatabaseObjExistsByID(c *gin.Context, db *gorm.DB, modelPtr interface{}, id uint, name, whenMsg string) bool {
+	var count int64
+	if err := db.Where(modelPtr, id).Count(&count).Error; err != nil {
+		writeDBFetchObjByIDErrorProblem(c, err, id, name, whenMsg)
+		return false
+	}
+	if count == 0 {
+		writeDBFetchObjByIDNotFoundProblem(c, id, name, whenMsg)
+		return false
+	}
+	return true
+}
+
+func writeDBFetchObjByIDErrorProblem(c *gin.Context, err error, id uint, name, whenMsg string) {
+	ginutil.WriteDBReadError(c, err, fmt.Sprintf(
+		"Failed fetching %s with ID %d from database%s.",
+		strings.ToLower(name), id, spaceWhenMessage(whenMsg)))
+}
+
+func writeDBFetchObjByIDNotFoundProblem(c *gin.Context, id uint, name, whenMsg string) {
+	ginutil.WriteDBNotFound(c, fmt.Sprintf(
+		"%s with ID %d was not found%s.",
+		strings.Title(name), id, spaceWhenMessage(whenMsg)))
+}
+
+func spaceWhenMessage(whenMsg string) string {
+	if whenMsg == "" {
+		return ""
+	}
+	return " " + whenMsg
 }
 
 func optionalLimitOffsetScope(limit, offset int) func(*gorm.DB) *gorm.DB {
