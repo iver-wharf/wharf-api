@@ -87,7 +87,7 @@ func build(buildID uint) broadcast.Broadcaster {
 // getBuildHandler godoc
 // @id getBuild
 // @summary Finds build by build ID
-// @description Added in TODO.
+// @description Added in v0.3.5.
 // @tags build
 // @param buildId path uint true "build id" minimum(0)
 // @success 200 {object} response.Build
@@ -263,7 +263,7 @@ func (m buildModule) getBuildListHandler(c *gin.Context) {
 // getBuildLogListHandler godoc
 // @id getBuildLogList
 // @summary Finds logs for build with selected build ID
-// @description Added in TODO.
+// @description Added in v0.3.8.
 // @tags build
 // @param buildId path uint true "build id" minimum(0)
 // @success 200 {object} []response.Log "logs from selected build"
@@ -301,7 +301,7 @@ func (m buildModule) getBuildLogListHandler(c *gin.Context) {
 // streamBuildLogHandler godoc
 // @id streamBuildLog
 // @summary Opens stream listener
-// @description Added in TODO.
+// @description Added in v0.3.8.
 // @tags build
 // @param buildId path uint true "build id" minimum(0)
 // @success 200 "Open stream"
@@ -332,7 +332,7 @@ func (m buildModule) streamBuildLogHandler(c *gin.Context) {
 // createBuildLogHandler godoc
 // @id createBuildLog
 // @summary Post a log to selected build
-// @description Added in TODO.
+// @description Added in v0.1.0.
 // @tags build
 // @param buildId path uint true "build id" minimum(0)
 // @param data body request.LogOrStatusUpdate true "data"
