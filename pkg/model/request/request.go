@@ -82,6 +82,7 @@ const (
 	BuildFailed BuildStatus = "Failed"
 )
 
+// BuildStatusUpdate allows you to update the status of a build.
 type BuildStatusUpdate struct {
 	Status BuildStatus `json:"status" enums:"Scheduling,Running,Completed,Failed"`
 }
