@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/iver-wharf/wharf-api/internal/ptrconv"
@@ -43,13 +44,20 @@ func (m branchModule) getProjectBranchListHandler(c *gin.Context) {
 	if !ok {
 		return
 	}
-	dbProject, ok := fetchProjectByID(c, m.Database, projectID, "when fetching list of branches for project")
-	if !ok {
+	if !checkProjectExistsByID(c, m.Database, projectID, "when fetching list of branches for project") {
+		return
+	}
+	var dbBranches []database.Branch
+	err := m.Database. Where(database.Branch{ProjectID: projectID}). Find(*&dbBranches). Error
+	if err != nil {
+		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
+			"Failed fetching list of branches for project with ID %d.",
+			projectID))
 		return
 	}
 	c.JSON(http.StatusOK, response.PaginatedBranches{
-		List:       modelconv.DBBranchesToResponses(dbProject.Branches),
-		TotalCount: int64(len(dbProject.Branches)),
+		List:       modelconv.DBBranchesToResponses(dbBranches),
+		TotalCount: int64(len(dbBranches)),
 	})
 }
 
@@ -64,7 +72,13 @@ func (m branchModule) getProjectBranchListHandler(c *gin.Context) {
 // @success 501 "Not Implemented"
 // @router /project/{projectId}/branch [post]
 func (m branchModule) createProjectBranchHandler(c *gin.Context) {
-	c.Status(http.StatusNotImplemented)
+	projectID, ok := ginutil.ParseParamUint(c, "projectId")
+	if !ok {
+		return
+	}
+	if !checkProjectExistsByID(c, m.Database, projectID, "when fetching list of branches for project") {
+		return
+	}
 }
 
 // updateProjectBranchListHandler godoc
