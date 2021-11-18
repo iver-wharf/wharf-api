@@ -25,6 +25,7 @@ func (m healthModule) DeprecatedRegister(e *gin.Engine) {
 // @id pingHandler
 // @summary Ping
 // @description You guessed it. Pong.
+// @description Added in TODO.
 // @tags health
 // @produce json
 // @success 200 {object} response.Ping
@@ -37,6 +38,7 @@ func (m healthModule) pingHandler(c *gin.Context) {
 // @id getHealth
 // @summary Healthcheck for the API
 // @description To be used by Kubernetes or alike.
+// @description Added in TODO.
 // @tags health
 // @produce json
 // @success 200 {object} response.HealthStatus

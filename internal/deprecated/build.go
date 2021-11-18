@@ -43,6 +43,7 @@ func (m BuildModule) Register(g *gin.RouterGroup) {
 // @description This endpoint was never implemented!
 // @description Deprecated since v5.0.0. Planned for removal in v6.0.0.
 // @description Use `GET /build` instead.
+// @description Added in TODO.
 // @summary NOT IMPLEMENTED YET
 // @tags build
 // @accept json
@@ -59,6 +60,7 @@ func (m BuildModule) searchBuildListHandler(c *gin.Context) {
 // @summary Partially update specific build
 // @description Deprecated since v5.0.0. Planned for removal in v6.0.0.
 // @description Use `PUT /build/{buildId}/status` instead.
+// @description Added in TODO.
 // @tags build
 // @param buildId path uint true "build id" minimum(0)
 // @param status query string true "Build status term" Enums(Scheduling, Running, Completed, Failed)

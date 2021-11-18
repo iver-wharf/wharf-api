@@ -48,6 +48,7 @@ func (m ProviderModule) Register(g *gin.RouterGroup) {
 // @summary Returns first 100 providers
 // @description Deprecated since v5.0.0. Planned for removal in v6.0.0.
 // @description Use `GET /provider` instead.
+// @description Added in TODO.
 // @tags provider
 // @success 200 {object} []response.Provider
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
@@ -72,6 +73,7 @@ func (m ProviderModule) getProviderListHandler(c *gin.Context) {
 // @description It takes into consideration name, URL and token ID.
 // @description Deprecated since v5.0.0. Planned for removal in v6.0.0.
 // @description Use `GET /provider` instead.
+// @description Added in TODO.
 // @tags provider
 // @accept json
 // @produce json
@@ -143,6 +145,7 @@ func (m ProviderModule) searchProviderListHandler(c *gin.Context) {
 // @description Creates a new provider if a match is not found.
 // @description Deprecated since v5.0.0. Planned for removal in v6.0.0.
 // @description Use POST /provider to create, or PUT /provider/{providerId} to update instead.
+// @description Added in TODO.
 // @tags provider
 // @accept json
 // @produce json

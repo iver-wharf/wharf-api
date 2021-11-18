@@ -297,6 +297,7 @@ func (m projectModule) updateProjectHandler(c *gin.Context) {
 // @description Meant for manual overrides.
 // @description Overridden field will take precedence when retreiving the project or in newly started builds,
 // @description but will stay unaffected by regular project updates.
+// @description Added in TODO.
 // @tags project
 // @produce json
 // @param projectId path uint true "project ID" minimum(0)
@@ -339,6 +340,7 @@ func (m projectModule) getProjectOverridesHandler(c *gin.Context) {
 // @description Meant for manual overrides.
 // @description Overridden field will take precedence when retreiving the project or in newly started builds,
 // @description but will stay unaffected by regular project updates.
+// @description Added in TODO.
 // @tags project
 // @accept json
 // @produce json
@@ -395,6 +397,7 @@ func (m projectModule) updateProjectOverridesHandler(c *gin.Context) {
 // @summary Delete project's overrides with selected project ID
 // @description This will revert all overrides to the specified project.
 // @description Equivalent to running `PUT /project/{projectId}/overrides` with all fields set to `null`.
+// @description Added in TODO.
 // @tags project
 // @param projectId path uint true "project ID" minimum(0)
 // @success 204 "Deleted"

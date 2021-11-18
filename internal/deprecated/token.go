@@ -47,6 +47,7 @@ func (m TokenModule) Register(g *gin.RouterGroup) {
 // @summary Returns first 100 tokens
 // @description Deprecated since v5.0.0. Planned for removal in v6.0.0.
 // @description Use `GET /token` instead.
+// @description Added in TODO.
 // @tags token
 // @success 200 {object} []response.Token
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
@@ -72,6 +73,7 @@ func (m TokenModule) getTokenListHandler(c *gin.Context) {
 // @description It takes into consideration only token string and user name.
 // @description Deprecated since v5.0.0. Planned for removal in v6.0.0.
 // @description Use `GET /token` instead.
+// @description Added in TODO.
 // @tags token
 // @accept json
 // @produce json
@@ -115,6 +117,7 @@ func (m TokenModule) searchTokenListHandler(c *gin.Context) {
 // @description Creates a new token if a match is not found.
 // @description Deprecated since v5.0.0. Planned for removal in v6.0.0.
 // @description Use POST /token to create, or PUT /token/{tokenId} to update instead.
+// @description Added in TODO.
 // @tags token
 // @accept json
 // @produce json

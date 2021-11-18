@@ -29,6 +29,7 @@ func (m branchModule) Register(g *gin.RouterGroup) {
 // getProjectBranchListHandler godoc
 // @id getProjectBranchList
 // @summary Get list of branches. (NOT IMPLEMENTED!)
+// @description Added in v5.0.0.
 // @tags branch
 // @param projectId path uint true "project ID" minimum(0)
 // @success 501 "Not Implemented"
@@ -41,6 +42,7 @@ func (m branchModule) getProjectBranchListHandler(c *gin.Context) {
 // @id createProjectBranch
 // @summary Add branch to project. (NOT IMPLEMENTED!)
 // @description Adds a branch to the project, and allows you to set this new branch to be the default branch.
+// @description Added in v5.0.0.
 // @tags branch
 // @accept json
 // @produce json
@@ -58,6 +60,7 @@ func (m branchModule) createProjectBranchHandler(c *gin.Context) {
 // @description and add all branches from the request that are missing in the database.
 // @description Effectively resetting the list of branches to the list from the HTTP request body.
 // @description Useful when used via the provider APIs when importing a project.
+// @description Added in v5.0.0.
 // @tags branch
 // @accept json
 // @produce json
