@@ -10,7 +10,8 @@ import (
 
 func runDatabaseMigrations(db *gorm.DB, driver DBDriver) error {
 	tables := []interface{}{
-		&database.Token{}, &database.Provider{}, &database.Project{},
+		&database.Token{}, &database.Provider{},
+		&database.Project{}, &database.ProjectOverrides{},
 		&database.Branch{}, &database.Build{}, &database.Log{},
 		&database.Artifact{}, &database.BuildParam{}, &database.Param{},
 		&database.TestResultDetail{}, &database.TestResultSummary{}}

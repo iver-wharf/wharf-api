@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
@@ -27,11 +28,19 @@ func (m projectModule) Register(g *gin.RouterGroup) {
 	{
 		project.GET("", m.getProjectListHandler)
 		project.POST("", m.createProjectHandler)
+
 		projectByID := project.Group("/:projectId")
 		{
 			projectByID.GET("", m.getProjectHandler)
 			projectByID.DELETE("", m.deleteProjectHandler)
 			projectByID.PUT("", m.updateProjectHandler)
+
+			override := projectByID.Group("/override")
+			{
+				override.GET("", m.getProjectOverridesHandler)
+				override.PUT("", m.updateProjectOverridesHandler)
+				override.DELETE("", m.deleteProjectOverridesHandler)
+			}
 		}
 	}
 }
@@ -276,6 +285,136 @@ func (m projectModule) updateProjectHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, resProject)
 }
 
+// getProjectOverridesHandler godoc
+// @id getProjectOverrides
+// @summary Get project overrides
+// @description Get values for a project's overridable fields.
+// @description Meant for manual overrides.
+// @description Overridden field will take precedence when retreiving the project or in newly started builds,
+// @description but will stay unaffected by regular project updates.
+// @tags project
+// @produce json
+// @param projectId path uint true "project ID" minimum(0)
+// @success 200 {object} response.ProjectOverrides
+// @failure 400 {object} problem.Response "Bad request, such as invalid body JSON"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 404 {object} problem.Response "Project to update was not found"
+// @failure 502 {object} problem.Response "Database is unreachable"
+// @router /project/{projectId}/override [get]
+func (m projectModule) getProjectOverridesHandler(c *gin.Context) {
+	projectID, ok := ginutil.ParseParamUint(c, "projectId")
+	if !ok {
+		return
+	}
+
+	var dbProjectOverrides database.ProjectOverrides
+	err := m.Database.
+		Where(&database.ProjectOverrides{
+			ProjectID: projectID,
+		}).
+		First(&dbProjectOverrides).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		// fake that it exists
+		dbProjectOverrides.ProjectID = projectID
+	} else if err != nil {
+		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
+			"Failed reading project overrides for project with ID %d to database.",
+			projectID))
+		return
+	}
+
+	resProject := modelconv.DBProjectOverridesToResponse(dbProjectOverrides)
+	c.JSON(http.StatusOK, resProject)
+}
+
+// updateProjectOverridesHandler godoc
+// @id updateProjectOverrides
+// @summary Update project overrides in database
+// @description Updates a project by replacing all of its overridable fields.
+// @description Meant for manual overrides.
+// @description Overridden field will take precedence when retreiving the project or in newly started builds,
+// @description but will stay unaffected by regular project updates.
+// @tags project
+// @accept json
+// @produce json
+// @param projectId path uint true "project ID" minimum(0)
+// @param overrides body request.ProjectOverridesUpdate _ "New project overrides"
+// @success 200 {object} response.ProjectOverrides
+// @failure 400 {object} problem.Response "Bad request, such as invalid body JSON"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 404 {object} problem.Response "Project to update was not found"
+// @failure 502 {object} problem.Response "Database is unreachable"
+// @router /project/{projectId}/override [put]
+func (m projectModule) updateProjectOverridesHandler(c *gin.Context) {
+	projectID, ok := ginutil.ParseParamUint(c, "projectId")
+	if !ok {
+		return
+	}
+	var reqOverridesUpdate request.ProjectOverridesUpdate
+	err := c.ShouldBindJSON(&reqOverridesUpdate)
+	if err != nil {
+		ginutil.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading the request body.")
+		return
+	}
+
+	var dbProjectOverrides database.ProjectOverrides
+	err = m.Database.
+		Where(&database.ProjectOverrides{
+			ProjectID: projectID,
+		}).
+		FirstOrCreate(&dbProjectOverrides).Error
+	if err != nil {
+		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
+			"Failed reading project overrides for project with ID %d to database.",
+			projectID))
+		return
+	}
+
+	dbProjectOverrides.Description = reqOverridesUpdate.Description
+	dbProjectOverrides.AvatarURL = reqOverridesUpdate.AvatarURL
+	dbProjectOverrides.GitURL = reqOverridesUpdate.GitURL
+
+	if err := m.Database.Save(&dbProjectOverrides).Error; err != nil {
+		ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
+			"Failed writing project overrides for project with ID %d to database.",
+			projectID))
+		return
+	}
+
+	resProject := modelconv.DBProjectOverridesToResponse(dbProjectOverrides)
+	c.JSON(http.StatusOK, resProject)
+}
+
+// deleteProjectOverridesHandler godoc
+// @id deleteProjectOverrides
+// @summary Delete project's overrides with selected project ID
+// @description This will revert all overrides to the specified project.
+// @description Equivalent to running `PUT /project/{projectId}/overrides` with all fields set to `null`.
+// @tags project
+// @param projectId path uint true "project ID" minimum(0)
+// @success 204 "Deleted"
+// @failure 502 {object} problem.Response "Database is unreachable"
+// @failure 400 {object} problem.Response "Bad request"
+// @failure 404 {object} problem.Response "Project to delete overrides from is not found"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @router /project/{projectId}/override [delete]
+func (m projectModule) deleteProjectOverridesHandler(c *gin.Context) {
+	projectID, ok := ginutil.ParseParamUint(c, "projectId")
+	if !ok {
+		return
+	}
+	err := m.Database.
+		Where(&database.ProjectOverrides{
+			ProjectID: projectID,
+		}).
+		Delete(&database.ProjectOverrides{}).Error
+	if err != nil {
+		ginutil.WriteDBWriteError(c, err, fmt.Sprintf("Failed deleting project overrides for project with ID %d from database.", projectID))
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
 func fetchProjectByID(c *gin.Context, db *gorm.DB, projectID uint, whenMsg string) (database.Project, bool) {
 	var dbProject database.Project
 	ok := fetchDatabaseObjByID(c, databaseProjectPreloaded(db), &dbProject, projectID, "project", whenMsg)
@@ -294,7 +433,8 @@ func databaseProjectPreloaded(db *gorm.DB) *gorm.DB {
 		Preload(database.ProjectFields.Branches, func(db *gorm.DB) *gorm.DB {
 			return db.Order(database.BranchColumns.BranchID)
 		}).
-		Preload(database.ProjectFields.Token)
+		Preload(database.ProjectFields.Token).
+		Preload(database.ProjectFields.Overrides)
 }
 
 func (m projectModule) getBuildsCount(projectID uint) (int64, error) {

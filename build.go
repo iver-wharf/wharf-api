@@ -16,6 +16,7 @@ import (
 	"github.com/dustin/go-broadcast"
 	"github.com/ghodss/yaml"
 	"github.com/gin-gonic/gin"
+	"github.com/iver-wharf/wharf-api/internal/coalesce"
 	"github.com/iver-wharf/wharf-api/internal/wherefields"
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/iver-wharf/wharf-api/pkg/model/request"
@@ -766,7 +767,7 @@ func getDBJobParams(
 		{Type: "string", Name: "RUN_STAGES", Value: dbBuild.Stage},
 		{Type: "string", Name: "BUILD_REF", Value: strconv.FormatUint(uint64(dbBuild.BuildID), 10)},
 		{Type: "string", Name: "VARS", Value: string(v)},
-		{Type: "string", Name: "GIT_FULLURL", Value: dbProject.GitURL},
+		{Type: "string", Name: "GIT_FULLURL", Value: coalesce.String(dbProject.Overrides.GitURL, dbProject.GitURL)},
 		{Type: "string", Name: "GIT_TOKEN", Value: token},
 		{Type: "string", Name: "WHARF_PROJECT_ID", Value: strconv.FormatUint(uint64(dbProject.ProjectID), 10)},
 		{Type: "string", Name: "WHARF_INSTANCE", Value: wharfInstanceID},
