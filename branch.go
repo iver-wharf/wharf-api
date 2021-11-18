@@ -1,8 +1,6 @@
 package main
 
 import (
-	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/iver-wharf/wharf-api/internal/ptrconv"
@@ -20,87 +18,37 @@ type branchModule struct {
 }
 
 func (m branchModule) Register(g *gin.RouterGroup) {
-	branches := g.Group("/branches")
-	{
-		branches.GET("", m.getBranchListHandler)
-	}
-
-	branch := g.Group("/branch")
-	{
-		branch.POST("", m.createBranchHandler)
-	}
-
 	projectBranch := g.Group("/project/:projectId/branch")
 	{
+		projectBranch.GET("", m.getProjectBranchListHandler)
 		projectBranch.PUT("", m.updateProjectBranchListHandler)
+		projectBranch.POST("", m.createProjectBranchHandler)
 	}
 }
 
-// getBranchListHandler godoc
-// @id getBranchList
-// @summary NOT IMPLEMENTED YET
+// getProjectBranchListHandler godoc
+// @id getProjectBranchList
+// @summary Get list of branches. (NOT IMPLEMENTED!)
 // @tags branch
+// @param projectId path uint true "project ID" minimum(0)
 // @success 501 "Not Implemented"
-// @router /branches [get]
-func (m branchModule) getBranchListHandler(c *gin.Context) {
+// @router /project/{projectId}/branch [get]
+func (m branchModule) getProjectBranchListHandler(c *gin.Context) {
 	c.Status(http.StatusNotImplemented)
 }
 
-// createBranchHandler godoc
-// @id createBranch
-// @summary Create or update branch.
-// @description It finds branch by project ID, token ID and name.
-// @description First found branch will have updated default flag.
-// @description If not existing new branch will be created.
+// createProjectBranchHandler godoc
+// @id createProjectBranch
+// @summary Add branch to project. (NOT IMPLEMENTED!)
+// @description Adds a branch to the project, and allows you to set this new branch to be the default branch.
 // @tags branch
 // @accept json
 // @produce json
-// @param branch body request.Branch true "branch object"
-// @success 200 {object} response.Branch "Updated branch"
-// @success 201 {object} response.Branch "Added new branch"
-// @failure 400 {object} problem.Response "Bad request"
-// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
-// @failure 502 {object} problem.Response "Database is unreachable"
-// @router /branch [post]
-func (m branchModule) createBranchHandler(c *gin.Context) {
-	var reqBranch request.Branch
-	if err := c.ShouldBindJSON(&reqBranch); err != nil {
-		ginutil.WriteInvalidBindError(c, err,
-			"One or more parameters failed to parse when reading the request body for branch object to update.")
-		return
-	}
-
-	dbBranch := database.Branch{
-		ProjectID: reqBranch.ProjectID,
-		TokenID:   reqBranch.TokenID,
-		Name:      reqBranch.Name,
-		Default:   reqBranch.Default,
-	}
-
-	var dbExistingBranch database.Branch
-	err := m.Database.
-		Where(&dbBranch, database.BranchFields.ProjectID, database.BranchFields.TokenID, database.BranchFields.Name).
-		First(&dbExistingBranch).
-		Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		if err := m.Database.Create(&dbBranch).Error; err != nil {
-			ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
-				"Failed creating branch with name %q for token with ID %d and for project with ID %d in database.",
-				dbBranch.Name, dbBranch.TokenID, dbBranch.ProjectID))
-			return
-		}
-		c.JSON(http.StatusCreated, modelconv.DBBranchToResponse(dbBranch))
-		return
-	} else if err != nil {
-		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
-			"Failed fetching branch with name %q for token with ID %d and for project with ID %d in database.",
-			reqBranch.Name, reqBranch.TokenID, reqBranch.ProjectID))
-		return
-	}
-
-	dbExistingBranch.Default = reqBranch.Default
-	m.Database.Save(dbExistingBranch)
-	c.JSON(http.StatusOK, modelconv.DBBranchToResponse(dbExistingBranch))
+// @param branch body request.Branch true "Branch object"
+// @success 501 "Not Implemented"
+// @router /project/{projectId}/branch [post]
+func (m branchModule) createProjectBranchHandler(c *gin.Context) {
+	c.Status(http.StatusNotImplemented)
 }
 
 // updateProjectBranchListHandler godoc

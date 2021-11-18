@@ -52,6 +52,15 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   - Use new `GET /token` instead of `GET /tokens` or `POST /tokens/search`
   - Use new `GET /build/{buildId}/artifact` instead of `GET /build/{buildId}/artifacts`
 
+- Deprecated `/branch` and `/branches` endpoints in favor of
+  new `/project/{projectId}/branch` endpoints. (#120)
+
+- Deprecated `PUT /build/{buildId}` in favor of new `PUT /build/{buildId}/status`
+  endpoint. (#120)
+
+- Deprecated `POST /project/{projectId}/{stage}/run` in favor of
+  new `POST /project/{projectId}/build` endpoint. (#120)
+
 - Added new GET endpoints to get list of objects (as mentioned in note above),
   with large set of query parameters. Major difference with their "plural"
   GET counterparts, they all return paginated results instead, as well as a

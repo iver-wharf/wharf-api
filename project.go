@@ -3,20 +3,12 @@ package main
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"strconv"
-	"strings"
-	"time"
 
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 
-	"encoding/json"
 	"net/http"
-	"net/url"
 
-	"github.com/ghodss/yaml"
 	"github.com/gin-gonic/gin"
-	"github.com/iver-wharf/wharf-api/internal/coalesce"
 	"github.com/iver-wharf/wharf-api/internal/ptrconv"
 	"github.com/iver-wharf/wharf-api/internal/wherefields"
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
@@ -24,14 +16,11 @@ import (
 	"github.com/iver-wharf/wharf-api/pkg/model/response"
 	"github.com/iver-wharf/wharf-api/pkg/modelconv"
 	"github.com/iver-wharf/wharf-api/pkg/orderby"
-	"github.com/iver-wharf/wharf-core/pkg/problem"
-	"gopkg.in/guregu/null.v4"
 	"gorm.io/gorm"
 )
 
 type projectModule struct {
 	Database *gorm.DB
-	Config   *Config
 }
 
 func (m projectModule) Register(g *gin.RouterGroup) {
@@ -45,7 +34,6 @@ func (m projectModule) Register(g *gin.RouterGroup) {
 			projectByID.GET("", m.getProjectHandler)
 			projectByID.DELETE("", m.deleteProjectHandler)
 			projectByID.PUT("", m.updateProjectHandler)
-			projectByID.POST("/:stage/run", m.startProjectBuildHandler)
 
 			override := projectByID.Group("/override")
 			{
@@ -427,143 +415,6 @@ func (m projectModule) deleteProjectOverridesHandler(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-// startProjectBuildHandler godoc
-// @id startProjectBuild
-// @summary Responsible for run stage environment for selected project
-// @tags project
-// @accept json
-// @param projectId path uint true "project ID" minimum(0)
-// @param stage path string true "name of stage to run, or specify ALL to run everything"
-// @param branch query string false "branch name, uses default branch if omitted"
-// @param environment query string false "environment name"
-// @param inputs body string _ "user inputs"
-// @success 200 {object} response.BuildReferenceWrapper "Build scheduled"
-// @failure 400 {object} problem.Response "Bad request, such as invalid body JSON"
-// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
-// @failure 404 {object} problem.Response "Project was not found"
-// @failure 502 {object} problem.Response "Database or code execution engine is unreachable"
-// @router /project/{projectId}/{stage}/run [post]
-func (m projectModule) startProjectBuildHandler(c *gin.Context) {
-	projectID, ok := ginutil.ParseParamUint(c, "projectId")
-	if !ok {
-		return
-	}
-	dbProject, ok := fetchProjectByID(c, m.Database, projectID, "when starting a new build")
-	if !ok {
-		return
-	}
-
-	body, err := c.GetRawData()
-	if err != nil {
-		ginutil.WriteBodyReadError(c, err, fmt.Sprintf(
-			"Failed to read the input variables body when starting a new build for project with ID %d.",
-			projectID))
-		return
-	}
-
-	stageName := c.Param("stage")
-	env, hasEnv := c.GetQuery("environment")
-	branch, hasBranch := c.GetQuery("branch")
-
-	if !hasBranch {
-		b, ok := findDefaultBranch(dbProject.Branches)
-		if !ok {
-			ginutil.WriteDBNotFound(c, fmt.Sprintf(
-				"No branch to build for project with ID %d was specified, and no default branch was found on the project.",
-				projectID))
-			return
-		}
-		branch = b.Name
-	}
-
-	now := time.Now().UTC()
-	dbBuild := database.Build{
-		ProjectID:   dbProject.ProjectID,
-		ScheduledOn: null.TimeFrom(now),
-		GitBranch:   branch,
-		Environment: null.NewString(env, hasEnv),
-		Stage:       stageName,
-	}
-	if err := m.Database.Create(&dbBuild).Error; err != nil {
-		ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
-			"Failed creating build on stage %q and branch %q for project with ID %d in database.",
-			stageName, branch, projectID))
-		return
-	}
-
-	dbBuildParams, err := parseDBBuildParams(dbBuild.BuildID, []byte(dbProject.BuildDefinition), body)
-	if err != nil {
-		dbBuild.IsInvalid = true
-		if saveErr := m.Database.Save(&dbBuild).Error; saveErr != nil {
-			c.Error(saveErr)
-		}
-		ginutil.WriteProblemError(c, err, problem.Response{
-			Type:   "/prob/api/project/run/params-deserialize",
-			Title:  "Parsing build parameters failed.",
-			Status: http.StatusBadRequest,
-			Detail: fmt.Sprintf(
-				"Failed to deserialize build parameters from request body for build on stage %q and branch %q for project with ID %d.",
-				stageName, branch, projectID),
-		})
-		return
-	}
-
-	err = m.SaveBuildParams(dbBuildParams)
-	if err != nil {
-		dbBuild.IsInvalid = true
-		if saveErr := m.Database.Save(&dbBuild).Error; saveErr != nil {
-			c.Error(saveErr)
-		}
-		ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
-			"Failed saving build parameters for build on stage %q and branch %q for project with ID %d in database.",
-			stageName, branch, projectID))
-		return
-	}
-
-	dbJobParams, err := getDBJobParams(dbProject, dbBuild, dbBuildParams, m.Config.InstanceID)
-	if err != nil {
-		dbBuild.IsInvalid = true
-		if saveErr := m.Database.Save(&dbBuild).Error; saveErr != nil {
-			c.Error(saveErr)
-		}
-		ginutil.WriteProblemError(c, err, problem.Response{
-			Type:   "/prob/api/project/run/params-serialize",
-			Title:  "Serializing build parameters failed.",
-			Status: http.StatusBadRequest,
-			Detail: fmt.Sprintf(
-				"Failed to serialize build parameters before sending them onwards to Wharfs execution engine for build on stage %q and branch %q for project with ID %d.",
-				stageName, branch, projectID),
-		})
-		return
-	}
-
-	if m.Config.CI.MockTriggerResponse {
-		log.Info().Message("Setting for mocking build triggers was true, mocking CI response.")
-		c.JSON(http.StatusOK, modelconv.DBBuildToResponseBuildReferenceWrapper(dbBuild))
-		return
-	}
-
-	_, err = triggerBuild(dbJobParams, m.Config.CI)
-	if err != nil {
-		dbBuild.IsInvalid = true
-		if saveErr := m.Database.Save(&dbBuild).Error; saveErr != nil {
-			c.Error(saveErr)
-		}
-
-		ginutil.WriteProblemError(c, err, problem.Response{
-			Type:   "/prob/api/project/run/trigger",
-			Title:  "Triggering build failed.",
-			Status: http.StatusBadGateway,
-			Detail: fmt.Sprintf(
-				"Failed to trigger code execution engine to schedule the build with ID %d on stage %q on branch %q for project with ID %d.",
-				dbBuild.BuildID, stageName, branch, projectID),
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, modelconv.DBBuildToResponseBuildReferenceWrapper(dbBuild))
-}
-
 func fetchProjectByID(c *gin.Context, db *gorm.DB, projectID uint, whenMsg string) (database.Project, bool) {
 	var dbProject database.Project
 	ok := fetchDatabaseObjByID(c, databaseProjectPreloaded(db), &dbProject, projectID, "project", whenMsg)
@@ -584,151 +435,6 @@ func databaseProjectPreloaded(db *gorm.DB) *gorm.DB {
 		}).
 		Preload(database.ProjectFields.Token).
 		Preload(database.ProjectFields.Overrides)
-}
-
-func (m projectModule) SaveBuildParams(dbParams []database.BuildParam) error {
-	for _, dbParam := range dbParams {
-		if err := m.Database.Create(&dbParam).Error; err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func parseDBBuildParams(buildID uint, buildDef []byte, vars []byte) ([]database.BuildParam, error) {
-	type BuildDefinition struct {
-		Inputs []struct {
-			Name    string
-			Type    string
-			Default string
-		}
-	}
-
-	var def BuildDefinition
-	err := yaml.Unmarshal(buildDef, &def)
-	if err != nil {
-		log.Error().WithError(err).Message("Failed unmarshaling build-def.")
-		return nil, err
-	}
-
-	log.Info().
-		WithInt("inputs", len(def.Inputs)).
-		Message("Unmarshaled build-def.")
-
-	m := make(map[string]interface{})
-	err = json.Unmarshal(vars, &m)
-	if err != nil {
-		log.Error().WithError(err).Message("Failed unmarshaling input variables JSON.")
-		return nil, err
-	}
-
-	var params []database.BuildParam
-	for _, input := range def.Inputs {
-		param := database.BuildParam{
-			Name:    input.Name,
-			BuildID: buildID,
-		}
-
-		if m[input.Name] == nil {
-			param.Value = input.Default
-		} else {
-			param.Value = fmt.Sprintf("%v", m[input.Name])
-		}
-
-		params = append(params, param)
-	}
-
-	return params, nil
-}
-
-func triggerBuild(dbJobParams []database.Param, conf CIConfig) (string, error) {
-	q := ""
-	for _, dbJobParam := range dbJobParams {
-		if dbJobParam.Value != "" {
-			q = fmt.Sprintf("%s&%s=%s", q, url.QueryEscape(dbJobParam.Name), url.QueryEscape(dbJobParam.Value))
-		}
-	}
-
-	tokenStr := fmt.Sprintf("?token=%s", conf.TriggerToken)
-
-	url := fmt.Sprintf("%s%s%s", conf.TriggerURL, tokenStr, q)
-	fmt.Printf("POSTing to url: %v\n", url)
-	log.Info().
-		WithString("method", "POST").
-		WithString("url", fmt.Sprintf("%s?token=%s%s", conf.TriggerURL, "*****", q)).
-		Message("Triggering build.")
-
-	var resp, err = http.Post(url, "", nil)
-	if err != nil {
-		return "", err
-	}
-
-	defer resp.Body.Close()
-	var body, err2 = ioutil.ReadAll(resp.Body)
-	if err2 != nil {
-		return "", err2
-	}
-
-	var strBody = string(body)
-	if resp.StatusCode != 200 && resp.StatusCode != 201 {
-		return "", fmt.Errorf(strBody)
-	}
-
-	return strBody, err2
-}
-
-func getDBJobParams(
-	dbProject database.Project,
-	dbBuild database.Build,
-	dbBuildParams []database.BuildParam,
-	wharfInstanceID string,
-) ([]database.Param, error) {
-	var err error
-	var v []byte
-	if len(dbBuildParams) > 0 {
-		m := make(map[string]interface{})
-
-		for _, input := range dbBuildParams {
-			m[input.Name] = input.Value
-		}
-
-		v, err = yaml.Marshal(m)
-		if err != nil {
-			log.Error().WithError(err).Message("Failed to marshal input variables YAML for build.")
-			return nil, err
-		}
-	} else {
-		log.Debug().Message("Skipping input variables, nothing in body.")
-	}
-
-	token := ""
-	if dbProject.Token != nil {
-		token = dbProject.Token.Token
-	}
-
-	dbJobParams := []database.Param{
-		{Type: "string", Name: "REPO_NAME", Value: dbProject.Name},
-		{Type: "string", Name: "REPO_GROUP", Value: strings.ToLower(dbProject.GroupName)},
-		{Type: "string", Name: "REPO_BRANCH", Value: dbBuild.GitBranch},
-		{Type: "string", Name: "GIT_BRANCH", Value: dbBuild.GitBranch},
-		{Type: "string", Name: "RUN_STAGES", Value: dbBuild.Stage},
-		{Type: "string", Name: "BUILD_REF", Value: strconv.FormatUint(uint64(dbBuild.BuildID), 10)},
-		{Type: "string", Name: "VARS", Value: string(v)},
-		{Type: "string", Name: "GIT_FULLURL", Value: coalesce.String(dbProject.Overrides.GitURL, dbProject.GitURL)},
-		{Type: "string", Name: "GIT_TOKEN", Value: token},
-		{Type: "string", Name: "WHARF_PROJECT_ID", Value: strconv.FormatUint(uint64(dbProject.ProjectID), 10)},
-		{Type: "string", Name: "WHARF_INSTANCE", Value: wharfInstanceID},
-	}
-
-	if dbBuild.Environment.Valid {
-		dbJobParams = append(dbJobParams, database.Param{
-			Type:  "string",
-			Name:  "ENVIRONMENT",
-			Value: dbBuild.Environment.String,
-		})
-	}
-
-	return dbJobParams, nil
 }
 
 func (m projectModule) getBuildsCount(projectID uint) (int64, error) {

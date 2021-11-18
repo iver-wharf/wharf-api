@@ -38,10 +38,8 @@ type TokenUpdate struct {
 
 // Branch specifies fields when adding a new branch to a project.
 type Branch struct {
-	ProjectID uint   `json:"projectId" validate:"required" minimum:"0"`
-	Name      string `json:"name" validate:"required"`
-	Default   bool   `json:"default"`
-	TokenID   uint   `json:"tokenId" minimum:"0"`
+	Name    string `json:"name" validate:"required"`
+	Default bool   `json:"default"`
 }
 
 // BranchUpdate specifies fields for a single branch.
@@ -83,6 +81,11 @@ const (
 	// in some build step.
 	BuildFailed BuildStatus = "Failed"
 )
+
+// BuildInputs is a key-value object of input variables used when starting a new
+// build, where the key is the input variable name and the value is its string,
+// boolean, or numeric value.
+type BuildInputs map[string]interface{}
 
 // Project specifies fields when creating a new project.
 type Project struct {
