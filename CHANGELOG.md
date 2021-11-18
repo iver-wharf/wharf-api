@@ -202,6 +202,14 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
 - Added new field `RemoteProjectID` to the project model. (#112)
 
+- Added endpoints to allow setting manual overrides for a project. These
+  overrides are used in responses from `GET /project` and other, as well as in
+  build parameters for newly started builds. New endpoints: (#117)
+
+  - `GET /project/{projectId}/override` to get all overrides
+  - `PUT /project/{projectId}/override` to set all overrides
+  - `DELETE /project/{projectId}/override` to clear all overrides
+
 ## v4.2.0 (2021-09-10)
 
 - Added support for the TZ environment variable (setting timezones ex.

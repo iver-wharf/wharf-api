@@ -241,6 +241,14 @@ type Project struct {
 	ParsedBuildDefinition interface{} `json:"build" swaggertype:"object" extensions:"x-nullable"`
 }
 
+// ProjectOverrides holds field overrides for a project.
+type ProjectOverrides struct {
+	ProjectID   uint   `json:"projectId" minimum:"0"`
+	Description string `json:"description"`
+	AvatarURL   string `json:"avatarUrl"`
+	GitURL      string `json:"gitUrl"`
+}
+
 // ProviderJSONFields holds the JSON field names for each field.
 // Useful in ordering statements to map the correct field to the correct
 // database column.
