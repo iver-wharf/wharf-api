@@ -103,7 +103,7 @@ func (m projectModule) getProjectListHandler(c *gin.Context) {
 	if !bindCommonGetQueryParams(c, &params) {
 		return
 	}
-	orderBySlice, ok := parseCommonOrderBySlice(c, params.OrderBy, providerJSONToColumns)
+	orderBySlice, ok := parseCommonOrderBySlice(c, params.OrderBy, projectJSONToColumns)
 	if !ok {
 		return
 	}
