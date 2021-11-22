@@ -61,6 +61,7 @@ var defaultGetProjectsOrderBy = orderby.Column{Name: database.ProjectColumns.Pro
 // @description List all projects, or a window of projects using the `limit` and `offset` query parameters. Allows optional filtering parameters.
 // @description Verbatim filters will match on the entire string used to find exact matches,
 // @description while the matching filters are meant for searches by humans where it tries to find soft matches and is therefore inaccurate by nature.
+// @description Added in v5.0.0.
 // @tags project
 // @param orderby query []string false "Sorting orders. Takes the property name followed by either 'asc' or 'desc'. Can be specified multiple times for more granular sorting. Defaults to `?orderby=projectId desc`"
 // @param limit query int false "Number of results to return. No limiting is applied if empty (`?limit=`) or non-positive (`?limit=0`). Required if `offset` is used." default(100)
@@ -151,6 +152,7 @@ func (m projectModule) getProjectListHandler(c *gin.Context) {
 // getProjectHandler godoc
 // @id getProject
 // @summary Returns project with selected project ID
+// @description Added in v0.1.8.
 // @tags project
 // @param projectId path uint true "project ID" minimum(0)
 // @success 200 {object} response.Project
@@ -176,6 +178,7 @@ func (m projectModule) getProjectHandler(c *gin.Context) {
 // @id createProject
 // @summary Creates project
 // @description Add project to database.
+// @description Added in v0.1.10.
 // @tags project
 // @accept json
 // @produce json
@@ -209,6 +212,7 @@ func (m projectModule) createProjectHandler(c *gin.Context) {
 // deleteProjectHandler godoc
 // @id deleteProject
 // @summary Delete project with selected project ID
+// @description Added in v0.2.8.
 // @tags project
 // @param projectId path uint true "project ID" minimum(0)
 // @success 204 "Deleted"
@@ -238,6 +242,7 @@ func (m projectModule) deleteProjectHandler(c *gin.Context) {
 // @id updateProject
 // @summary Update project in database
 // @description Updates a project by replacing all of its fields.
+// @description Added in v5.0.0.
 // @tags project
 // @accept json
 // @produce json
@@ -292,6 +297,7 @@ func (m projectModule) updateProjectHandler(c *gin.Context) {
 // @description Meant for manual overrides.
 // @description Overridden field will take precedence when retreiving the project or in newly started builds,
 // @description but will stay unaffected by regular project updates.
+// @description Added in v5.0.0.
 // @tags project
 // @produce json
 // @param projectId path uint true "project ID" minimum(0)
@@ -334,6 +340,7 @@ func (m projectModule) getProjectOverridesHandler(c *gin.Context) {
 // @description Meant for manual overrides.
 // @description Overridden field will take precedence when retreiving the project or in newly started builds,
 // @description but will stay unaffected by regular project updates.
+// @description Added in v5.0.0.
 // @tags project
 // @accept json
 // @produce json
@@ -390,6 +397,7 @@ func (m projectModule) updateProjectOverridesHandler(c *gin.Context) {
 // @summary Delete project's overrides with selected project ID
 // @description This will revert all overrides to the specified project.
 // @description Equivalent to running `PUT /project/{projectId}/overrides` with all fields set to `null`.
+// @description Added in v5.0.0.
 // @tags project
 // @param projectId path uint true "project ID" minimum(0)
 // @success 204 "Deleted"

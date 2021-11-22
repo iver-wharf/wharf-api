@@ -87,6 +87,7 @@ func build(buildID uint) broadcast.Broadcaster {
 // getBuildHandler godoc
 // @id getBuild
 // @summary Finds build by build ID
+// @description Added in v0.3.5.
 // @tags build
 // @param buildId path uint true "build id" minimum(0)
 // @success 200 {object} response.Build
@@ -137,6 +138,7 @@ var defaultGetBuildsOrderBy = orderby.Column{Name: database.BuildColumns.BuildID
 // @description List all builds, or a window of builds using the `limit` and `offset` query parameters. Allows optional filtering parameters.
 // @description Verbatim filters will match on the entire string used to find exact matches,
 // @description while the matching filters are meant for searches by humans where it tries to find soft matches and is therefore inaccurate by nature.
+// @description Added in v5.0.0.
 // @tags build
 // @param limit query int false "Number of results to return. No limiting is applied if empty (`?limit=`) or non-positive (`?limit=0`). Required if `offset` is used." default(100)
 // @param offset query int false "Skipped results, where 0 means from the start." minimum(0) default(0)
@@ -261,6 +263,7 @@ func (m buildModule) getBuildListHandler(c *gin.Context) {
 // getBuildLogListHandler godoc
 // @id getBuildLogList
 // @summary Finds logs for build with selected build ID
+// @description Added in v0.3.8.
 // @tags build
 // @param buildId path uint true "build id" minimum(0)
 // @success 200 {object} []response.Log "logs from selected build"
@@ -298,6 +301,7 @@ func (m buildModule) getBuildLogListHandler(c *gin.Context) {
 // streamBuildLogHandler godoc
 // @id streamBuildLog
 // @summary Opens stream listener
+// @description Added in v0.3.8.
 // @tags build
 // @param buildId path uint true "build id" minimum(0)
 // @success 200 "Open stream"
@@ -328,6 +332,7 @@ func (m buildModule) streamBuildLogHandler(c *gin.Context) {
 // createBuildLogHandler godoc
 // @id createBuildLog
 // @summary Post a log to selected build
+// @description Added in v0.1.0.
 // @tags build
 // @param buildId path uint true "build id" minimum(0)
 // @param data body request.LogOrStatusUpdate true "data"
@@ -380,6 +385,7 @@ func (m buildModule) createBuildLogHandler(c *gin.Context) {
 // updateBuildStatusHandler godoc
 // @id updateBuildStatus
 // @summary Update a build's status. (NOT IMPLEMENTED!)
+// @description Added in v5.0.0.
 // @tags build
 // @param buildId path uint true "Build ID" minimum(0)
 // @success 501 "Not Implemented"
@@ -471,6 +477,7 @@ func (m buildModule) getLogs(buildID uint) ([]database.Log, error) {
 // @summary Responsible for run stage environment for selected project
 // @description Deprecated since v5.0.0. Planned for removal in v6.0.0.
 // @description Use `POST /project/{projectId}/build` instead.
+// @description Added in v0.2.4.
 // @tags project
 // @accept json
 // @param projectId path uint true "project ID" minimum(0)
@@ -498,6 +505,7 @@ func (m buildModule) oldStartProjectBuildHandler(c *gin.Context) {
 // startProjectBuildHandler godoc
 // @id startProjectBuild
 // @summary Start a new build for the given project, with optional build stage, build environment, or repo branch filters.
+// @description Added in v5.0.0.
 // @tags build
 // @accept json
 // @param projectId path uint true "Project ID" minimum(0)
