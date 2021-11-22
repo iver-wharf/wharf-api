@@ -28,6 +28,7 @@ func (m artifactModule) Register(g *gin.RouterGroup) {
 // @summary Get list of build artifacts
 // @description Deprecated since v5.0.0. Planned for removal in v6.0.0.
 // @description Use `GET /build/{buildId}/artifact` instead.
+// @description Added in v0.4.9.
 // @tags artifact
 // @param buildId path uint true "Build ID" minimum(0)
 // @success 200 {object} []response.Artifact
