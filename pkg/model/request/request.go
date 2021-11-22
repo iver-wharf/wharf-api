@@ -38,10 +38,8 @@ type TokenUpdate struct {
 
 // Branch specifies fields when adding a new branch to a project.
 type Branch struct {
-	ProjectID uint   `json:"projectId" validate:"required" minimum:"0"`
-	Name      string `json:"name" validate:"required"`
-	Default   bool   `json:"default"`
-	TokenID   uint   `json:"tokenId" minimum:"0"`
+	Name    string `json:"name" validate:"required"`
+	Default bool   `json:"default"`
 }
 
 // BranchUpdate specifies fields for a single branch.
@@ -84,6 +82,11 @@ const (
 	BuildFailed BuildStatus = "Failed"
 )
 
+// BuildInputs is a key-value object of input variables used when starting a new
+// build, where the key is the input variable name and the value is its string,
+// boolean, or numeric value.
+type BuildInputs map[string]interface{}
+
 // Project specifies fields when creating a new project.
 type Project struct {
 	Name            string `json:"name" validate:"required" binding:"required"`
@@ -107,6 +110,13 @@ type ProjectUpdate struct {
 	ProviderID      uint   `json:"providerId" minimum:"0"`
 	BuildDefinition string `json:"buildDefinition"`
 	GitURL          string `json:"gitUrl"`
+}
+
+// ProjectOverridesUpdate specifies fields when updating a project's overrides.
+type ProjectOverridesUpdate struct {
+	Description string `json:"description"`
+	AvatarURL   string `json:"avatarUrl"`
+	GitURL      string `json:"gitUrl"`
 }
 
 // ProviderName is an enum of different providers that are available over at

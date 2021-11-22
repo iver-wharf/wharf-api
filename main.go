@@ -113,8 +113,8 @@ func main() {
 
 	modules := []httpModule{
 		branchModule{Database: db},
-		buildModule{Database: db},
-		projectModule{Database: db, Config: &config},
+		buildModule{Database: db, Config: &config},
+		projectModule{Database: db},
 		providerModule{Database: db},
 		tokenModule{Database: db},
 		deprecated.BranchModule{Database: db},

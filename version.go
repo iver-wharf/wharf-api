@@ -24,6 +24,7 @@ func loadEmbeddedVersionFile() error {
 // getVersionHandler godoc
 // @id getVersion
 // @summary Returns the version of this API
+// @description Added in v4.0.0.
 // @tags meta
 // @success 200 {object} app.Version
 // @router /version [get]

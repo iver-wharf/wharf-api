@@ -136,6 +136,7 @@ var ProjectFields = struct {
 	BuildDefinition string
 	Branches        string
 	GitURL          string
+	Overrides       string
 }{
 	ProjectID:       "ProjectID",
 	Name:            "Name",
@@ -149,6 +150,7 @@ var ProjectFields = struct {
 	BuildDefinition: "BuildDefinition",
 	Branches:        "Branches",
 	GitURL:          "GitURL",
+	Overrides:       "Overrides",
 }
 
 // ProjectColumns holds the DB column names for each field.
@@ -190,6 +192,17 @@ type Project struct {
 	BuildDefinition string    `gorm:"not null;default:''"`
 	Branches        []Branch  `gorm:"foreignKey:ProjectID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	GitURL          string    `gorm:"not null;default:''"`
+
+	Overrides ProjectOverrides `gorm:"foreignKey:ProjectID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+}
+
+// ProjectOverrides holds data about a project's overridden values.
+type ProjectOverrides struct {
+	ProjectOverridesID uint   `gorm:"primaryKey"`
+	ProjectID          uint   `gorm:"uniqueIndex:project_overrides_idx_project_id"`
+	Description        string `gorm:"size:500;not null;default:''"`
+	AvatarURL          string `gorm:"size:500;not null;default:''"`
+	GitURL             string `gorm:"not null;default:''"`
 }
 
 // BranchFields holds the Go struct field names for each field.

@@ -44,13 +44,22 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Deprecated POST search endpoints that took the search queries from the HTTP
   request body. They are still supported, but may be removed in the next major
   release (v6.0.0). Please refer to the new endpoints that use query parameter
-  instead. (#99, #109, #118, #119)
+  instead. (#99, #109, #118, #119, #123)
 
   - Use new `GET /project` instead of `GET /projects` or `POST /projects/search`
   - Use new `GET /build` instead of `GET /projects/{projectId}/builds` or `POST /builds/search`
   - Use new `GET /provider` instead of `GET /providers` or `POST /providers/search`
   - Use new `GET /token` instead of `GET /tokens` or `POST /tokens/search`
   - Use new `GET /build/{buildId}/artifact` instead of `GET /build/{buildId}/artifacts`
+
+- Deprecated `/branch` and `/branches` endpoints in favor of
+  new `/project/{projectId}/branch` endpoints. (#120)
+
+- Deprecated `PUT /build/{buildId}` in favor of new `PUT /build/{buildId}/status`
+  endpoint. (#120)
+
+- Deprecated `POST /project/{projectId}/{stage}/run` in favor of
+  new `POST /project/{projectId}/build` endpoint. (#120)
 
 - Added new GET endpoints to get list of objects (as mentioned in note above),
   with large set of query parameters. Major difference with their "plural"
@@ -201,6 +210,14 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   - `token.user_name`
 
 - Added new field `RemoteProjectID` to the project model. (#112)
+
+- Added endpoints to allow setting manual overrides for a project. These
+  overrides are used in responses from `GET /project` and other, as well as in
+  build parameters for newly started builds. New endpoints: (#117)
+
+  - `GET /project/{projectId}/override` to get all overrides
+  - `PUT /project/{projectId}/override` to set all overrides
+  - `DELETE /project/{projectId}/override` to clear all overrides
 
 ## v4.2.0 (2021-09-10)
 

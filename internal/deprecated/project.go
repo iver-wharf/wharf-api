@@ -71,6 +71,7 @@ func (m ProjectModule) Register(g *gin.RouterGroup) {
 // @summary Returns all projects from database
 // @description Deprecated since v5.0.0. Planned for removal in v6.0.0.
 // @description Use `GET /project` instead.
+// @description Added in v0.1.8.
 // @tags project
 // @success 200 {object} []response.Project
 // @failure 502 {object} problem.Response "Database is unreachable"
@@ -95,6 +96,7 @@ func (m ProjectModule) getProjectListHandler(c *gin.Context) {
 // @summary Search for projects from database
 // @description Deprecated since v5.0.0. Planned for removal in v6.0.0.
 // @description Use `GET /project` instead.
+// @description Added in v0.5.5.
 // @tags project
 // @param project body ProjectSearch _ "Project search criteria"
 // @success 200 {object} []response.Project
@@ -154,6 +156,7 @@ type PaginatedBuilds struct {
 // @summary Get slice of builds.
 // @description Deprecated since v5.0.0. Planned for removal in v6.0.0.
 // @description Use `GET /build?projectId=123` instead.
+// @description Added in v1.0.1.
 // @tags project
 // @param projectId path uint true "project ID" minimum(0)
 // @param limit query string true "number of fetched branches"
@@ -220,6 +223,7 @@ func (m ProjectModule) getProjectBuildListHandler(c *gin.Context) {
 // @description It ignores branches array, build history and provider params.
 // @description Deprecated since v5.0.0. Planned for removal in v6.0.0.
 // @description Use POST /project to create, or PUT /project/{projectId} to update instead.
+// @description Added in v0.2.13.
 // @tags project
 // @accept json
 // @produce json

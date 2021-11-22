@@ -49,6 +49,7 @@ var defaultGetTokensOrderBy = orderby.Column{Name: database.TokenColumns.TokenID
 // @description List all tokens, or a window of tokens using the `limit` and `offset` query parameters. Allows optional filtering parameters.
 // @description Verbatim filters will match on the entire string used to find exact matches,
 // @description while the matching filters are meant for searches by humans where it tries to find soft matches and is therefore inaccurate by nature.
+// @description Added in v5.0.0.
 // @tags token
 // @param limit query int false "Number of results to return. No limiting is applied if empty (`?limit=`) or non-positive (`?limit=0`). Required if `offset` is used." default(100)
 // @param offset query int false "Skipped results, where 0 means from the start." minimum(0) default(0)
@@ -106,6 +107,7 @@ func (m tokenModule) getTokenListHandler(c *gin.Context) {
 // getTokenHandler godoc
 // @id getToken
 // @summary Returns token with selected token ID
+// @description Added in v0.2.2.
 // @tags token
 // @param tokenId path uint true "Token ID" minimum(0)
 // @success 200 {object} response.Token
@@ -132,6 +134,7 @@ func (m tokenModule) getTokenHandler(c *gin.Context) {
 // @id createToken
 // @summary Add token to database.
 // @description Add token to database. Provider in post object has to exists or should be empty.
+// @description Added in v0.2.0.
 // @tags token
 // @accept json
 // @produce json
@@ -182,6 +185,7 @@ func (m tokenModule) createTokenHandler(c *gin.Context) {
 // @id updateToken
 // @summary Update token in database.
 // @description Updates a token by replacing all of its fields.
+// @description Added in v5.0.0.
 // @tags token
 // @accept json
 // @produce json

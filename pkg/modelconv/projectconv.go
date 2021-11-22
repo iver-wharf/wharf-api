@@ -2,6 +2,7 @@ package modelconv
 
 import (
 	"github.com/ghodss/yaml"
+	"github.com/iver-wharf/wharf-api/internal/coalesce"
 	"github.com/iver-wharf/wharf-api/internal/ptrconv"
 	"github.com/iver-wharf/wharf-api/pkg/model/database"
 	"github.com/iver-wharf/wharf-api/pkg/model/request"
@@ -37,14 +38,14 @@ func DBProjectToResponse(dbProject database.Project) response.Project {
 		ProjectID:             dbProject.ProjectID,
 		Name:                  dbProject.Name,
 		GroupName:             dbProject.GroupName,
-		Description:           dbProject.Description,
-		AvatarURL:             dbProject.AvatarURL,
+		Description:           coalesce.String(dbProject.Overrides.Description, dbProject.Description),
+		AvatarURL:             coalesce.String(dbProject.Overrides.AvatarURL, dbProject.AvatarURL),
 		TokenID:               ptrconv.UintPtr(dbProject.TokenID),
 		ProviderID:            ptrconv.UintPtr(dbProject.ProviderID),
 		Provider:              resProviderPtr,
 		BuildDefinition:       dbProject.BuildDefinition,
 		Branches:              DBBranchesToResponses(dbProject.Branches),
-		GitURL:                dbProject.GitURL,
+		GitURL:                coalesce.String(dbProject.Overrides.GitURL, dbProject.GitURL),
 		RemoteProjectID:       dbProject.RemoteProjectID,
 		ParsedBuildDefinition: parsedBuildDef,
 	}
@@ -77,4 +78,15 @@ func ParseBuildDefinition(buildDef string) (interface{}, error) {
 		return nil, err
 	}
 	return parsed, nil
+}
+
+// DBProjectOverridesToResponse converts a database project's overrides to a
+// response project's overrides.
+func DBProjectOverridesToResponse(dbProjectOverrides database.ProjectOverrides) response.ProjectOverrides {
+	return response.ProjectOverrides{
+		ProjectID:   dbProjectOverrides.ProjectID,
+		Description: dbProjectOverrides.Description,
+		AvatarURL:   dbProjectOverrides.AvatarURL,
+		GitURL:      dbProjectOverrides.GitURL,
+	}
 }
