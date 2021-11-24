@@ -116,7 +116,6 @@ type HTTPConfig struct {
 	//
 	// Added in v5.0.0.
 	OIDC OIDCConfig
-
 }
 
 // CORSConfig holds settings for the HTTP server's CORS settings.

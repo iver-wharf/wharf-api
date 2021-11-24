@@ -4,11 +4,12 @@ import (
 	"crypto/rsa"
 	"encoding/base64"
 	"encoding/json"
-	"github.com/gin-gonic/gin"
 	"math/big"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/gin-gonic/gin"
 
 	"github.com/golang-jwt/jwt/v4"
 )
@@ -45,7 +46,7 @@ func GetOidcPublicKeys(config OIDCConfig) *map[string]*rsa.PublicKey {
 // request. This uses the environment vars WHARF_HTTP_OIDC_IssuerURL and WHARF_HTTP_OIDC_AudienceURL as limiters
 // that control the variety of tokens that pass validation.
 func VerifyTokenMiddleware(config OIDCConfig, rsaKeys *map[string]*rsa.PublicKey) gin.HandlerFunc {
-	return func (ginContext *gin.Context) {
+	return func(ginContext *gin.Context) {
 		if *rsaKeys == nil {
 			log.Warn().Message("RsaKeys for OIDC have not been set (http:500).")
 			ginContext.AbortWithStatus(http.StatusInternalServerError)
