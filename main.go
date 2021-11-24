@@ -110,7 +110,7 @@ func main() {
 	healthModule{}.Register(r.Group("/api"))
 
 	if config.HTTP.OIDC.Enable {
-		rsaKeys := GetOidcPublicKeys(config.HTTP.OIDC)
+		rsaKeys := GetOIDCPublicKeys(config.HTTP.OIDC)
 		r.Use(VerifyTokenMiddleware(config.HTTP.OIDC, rsaKeys))
 		SubscribeToKeyURLUpdates(config.HTTP.OIDC, rsaKeys)
 	}

@@ -33,8 +33,8 @@ import (
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// GetOidcPublicKeys return the public keys of the currently set WHARF_HTTP_OIDC_KeysURL.
-func GetOidcPublicKeys(config OIDCConfig) *map[string]*rsa.PublicKey {
+// GetOIDCPublicKeys return the public keys of the currently set WHARF_HTTP_OIDC_KeysURL.
+func GetOIDCPublicKeys(config OIDCConfig) *map[string]*rsa.PublicKey {
 	rsaKeys := make(map[string]*rsa.PublicKey)
 	var body map[string]interface{}
 	resp, err := http.Get(config.KeysURL)
@@ -105,7 +105,7 @@ func SubscribeToKeyURLUpdates(config OIDCConfig, rsakeys *map[string]*rsa.Public
 	go func() {
 		for {
 			<-fetchOidcKeysTicker.C
-			rsakeys = GetOidcPublicKeys(config)
+			rsakeys = GetOIDCPublicKeys(config)
 		}
 	}()
 }
