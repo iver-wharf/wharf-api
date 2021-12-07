@@ -112,7 +112,8 @@ func main() {
 	if config.HTTP.OIDC.Enable {
 		rsaKeys, err := GetOIDCPublicKeys(config.HTTP.OIDC)
 		if err != nil {
-			panic(err)
+			log.Error().WithError(err).Message("Failed to obtain OIDC public keys.")
+			os.Exit(1)
 		}
 		r.Use(VerifyTokenMiddleware(config.HTTP.OIDC, rsaKeys))
 		SubscribeToKeyURLUpdates(config.HTTP.OIDC, rsaKeys)

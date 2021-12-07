@@ -111,15 +111,22 @@ func VerifyTokenMiddleware(config OIDCConfig, rsaKeys *map[string]*rsa.PublicKey
 // SubscribeToKeyURLUpdates ensures new keys are fetched as necessary.
 // As a standard OIDC login provider keys should be checked for updates ever 1 day 1 hour.
 func SubscribeToKeyURLUpdates(config OIDCConfig, rsakeys *map[string]*rsa.PublicKey) {
-	fetchOidcKeysTicker := time.NewTicker(time.Hour * 25)
+	interval := time.Hour * 25
+	fetchOidcKeysTicker := time.NewTicker(interval)
 	go func() {
 		for {
 			<-fetchOidcKeysTicker.C
 			newKeys, err := GetOIDCPublicKeys(config)
 			if err != nil {
-				panic("Cannot live with error: ")
+				log.Warn().WithError(err).
+					WithDuration("interval", interval).
+					Message("Failed to update OIDC public keys.")
+			} else {
+				*rsakeys = *newKeys
+				log.Info().
+					WithDuration("interval", interval).
+					Message("Successfully updated OIDC public keys.")
 			}
-			*rsakeys = *newKeys
 		}
 	}()
 }

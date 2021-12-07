@@ -93,21 +93,3 @@ func TestNewLikeContainsValue(t *testing.T) {
 		})
 	}
 }
-
-func TestPointers(t *testing.T) {
-	myMap := map[string]int{
-		"foo": 123,
-	}
-
-	myMapPtr := &myMap
-
-	var f = func(localMapPtr *map[string]int) {
-		myNewMap := map[string]int{
-			"bar": 456,
-		}
-		localMapPtr = &myNewMap
-	}
-
-	f(myMapPtr)
-	assert.Equal(t, 456, (*myMapPtr)["bar"])
-}
