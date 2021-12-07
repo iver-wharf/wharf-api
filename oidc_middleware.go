@@ -4,6 +4,7 @@ import (
 	"crypto/rsa"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"math/big"
 	"net/http"
 	"strings"
@@ -34,29 +35,38 @@ import (
 // limitations under the License.
 
 // GetOIDCPublicKeys return the public keys of the currently set WHARF_HTTP_OIDC_KeysURL.
-func GetOIDCPublicKeys(config OIDCConfig) *map[string]*rsa.PublicKey {
+func GetOIDCPublicKeys(config OIDCConfig) (*map[string]*rsa.PublicKey, error) {
 	rsaKeys := make(map[string]*rsa.PublicKey)
-	var body map[string]interface{}
 	resp, err := http.Get(config.KeysURL)
 	if err != nil {
-		log.Error().WithError(err).Message("Could not fetch from KeysURL.")
+		return nil, fmt.Errorf("http GET keys URL: %w", err)
+		//log.Error().WithError(err).Message("Could not fetch from KeysURL.")
+	}
+	var body struct {
+		Keys []struct {
+			KeyID  string `json:"kid"`
+			Number string `json:"n"`
+		} `json:"keys"`
 	}
 	err = json.NewDecoder(resp.Body).Decode(&body)
 	if err != nil {
-		log.Error().WithError(err).Message("Failed to decode login JWT Keys.")
+		return nil, fmt.Errorf("decode keys payload: %w", err)
+		//log.Error().WithError(err).Message("Failed to decode login JWT Keys.")
 	}
 	log.Debug().Message("Updating keys for oidc.")
 	rsaExponent := 65537
-	for _, bodykey := range body["keys"].([]interface{}) {
-		key := bodykey.(map[string]interface{})
-		kid := key["kid"].(string)
+	for _, key := range body.Keys {
+		kid := key.KeyID
 		rsakey := new(rsa.PublicKey)
-		number, _ := base64.RawURLEncoding.DecodeString(key["n"].(string))
+		number, err := base64.RawURLEncoding.DecodeString(key.Number)
+		if err != nil {
+			return nil, fmt.Errorf("decode JWT 'n' field: %w", err)
+		}
 		rsakey.N = new(big.Int).SetBytes(number)
 		rsakey.E = rsaExponent
 		rsaKeys[kid] = rsakey
 	}
-	return &rsaKeys
+	return &rsaKeys, nil
 }
 
 // VerifyTokenMiddleware is a gin middleware function that enforces validity of the access bearer token on every
@@ -105,7 +115,11 @@ func SubscribeToKeyURLUpdates(config OIDCConfig, rsakeys *map[string]*rsa.Public
 	go func() {
 		for {
 			<-fetchOidcKeysTicker.C
-			rsakeys = GetOIDCPublicKeys(config)
+			newKeys, err := GetOIDCPublicKeys(config)
+			if err != nil {
+				panic("Cannot live with error: ")
+			}
+			*rsakeys = *newKeys
 		}
 	}()
 }
