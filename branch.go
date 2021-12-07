@@ -44,7 +44,7 @@ func (m branchModule) getProjectBranchListHandler(c *gin.Context) {
 	if !ok {
 		return
 	}
-	if !checkProjectExistsByID(c, m.Database, projectID, "when fetching list of branches for project") {
+	if !validateProjectExistsByID(c, m.Database, projectID, "when fetching list of branches for project") {
 		return
 	}
 	var dbBranches []database.Branch

@@ -406,7 +406,7 @@ func (m buildModule) updateBuildStatusHandler(c *gin.Context) {
 			"One or more parameters failed to parse when reading the request body for build status update.")
 		return
 	}
-	if !checkBuildExistsByID(c, m.Database, buildID, "when updating build status") {
+	if !validateBuildExistsByID(c, m.Database, buildID, "when updating build status") {
 		return
 	}
 	dbBuildStatus, ok := modelconv.ReqBuildStatusToDatabase(reqStatusUpdate.Status)
@@ -825,6 +825,6 @@ func getDBJobParams(
 	return dbJobParams, nil
 }
 
-func checkBuildExistsByID(c *gin.Context, db *gorm.DB, buildID uint, whenMsg string) bool {
-	return checkDatabaseObjExistsByID(c, db, &database.Build{}, buildID, "build", whenMsg)
+func validateBuildExistsByID(c *gin.Context, db *gorm.DB, buildID uint, whenMsg string) bool {
+	return validateDatabaseObjExistsByID(c, db, &database.Build{}, buildID, "build", whenMsg)
 }

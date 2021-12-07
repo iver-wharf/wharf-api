@@ -34,7 +34,7 @@ func fetchDatabaseObjByID(c *gin.Context, db *gorm.DB, modelPtr interface{}, id 
 	return true
 }
 
-func checkDatabaseObjExistsByID(c *gin.Context, db *gorm.DB, modelPtr interface{}, id uint, name, whenMsg string) bool {
+func validateDatabaseObjExistsByID(c *gin.Context, db *gorm.DB, modelPtr interface{}, id uint, name, whenMsg string) bool {
 	var count int64
 	if err := db.Model(modelPtr).Where(id).Count(&count).Error; err != nil {
 		writeDBFetchObjByIDErrorProblem(c, err, id, name, whenMsg)
