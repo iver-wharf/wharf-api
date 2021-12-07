@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/iver-wharf/wharf-core/pkg/ginutil"
+	"github.com/iver-wharf/wharf-core/pkg/problem"
 
 	"github.com/golang-jwt/jwt/v4"
 )
@@ -86,14 +88,22 @@ type OIDCMiddleware struct {
 // that control the variety of tokens that pass validation.
 func (m *OIDCMiddleware) VerifyTokenMiddleware(ginContext *gin.Context) {
 	if m.rsaKeys == nil {
-		log.Warn().Message("RsaKeys for OIDC have not been set (http:500).")
-		ginContext.AbortWithStatus(http.StatusInternalServerError)
+		ginutil.WriteProblem(ginContext, problem.Response{
+			Type:   "/prob/api/oidc/missing-rsa-keys",
+			Title:  "Missing OIDC public keys.",
+			Status: http.StatusInternalServerError,
+			Detail: "The OIDC RSA public keys were not properly set up during initialization of the wharf-api.",
+		})
+		ginContext.Abort()
+		return
 	}
 	isValid := false
 	errorMessage := ""
 	tokenString := ginContext.Request.Header.Get("Authorization")
 	if !strings.HasPrefix(tokenString, "Bearer ") {
-		ginContext.AbortWithStatus(http.StatusUnauthorized)
+		ginutil.WriteUnauthorized(ginContext, "Expected authorization scheme to be 'Bearer' (case sensitive), but was not.")
+		ginContext.Abort()
+		return
 	}
 	tokenString = strings.TrimPrefix(tokenString, "Bearer ")
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
@@ -113,8 +123,8 @@ func (m *OIDCMiddleware) VerifyTokenMiddleware(ginContext *gin.Context) {
 		isValid = true
 	}
 	if !isValid {
-		ginContext.String(http.StatusForbidden, errorMessage)
-		ginContext.AbortWithStatus(http.StatusUnauthorized)
+		ginutil.WriteUnauthorized(ginContext, "Invalid JWT: "+errorMessage)
+		ginContext.Abort()
 	}
 }
 
