@@ -4,6 +4,7 @@ import (
 	"crypto/rsa"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/big"
 	"net/http"
@@ -107,18 +108,23 @@ func (m *OIDCMiddleware) VerifyTokenMiddleware(ginContext *gin.Context) {
 	}
 	tokenString = strings.TrimPrefix(tokenString, "Bearer ")
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		return m.rsaKeys[token.Header["kid"].(string)], nil
+		if kid, ok := token.Header["kid"].(string); ok {
+			return m.rsaKeys[kid], nil
+		}
+		return nil, errors.New("expected JWT to have string 'kid' field")
 	})
 	if err != nil {
 		errorMessage = err.Error()
 	} else if !token.Valid {
-		errorMessage = "Invalid access bearer token."
+		errorMessage = "invalid access bearer token."
 	} else if token.Header["alg"] == nil {
-		errorMessage = "Missing 'alg' field in authorization JWT header."
+		errorMessage = "missing 'alg' field."
 	} else if token.Claims.(jwt.MapClaims)["aud"] != m.config.AudienceURL {
-		errorMessage = "Invalid 'aud' field in authorization JWT header."
-	} else if !strings.Contains(token.Claims.(jwt.MapClaims)["iss"].(string), m.config.IssuerURL) {
-		errorMessage = "Invalid 'iss' field in authorization JWT header."
+		errorMessage = "invalid 'aud' field."
+	} else if iss, ok := token.Claims.(jwt.MapClaims)["iss"].(string); !ok {
+		errorMessage = "invalid or missing 'iss' field: should be string."
+	} else if !strings.Contains(iss, m.config.IssuerURL) {
+		errorMessage = "invalid 'iss' field: disallowed issuer."
 	} else {
 		isValid = true
 	}
