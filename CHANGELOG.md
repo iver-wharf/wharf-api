@@ -44,7 +44,7 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Deprecated POST search endpoints that took the search queries from the HTTP
   request body. They are still supported, but may be removed in the next major
   release (v6.0.0). Please refer to the new endpoints that use query parameter
-  instead. (#99, #109, #123)
+  instead. (#99, #109, #118, #119, #123)
 
   - Use new `GET /project` instead of `GET /projects` or `POST /projects/search`
   - Use new `GET /build` instead of `GET /projects/{projectId}/builds` or `POST /builds/search`
@@ -223,6 +223,9 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   - `GET /project/{projectId}/override` to get all overrides
   - `PUT /project/{projectId}/override` to set all overrides
   - `DELETE /project/{projectId}/override` to clear all overrides
+
+- Changed version of `github.com/iver-wharf/wharf-core` from v1.2.0 to v1.3.0.
+  (#125)
 
 ## v4.2.0 (2021-09-10)
 

@@ -144,6 +144,12 @@ var buildJSONToColumns = map[string]database.SafeSQLName{
 	response.BuildJSONFields.IsInvalid:   database.BuildColumns.IsInvalid,
 }
 
+// PaginatedBuilds is a list of builds as well as an explicit total count field.
+type PaginatedBuilds struct {
+	Builds     []response.Build `json:"builds"`
+	TotalCount int64            `json:"totalCount"`
+}
+
 // getProjectBuildListHandler godoc
 // @id oldGetProjectBuildList
 // @deprecated
@@ -156,7 +162,7 @@ var buildJSONToColumns = map[string]database.SafeSQLName{
 // @param limit query string true "number of fetched branches"
 // @param offset query string true "PK of last branch taken"
 // @param orderby query []string false "Sorting orders. Takes the property name followed by either 'asc' or 'desc'. Can be specified multiple times for more granular sorting. Defaults to `?orderby=buildId desc`"
-// @success 200 {object} response.PaginatedBuilds
+// @success 200 {object} PaginatedBuilds
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 502 {object} problem.Response "Database is unreachable"
@@ -201,8 +207,8 @@ func (m ProjectModule) getProjectBuildListHandler(c *gin.Context) {
 		return
 	}
 
-	resPaginated := response.PaginatedBuilds{
-		List:       modelconv.DBBuildsToResponses(dbBuilds),
+	resPaginated := PaginatedBuilds{
+		Builds:     modelconv.DBBuildsToResponses(dbBuilds),
 		TotalCount: count,
 	}
 	c.JSON(http.StatusOK, resPaginated)
