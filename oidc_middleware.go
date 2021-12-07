@@ -72,14 +72,14 @@ func GetOIDCPublicKeys(keysURL string) (map[string]*rsa.PublicKey, error) {
 	return rsaKeys, nil
 }
 
-func NewOIDCMiddleware(rsaKeys map[string]*rsa.PublicKey, config OIDCConfig) *OIDCMiddleware {
-	return &OIDCMiddleware{
+func newOIDCMiddleware(rsaKeys map[string]*rsa.PublicKey, config OIDCConfig) *oidcMiddleware {
+	return &oidcMiddleware{
 		rsaKeys: rsaKeys,
 		config:  config,
 	}
 }
 
-type OIDCMiddleware struct {
+type oidcMiddleware struct {
 	rsaKeys map[string]*rsa.PublicKey
 	config  OIDCConfig
 }
@@ -87,7 +87,7 @@ type OIDCMiddleware struct {
 // VerifyTokenMiddleware is a gin middleware function that enforces validity of the access bearer token on every
 // request. This uses the environment vars WHARF_HTTP_OIDC_IssuerURL and WHARF_HTTP_OIDC_AudienceURL as limiters
 // that control the variety of tokens that pass validation.
-func (m *OIDCMiddleware) VerifyTokenMiddleware(ginContext *gin.Context) {
+func (m *oidcMiddleware) VerifyTokenMiddleware(ginContext *gin.Context) {
 	if m.rsaKeys == nil {
 		ginutil.WriteProblem(ginContext, problem.Response{
 			Type:   "/prob/api/oidc/missing-rsa-keys",
@@ -136,19 +136,19 @@ func (m *OIDCMiddleware) VerifyTokenMiddleware(ginContext *gin.Context) {
 
 // SubscribeToKeyURLUpdates ensures new keys are fetched as necessary.
 // As a standard OIDC login provider keys should be checked for updates ever 1 day 1 hour.
-func (m *OIDCMiddleware) SubscribeToKeyURLUpdates() {
+func (m *oidcMiddleware) SubscribeToKeyURLUpdates() {
 	fetchOidcKeysTicker := time.NewTicker(m.config.UpdateInterval)
 	log.Debug().WithDuration("interval", m.config.UpdateInterval).
 		Message("Subscribing to OIDC public keys rotation via periodic check timer.")
 	go func() {
 		for {
 			<-fetchOidcKeysTicker.C
-			m.UpdateOIDCPublicKeys()
+			m.updateOIDCPublicKeys()
 		}
 	}()
 }
 
-func (m *OIDCMiddleware) UpdateOIDCPublicKeys() {
+func (m *oidcMiddleware) updateOIDCPublicKeys() {
 	newKeys, err := GetOIDCPublicKeys(m.config.KeysURL)
 	if err != nil {
 		log.Warn().WithError(err).

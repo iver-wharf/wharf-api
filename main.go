@@ -115,7 +115,7 @@ func main() {
 			log.Error().WithError(err).Message("Failed to obtain OIDC public keys.")
 			os.Exit(1)
 		}
-		m := NewOIDCMiddleware(rsaKeys, config.HTTP.OIDC)
+		m := newOIDCMiddleware(rsaKeys, config.HTTP.OIDC)
 		r.Use(m.VerifyTokenMiddleware)
 		m.SubscribeToKeyURLUpdates()
 	}

@@ -165,6 +165,11 @@ type OIDCConfig struct {
 	// Added in v5.0.0.
 	KeysURL string
 
+	// UpdateInterval defines the key rotation of the public RSA keys obtained
+	// by the OIDC keys URL. A value of 25 hours is both default and
+	// recommended.
+	//
+	// Added in v5.0.0.
 	UpdateInterval time.Duration
 }
 
