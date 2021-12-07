@@ -164,6 +164,8 @@ type OIDCConfig struct {
 	//
 	// Added in v5.0.0.
 	KeysURL string
+
+	UpdateInterval time.Duration
 }
 
 // CertConfig holds settings for certificates verification used when talking
@@ -310,6 +312,18 @@ type DBConfig struct {
 var DefaultConfig = Config{
 	HTTP: HTTPConfig{
 		BindAddress: "0.0.0.0:8080",
+		CORS: CORSConfig{
+			// :4200 is used when running wharf-web via `npm start` locally
+			// :5000 is used when running wharf-web via docker-compose locally
+			AllowOrigins: []string{"http://localhost:4200", "http://localhost:5000"},
+		},
+		OIDC: OIDCConfig{
+			Enable:         false,
+			IssuerURL:      "https://sts.windows.net/841df554-ef9d-48b1-bc6e-44cf8543a8fc/",
+			AudienceURL:    "api://wharf-internal",
+			KeysURL:        "https://login.microsoftonline.com/841df554-ef9d-48b1-bc6e-44cf8543a8fc/discovery/v2.0/keys",
+			UpdateInterval: time.Hour * 25,
+		},
 	},
 	DB: DBConfig{
 		Driver: DBDriverPostgres,

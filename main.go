@@ -110,13 +110,14 @@ func main() {
 	healthModule{}.Register(r.Group("/api"))
 
 	if config.HTTP.OIDC.Enable {
-		rsaKeys, err := GetOIDCPublicKeys(config.HTTP.OIDC)
+		rsaKeys, err := GetOIDCPublicKeys(config.HTTP.OIDC.KeysURL)
 		if err != nil {
 			log.Error().WithError(err).Message("Failed to obtain OIDC public keys.")
 			os.Exit(1)
 		}
-		r.Use(VerifyTokenMiddleware(config.HTTP.OIDC, rsaKeys))
-		SubscribeToKeyURLUpdates(config.HTTP.OIDC, rsaKeys)
+		m := NewOIDCMiddleware(rsaKeys, config.HTTP.OIDC)
+		r.Use(m.VerifyTokenMiddleware)
+		m.SubscribeToKeyURLUpdates()
 	}
 
 	setupBasicAuth(r, config)

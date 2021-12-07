@@ -35,9 +35,9 @@ import (
 // limitations under the License.
 
 // GetOIDCPublicKeys return the public keys of the currently set WHARF_HTTP_OIDC_KeysURL.
-func GetOIDCPublicKeys(config OIDCConfig) (*map[string]*rsa.PublicKey, error) {
+func GetOIDCPublicKeys(keysURL string) (map[string]*rsa.PublicKey, error) {
 	rsaKeys := make(map[string]*rsa.PublicKey)
-	resp, err := http.Get(config.KeysURL)
+	resp, err := http.Get(keysURL)
 	if err != nil {
 		return nil, fmt.Errorf("http GET keys URL: %w", err)
 		//log.Error().WithError(err).Message("Could not fetch from KeysURL.")
@@ -66,67 +66,82 @@ func GetOIDCPublicKeys(config OIDCConfig) (*map[string]*rsa.PublicKey, error) {
 		rsakey.E = rsaExponent
 		rsaKeys[kid] = rsakey
 	}
-	return &rsaKeys, nil
+	return rsaKeys, nil
+}
+
+func NewOIDCMiddleware(rsaKeys map[string]*rsa.PublicKey, config OIDCConfig) *OIDCMiddleware {
+	return &OIDCMiddleware{
+		rsaKeys: rsaKeys,
+		config:  config,
+	}
+}
+
+type OIDCMiddleware struct {
+	rsaKeys map[string]*rsa.PublicKey
+	config  OIDCConfig
 }
 
 // VerifyTokenMiddleware is a gin middleware function that enforces validity of the access bearer token on every
 // request. This uses the environment vars WHARF_HTTP_OIDC_IssuerURL and WHARF_HTTP_OIDC_AudienceURL as limiters
 // that control the variety of tokens that pass validation.
-func VerifyTokenMiddleware(config OIDCConfig, rsaKeys *map[string]*rsa.PublicKey) gin.HandlerFunc {
-	return func(ginContext *gin.Context) {
-		if *rsaKeys == nil {
-			log.Warn().Message("RsaKeys for OIDC have not been set (http:500).")
-			ginContext.AbortWithStatus(http.StatusInternalServerError)
-		}
-		isValid := false
-		errorMessage := ""
-		tokenString := ginContext.Request.Header.Get("Authorization")
-		if !strings.HasPrefix(tokenString, "Bearer ") {
-			ginContext.AbortWithStatus(http.StatusUnauthorized)
-		}
-		tokenString = strings.TrimPrefix(tokenString, "Bearer ")
-		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			return (*rsaKeys)[token.Header["kid"].(string)], nil
-		})
-		if err != nil {
-			errorMessage = err.Error()
-		} else if !token.Valid {
-			errorMessage = "Invalid access bearer token."
-		} else if token.Header["alg"] == nil {
-			errorMessage = "Missing 'alg' field in authorization JWT header."
-		} else if token.Claims.(jwt.MapClaims)["aud"] != config.AudienceURL {
-			errorMessage = "Invalid 'aud' field in authorization JWT header."
-		} else if !strings.Contains(token.Claims.(jwt.MapClaims)["iss"].(string), config.IssuerURL) {
-			errorMessage = "Invalid 'iss' field in authorization JWT header."
-		} else {
-			isValid = true
-		}
-		if !isValid {
-			ginContext.String(http.StatusForbidden, errorMessage)
-			ginContext.AbortWithStatus(http.StatusUnauthorized)
-		}
+func (m *OIDCMiddleware) VerifyTokenMiddleware(ginContext *gin.Context) {
+	if m.rsaKeys == nil {
+		log.Warn().Message("RsaKeys for OIDC have not been set (http:500).")
+		ginContext.AbortWithStatus(http.StatusInternalServerError)
+	}
+	isValid := false
+	errorMessage := ""
+	tokenString := ginContext.Request.Header.Get("Authorization")
+	if !strings.HasPrefix(tokenString, "Bearer ") {
+		ginContext.AbortWithStatus(http.StatusUnauthorized)
+	}
+	tokenString = strings.TrimPrefix(tokenString, "Bearer ")
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return m.rsaKeys[token.Header["kid"].(string)], nil
+	})
+	if err != nil {
+		errorMessage = err.Error()
+	} else if !token.Valid {
+		errorMessage = "Invalid access bearer token."
+	} else if token.Header["alg"] == nil {
+		errorMessage = "Missing 'alg' field in authorization JWT header."
+	} else if token.Claims.(jwt.MapClaims)["aud"] != m.config.AudienceURL {
+		errorMessage = "Invalid 'aud' field in authorization JWT header."
+	} else if !strings.Contains(token.Claims.(jwt.MapClaims)["iss"].(string), m.config.IssuerURL) {
+		errorMessage = "Invalid 'iss' field in authorization JWT header."
+	} else {
+		isValid = true
+	}
+	if !isValid {
+		ginContext.String(http.StatusForbidden, errorMessage)
+		ginContext.AbortWithStatus(http.StatusUnauthorized)
 	}
 }
 
 // SubscribeToKeyURLUpdates ensures new keys are fetched as necessary.
 // As a standard OIDC login provider keys should be checked for updates ever 1 day 1 hour.
-func SubscribeToKeyURLUpdates(config OIDCConfig, rsakeys *map[string]*rsa.PublicKey) {
-	interval := time.Hour * 25
-	fetchOidcKeysTicker := time.NewTicker(interval)
+func (m *OIDCMiddleware) SubscribeToKeyURLUpdates() {
+	fetchOidcKeysTicker := time.NewTicker(m.config.UpdateInterval)
+	log.Debug().WithDuration("interval", m.config.UpdateInterval).
+		Message("Subscribing to OIDC public keys rotation via periodic check timer.")
 	go func() {
 		for {
 			<-fetchOidcKeysTicker.C
-			newKeys, err := GetOIDCPublicKeys(config)
-			if err != nil {
-				log.Warn().WithError(err).
-					WithDuration("interval", interval).
-					Message("Failed to update OIDC public keys.")
-			} else {
-				*rsakeys = *newKeys
-				log.Info().
-					WithDuration("interval", interval).
-					Message("Successfully updated OIDC public keys.")
-			}
+			m.UpdateOIDCPublicKeys()
 		}
 	}()
+}
+
+func (m *OIDCMiddleware) UpdateOIDCPublicKeys() {
+	newKeys, err := GetOIDCPublicKeys(m.config.KeysURL)
+	if err != nil {
+		log.Warn().WithError(err).
+			WithDuration("interval", m.config.UpdateInterval).
+			Message("Failed to update OIDC public keys.")
+	} else {
+		m.rsaKeys = newKeys
+		log.Info().
+			WithDuration("interval", m.config.UpdateInterval).
+			Message("Successfully updated OIDC public keys.")
+	}
 }
