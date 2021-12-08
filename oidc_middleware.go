@@ -85,7 +85,7 @@ type oidcMiddleware struct {
 }
 
 // VerifyTokenMiddleware is a gin middleware function that enforces validity of the access bearer token on every
-// request. This uses the environment vars WHARF_HTTP_OIDC_IssuerURL and WHARF_HTTP_OIDC_AudienceURL as limiters
+// request. This uses the environment vars WHARF_HTTP_OIDC_ISSUERURL and WHARF_HTTP_OIDC_AUDIENCEURL as limiters
 // that control the variety of tokens that pass validation.
 func (m *oidcMiddleware) VerifyTokenMiddleware(ginContext *gin.Context) {
 	if m.rsaKeys == nil {
