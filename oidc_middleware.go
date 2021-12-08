@@ -37,7 +37,7 @@ import (
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// GetOIDCPublicKeys return the public keys of the currently set WHARF_HTTP_OIDC_KeysURL.
+// GetOIDCPublicKeys returns the public keys of the currently set WHARF_HTTP_OIDC_KEYSURL.
 func GetOIDCPublicKeys(keysURL string) (map[string]*rsa.PublicKey, error) {
 	rsaKeys := make(map[string]*rsa.PublicKey)
 	resp, err := http.Get(keysURL)
