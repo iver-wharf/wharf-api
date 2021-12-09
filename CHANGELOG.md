@@ -222,6 +222,8 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Changed version of `github.com/iver-wharf/wharf-core` from v1.2.0 to v1.3.0.
   (#125)
 
+- Changed Dockerfile for easier windows building. (#126)
+
 ## v4.2.0 (2021-09-10)
 
 - Added support for the TZ environment variable (setting timezones ex.
