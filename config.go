@@ -108,6 +108,15 @@ type HTTPConfig struct {
 	//
 	// Added in v4.2.0.
 	BasicAuth string
+
+	// OIDC is only secure if using HTTPS/SSL.
+	// Requires CORS set to specific origins.
+	//
+	// If enabled, HTTP requests without a valid OIDC access token in the Authorization
+	// header will be rejected with Unauthorized 401.
+	//
+	// Added in v5.0.0.
+	OIDC OIDCConfig
 }
 
 // CORSConfig holds settings for the HTTP server's CORS settings.
@@ -128,6 +137,41 @@ type CORSConfig struct {
 	//
 	// Added in v5.0.0.
 	AllowOrigins []string
+}
+
+// OIDCConfig holds settings for the HTTP server's OIDC access token validation settings.
+type OIDCConfig struct {
+
+	// Enable functions as a switch to enable or disable the validation of OIDC
+	// access bearer tokens.
+	//
+	// Added in v5.0.0.
+	Enable bool
+
+	// IssuerURL is an integral part of the access token. It should be checked such that
+	// only allowed OIDC targets can pass token validation.
+	//
+	// Added in v5.0.0.
+	IssuerURL string
+
+	// AudienceURL is an integral part of the access token. It should be checked such that
+	// only the allowed application within a OIDC target can pass validation.
+	//
+	// Added in v5.0.0.
+	AudienceURL string
+
+	// KeysURL is an integral part of the access token. It should be checked such that
+	// only OIDC targets with the expected keys pass validation.
+	//
+	// Added in v5.0.0.
+	KeysURL string
+
+	// UpdateInterval defines the key rotation of the public RSA keys obtained
+	// by the OIDC keys URL. A value of 25 hours is both default and
+	// recommended.
+	//
+	// Added in v5.0.0.
+	UpdateInterval time.Duration
 }
 
 // CertConfig holds settings for certificates verification used when talking
@@ -274,6 +318,18 @@ type DBConfig struct {
 var DefaultConfig = Config{
 	HTTP: HTTPConfig{
 		BindAddress: "0.0.0.0:8080",
+		CORS: CORSConfig{
+			// :4200 is used when running wharf-web via `npm start` locally
+			// :5000 is used when running wharf-web via docker-compose locally
+			AllowOrigins: []string{"http://localhost:4200", "http://localhost:5000"},
+		},
+		OIDC: OIDCConfig{
+			Enable:         false,
+			IssuerURL:      "https://sts.windows.net/841df554-ef9d-48b1-bc6e-44cf8543a8fc/",
+			AudienceURL:    "api://wharf-internal",
+			KeysURL:        "https://login.microsoftonline.com/841df554-ef9d-48b1-bc6e-44cf8543a8fc/discovery/v2.0/keys",
+			UpdateInterval: time.Hour * 25,
+		},
 	},
 	DB: DBConfig{
 		Driver: DBDriverPostgres,

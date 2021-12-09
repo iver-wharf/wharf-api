@@ -109,6 +109,17 @@ func main() {
 	healthModule{}.DeprecatedRegister(r)
 	healthModule{}.Register(r.Group("/api"))
 
+	if config.HTTP.OIDC.Enable {
+		rsaKeys, err := GetOIDCPublicKeys(config.HTTP.OIDC.KeysURL)
+		if err != nil {
+			log.Error().WithError(err).Message("Failed to obtain OIDC public keys.")
+			os.Exit(1)
+		}
+		m := newOIDCMiddleware(rsaKeys, config.HTTP.OIDC)
+		r.Use(m.VerifyTokenMiddleware)
+		m.SubscribeToKeyURLUpdates()
+	}
+
 	setupBasicAuth(r, config)
 
 	modules := []httpModule{

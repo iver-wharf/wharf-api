@@ -73,6 +73,11 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   `WHARF_HTTP_CORS_ALLOWORIGINS` or the YAML key `http.cors.allowOrigins`. This
   is to make sending `Authorization` headers possible. (#101)
 
+- Added a slew of options for setting OIDC parameters (see WHARF_HTTP_OIDC_*)
+  for JWT token verification. Upon setting `WHARF_HTTP_OIDC_ENABLE=true` a
+  check will be enforced for requests sent to the api such that all
+  requests not carrying a valid bearer token will fail.
+
 - Added support for Sqlite. Default database driver is still Postgres.
 
   Note: wharf-api must be compiled with `CGO_ENABLED=1` (which is the default
