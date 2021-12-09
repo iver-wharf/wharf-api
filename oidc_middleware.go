@@ -43,7 +43,6 @@ func GetOIDCPublicKeys(keysURL string) (map[string]*rsa.PublicKey, error) {
 	resp, err := http.Get(keysURL)
 	if err != nil {
 		return nil, fmt.Errorf("http GET keys URL: %w", err)
-		//log.Error().WithError(err).Message("Could not fetch from KeysURL.")
 	}
 	var body struct {
 		Keys []struct {
@@ -54,7 +53,6 @@ func GetOIDCPublicKeys(keysURL string) (map[string]*rsa.PublicKey, error) {
 	err = json.NewDecoder(resp.Body).Decode(&body)
 	if err != nil {
 		return nil, fmt.Errorf("decode keys payload: %w", err)
-		//log.Error().WithError(err).Message("Failed to decode login JWT Keys.")
 	}
 	log.Debug().Message("Updating keys for oidc.")
 	rsaExponent := 65537
