@@ -3,9 +3,9 @@ package modelconv
 import (
 	"strconv"
 
-	"github.com/iver-wharf/wharf-api/pkg/model/database"
-	"github.com/iver-wharf/wharf-api/pkg/model/request"
-	"github.com/iver-wharf/wharf-api/pkg/model/response"
+	"github.com/iver-wharf/wharf-api/v5/pkg/model/database"
+	"github.com/iver-wharf/wharf-api/v5/pkg/model/request"
+	"github.com/iver-wharf/wharf-api/v5/pkg/model/response"
 )
 
 // DBBuildParamsToResponses converts a slice of database build parameters to a

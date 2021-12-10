@@ -3,7 +3,7 @@ package set_test
 import (
 	"fmt"
 
-	"github.com/iver-wharf/wharf-api/internal/set"
+	"github.com/iver-wharf/wharf-api/v5/internal/set"
 )
 
 func ExampleStrings_loop() {

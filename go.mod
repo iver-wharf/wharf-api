@@ -1,4 +1,4 @@
-module github.com/iver-wharf/wharf-api
+module github.com/iver-wharf/wharf-api/v5
 
 go 1.16
 

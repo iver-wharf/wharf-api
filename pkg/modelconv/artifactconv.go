@@ -1,8 +1,8 @@
 package modelconv
 
 import (
-	"github.com/iver-wharf/wharf-api/pkg/model/database"
-	"github.com/iver-wharf/wharf-api/pkg/model/response"
+	"github.com/iver-wharf/wharf-api/v5/pkg/model/database"
+	"github.com/iver-wharf/wharf-api/v5/pkg/model/response"
 )
 
 // DBArtifactToResponse converts a database artifact to a response artifact.

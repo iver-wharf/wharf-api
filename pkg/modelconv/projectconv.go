@@ -2,11 +2,11 @@ package modelconv
 
 import (
 	"github.com/ghodss/yaml"
-	"github.com/iver-wharf/wharf-api/internal/coalesce"
-	"github.com/iver-wharf/wharf-api/internal/ptrconv"
-	"github.com/iver-wharf/wharf-api/pkg/model/database"
-	"github.com/iver-wharf/wharf-api/pkg/model/request"
-	"github.com/iver-wharf/wharf-api/pkg/model/response"
+	"github.com/iver-wharf/wharf-api/v5/internal/coalesce"
+	"github.com/iver-wharf/wharf-api/v5/internal/ptrconv"
+	"github.com/iver-wharf/wharf-api/v5/pkg/model/database"
+	"github.com/iver-wharf/wharf-api/v5/pkg/model/request"
+	"github.com/iver-wharf/wharf-api/v5/pkg/model/response"
 )
 
 // DBProjectsToResponses converts a slice of database projects to a slice of

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/iver-wharf/wharf-api/pkg/model/database"
+	"github.com/iver-wharf/wharf-api/v5/pkg/model/database"
 )
 
 func contains(items []string, value string) bool {

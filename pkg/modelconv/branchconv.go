@@ -1,10 +1,10 @@
 package modelconv
 
 import (
-	"github.com/iver-wharf/wharf-api/internal/set"
-	"github.com/iver-wharf/wharf-api/pkg/model/database"
-	"github.com/iver-wharf/wharf-api/pkg/model/request"
-	"github.com/iver-wharf/wharf-api/pkg/model/response"
+	"github.com/iver-wharf/wharf-api/v5/internal/set"
+	"github.com/iver-wharf/wharf-api/v5/pkg/model/database"
+	"github.com/iver-wharf/wharf-api/v5/pkg/model/request"
+	"github.com/iver-wharf/wharf-api/v5/pkg/model/response"
 )
 
 // DBBranchListToResponse converts a list of branches and an optional default
