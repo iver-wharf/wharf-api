@@ -82,6 +82,11 @@ const (
 	BuildFailed BuildStatus = "Failed"
 )
 
+// BuildStatusUpdate allows you to update the status of a build.
+type BuildStatusUpdate struct {
+	Status BuildStatus `json:"status" enums:"Scheduling,Running,Completed,Failed"`
+}
+
 // BuildInputs is a key-value object of input variables used when starting a new
 // build, where the key is the input variable name and the value is its string,
 // boolean, or numeric value.

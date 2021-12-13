@@ -435,6 +435,10 @@ func fetchProjectByIDSlim(c *gin.Context, db *gorm.DB, projectID uint, whenMsg s
 	return dbProject, ok
 }
 
+func validateProjectExistsByID(c *gin.Context, db *gorm.DB, projectID uint, whenMsg string) bool {
+	return validateDatabaseObjExistsByID(c, db, &database.Project{}, projectID, "project", whenMsg)
+}
+
 func databaseProjectPreloaded(db *gorm.DB) *gorm.DB {
 	return db.Set("gorm:auto_preload", false).
 		Preload(database.ProjectFields.Provider).

@@ -384,14 +384,47 @@ func (m buildModule) createBuildLogHandler(c *gin.Context) {
 
 // updateBuildStatusHandler godoc
 // @id updateBuildStatus
-// @summary Update a build's status. (NOT IMPLEMENTED!)
+// @summary Update a build's status.
 // @description Added in v5.0.0.
 // @tags build
 // @param buildId path uint true "Build ID" minimum(0)
-// @success 501 "Not Implemented"
+// @param data body request.BuildStatusUpdate true "Status update"
+// @success 204 "Updated"
+// @failure 400 {object} problem.Response "Bad request"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 404 {object} problem.Response "Build not found"
+// @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildId}/status [put]
 func (m buildModule) updateBuildStatusHandler(c *gin.Context) {
-	c.Status(http.StatusNotImplemented)
+	buildID, ok := ginutil.ParseParamUint(c, "buildId")
+	if !ok {
+		return
+	}
+	var reqStatusUpdate request.BuildStatusUpdate
+	if err := c.ShouldBindJSON(&reqStatusUpdate); err != nil {
+		ginutil.WriteInvalidBindError(c, err,
+			"One or more parameters failed to parse when reading the request body for build status update.")
+		return
+	}
+	if !validateBuildExistsByID(c, m.Database, buildID, "when updating build status") {
+		return
+	}
+	dbBuildStatus, ok := modelconv.ReqBuildStatusToDatabase(reqStatusUpdate.Status)
+	if !ok {
+		err := errors.New("invalid build status value")
+		ginutil.WriteInvalidParamError(c, err, "status", fmt.Sprintf(
+			"The new build status %q is not a valid build status value.",
+			reqStatusUpdate.Status,
+		))
+	}
+	_, err := m.updateBuildStatus(buildID, dbBuildStatus)
+	if err != nil {
+		ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
+			"Failed updating status on build with ID %d to status with ID %d.",
+			buildID, dbBuildStatus))
+		return
+	}
+	c.Status(http.StatusNoContent)
 }
 
 func (m buildModule) updateBuildStatus(buildID uint, statusID database.BuildStatus) (database.Build, error) {
@@ -790,4 +823,8 @@ func getDBJobParams(
 	}
 
 	return dbJobParams, nil
+}
+
+func validateBuildExistsByID(c *gin.Context, db *gorm.DB, buildID uint, whenMsg string) bool {
+	return validateDatabaseObjExistsByID(c, db, &database.Build{}, buildID, "build", whenMsg)
 }

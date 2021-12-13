@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/iver-wharf/wharf-api/internal/ptrconv"
@@ -28,29 +29,99 @@ func (m branchModule) Register(g *gin.RouterGroup) {
 
 // getProjectBranchListHandler godoc
 // @id getProjectBranchList
-// @summary Get list of branches. (NOT IMPLEMENTED!)
+// @summary Get list of branches.
 // @description Added in v5.0.0.
 // @tags branch
 // @param projectId path uint true "project ID" minimum(0)
-// @success 501 "Not Implemented"
+// @success 200 {object} response.PaginatedBranches "Branches"
+// @failure 400 {object} problem.Response "Bad request"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 404 {object} problem.Response "Project not found"
+// @failure 502 {object} problem.Response "Database is unreachable"
 // @router /project/{projectId}/branch [get]
 func (m branchModule) getProjectBranchListHandler(c *gin.Context) {
-	c.Status(http.StatusNotImplemented)
+	projectID, ok := ginutil.ParseParamUint(c, "projectId")
+	if !ok {
+		return
+	}
+	if !validateProjectExistsByID(c, m.Database, projectID, "when fetching list of branches for project") {
+		return
+	}
+	var dbBranches []database.Branch
+	err := m.Database.
+		Where(&database.Branch{ProjectID: projectID}).
+		Find(&dbBranches).Error
+	if err != nil {
+		ginutil.WriteDBReadError(c, err, fmt.Sprintf(
+			"Failed fetching list of branches for project with ID %d.",
+			projectID))
+		return
+	}
+	dbDefaultBranch := findDefaultDBBranch(dbBranches)
+	c.JSON(http.StatusOK, modelconv.DBBranchListToPaginatedResponse(dbBranches, int64(len(dbBranches)), dbDefaultBranch))
 }
 
 // createProjectBranchHandler godoc
 // @id createProjectBranch
-// @summary Add branch to project. (NOT IMPLEMENTED!)
+// @summary Add branch to project.
 // @description Adds a branch to the project, and allows you to set this new branch to be the default branch.
+// @description Will ignore name collisions, and treat them as if the branch was just created anyway.
 // @description Added in v5.0.0.
 // @tags branch
 // @accept json
 // @produce json
+// @param projectId path uint true "project ID" minimum(0)
 // @param branch body request.Branch true "Branch object"
-// @success 501 "Not Implemented"
+// @success 201 {object} response.Branch "Created branch"
+// @failure 400 {object} problem.Response "Bad request"
+// @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @failure 404 {object} problem.Response "Project not found"
+// @failure 502 {object} problem.Response "Database is unreachable"
 // @router /project/{projectId}/branch [post]
 func (m branchModule) createProjectBranchHandler(c *gin.Context) {
-	c.Status(http.StatusNotImplemented)
+	projectID, ok := ginutil.ParseParamUint(c, "projectId")
+	if !ok {
+		return
+	}
+	var reqBranch request.Branch
+	if err := c.ShouldBindJSON(&reqBranch); err != nil {
+		ginutil.WriteInvalidBindError(c, err,
+			"One or more parameters failed to parse when reading the request body for branch object to create.")
+		return
+	}
+	dbProject, ok := fetchProjectByIDSlim(c, m.Database, projectID, "when creating branch for project")
+	if !ok {
+		return
+	}
+	tokenID := ptrconv.UintPtr(dbProject.TokenID)
+	var dbBranch database.Branch
+	err := m.Database.Transaction(func(tx *gorm.DB) error {
+		dbBranch = database.Branch{
+			ProjectID: projectID,
+			Default:   reqBranch.Default,
+			Name:      reqBranch.Name,
+			TokenID:   tokenID,
+		}
+		if err := tx.Where(&database.Branch{
+			ProjectID: projectID,
+			Name:      reqBranch.Name,
+		}).FirstOrCreate(&dbBranch).Error; err != nil {
+			return err
+		}
+		if reqBranch.Default {
+			if err := setDefaultBranchByName(tx, projectID, reqBranch.Name); err != nil {
+				return err
+			}
+		}
+		return tx.First(&dbBranch, dbBranch.BranchID).Error
+	})
+	if err != nil {
+		ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
+			"Failed creating branch for project with ID %d.",
+			projectID))
+		return
+	}
+	c.JSON(http.StatusCreated, modelconv.DBBranchToResponse(dbBranch))
 }
 
 // updateProjectBranchListHandler godoc
@@ -185,7 +256,7 @@ func createBranchesWithNames(db *gorm.DB, projectID, tokenID uint, branchNames [
 func deleteBranchesByNames(db *gorm.DB, projectID uint, branchNames []string) error {
 	return db.
 		Where(&database.Branch{ProjectID: projectID}, database.BranchFields.ProjectID).
-		Where(database.BranchColumns.Name+" IN ?", branchNames).
+		Where(database.BranchColumns.Name+" IN ?", stringSliceToInterfaces(branchNames)).
 		Delete(&database.Branch{}).
 		Error
 }

@@ -43,8 +43,8 @@ func (m BuildModule) Register(g *gin.RouterGroup) {
 // @description This endpoint was never implemented!
 // @description Deprecated since v5.0.0. Planned for removal in v6.0.0.
 // @description Use `GET /build` instead.
+// @summary NOT IMPLEMENTED
 // @description Added in v0.3.5.
-// @summary NOT IMPLEMENTED YET
 // @tags build
 // @accept json
 // @produce json
