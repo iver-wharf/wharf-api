@@ -218,7 +218,7 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
 - Added endpoints to allow setting manual overrides for a project. These
   overrides are used in responses from `GET /project` and other, as well as in
-  build parameters for newly started builds. New endpoints: (#117)
+  build parameters for newly started builds. New endpoints: (#117, #127)
 
   - `GET /project/{projectId}/override` to get all overrides
   - `PUT /project/{projectId}/override` to set all overrides
