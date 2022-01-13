@@ -5,9 +5,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/iver-wharf/wharf-api/pkg/model/database"
-	"github.com/iver-wharf/wharf-api/pkg/model/request"
-	"github.com/iver-wharf/wharf-api/pkg/modelconv"
+	"github.com/iver-wharf/wharf-api/v5/pkg/model/database"
+	"github.com/iver-wharf/wharf-api/v5/pkg/model/request"
+	"github.com/iver-wharf/wharf-api/v5/pkg/modelconv"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"github.com/iver-wharf/wharf-core/pkg/problem"
 	"gorm.io/gorm"

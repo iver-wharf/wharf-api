@@ -16,8 +16,8 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 
-	"github.com/iver-wharf/wharf-api/docs"
-	"github.com/iver-wharf/wharf-api/internal/deprecated"
+	"github.com/iver-wharf/wharf-api/v5/docs"
+	"github.com/iver-wharf/wharf-api/v5/internal/deprecated"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/swaggo/gin-swagger/swaggerFiles"
 )

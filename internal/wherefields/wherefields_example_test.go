@@ -3,7 +3,7 @@ package wherefields_test
 import (
 	"fmt"
 
-	"github.com/iver-wharf/wharf-api/internal/wherefields"
+	"github.com/iver-wharf/wharf-api/v5/internal/wherefields"
 	"gorm.io/gorm"
 )
 

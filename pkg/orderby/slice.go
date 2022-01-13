@@ -3,7 +3,7 @@ package orderby
 import (
 	"strings"
 
-	"github.com/iver-wharf/wharf-api/pkg/model/database"
+	"github.com/iver-wharf/wharf-api/v5/pkg/model/database"
 	"gorm.io/gorm/clause"
 )
 

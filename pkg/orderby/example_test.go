@@ -3,8 +3,8 @@ package orderby_test
 import (
 	"fmt"
 
-	"github.com/iver-wharf/wharf-api/pkg/model/database"
-	"github.com/iver-wharf/wharf-api/pkg/orderby"
+	"github.com/iver-wharf/wharf-api/v5/pkg/model/database"
+	"github.com/iver-wharf/wharf-api/v5/pkg/orderby"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )

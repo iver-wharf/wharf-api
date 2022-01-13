@@ -14,6 +14,9 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
 ## v5.0.0 (WIP)
 
+- BREAKING: Changed module path from `github.com/iver-wharf/wharf-api` to
+  `github.com/iver-wharf/wharf-api/v5`. (#128)
+
 - BREAKING: Removed all deprecated environment variable configs, which were
   marked as deprecated in v4.2.0/#38. Now all environment variables require the
   `WHARF_` prefix. (#87)

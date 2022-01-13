@@ -7,11 +7,11 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/iver-wharf/wharf-api/internal/ptrconv"
-	"github.com/iver-wharf/wharf-api/pkg/model/database"
-	"github.com/iver-wharf/wharf-api/pkg/model/response"
-	"github.com/iver-wharf/wharf-api/pkg/modelconv"
-	"github.com/iver-wharf/wharf-api/pkg/orderby"
+	"github.com/iver-wharf/wharf-api/v5/internal/ptrconv"
+	"github.com/iver-wharf/wharf-api/v5/pkg/model/database"
+	"github.com/iver-wharf/wharf-api/v5/pkg/model/response"
+	"github.com/iver-wharf/wharf-api/v5/pkg/modelconv"
+	"github.com/iver-wharf/wharf-api/v5/pkg/orderby"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"gorm.io/gorm"
 )
