@@ -12,6 +12,11 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 	https://changelog.md/
 -->
 
+## v5.0.1 (WIP)
+
+- Fixed `testResultListSummary`, `testResultSummary` and `params` not filled
+  when fetching list of builds. (#131)
+
 ## v5.0.0 (2022-01-17)
 
 - BREAKING: Changed module path from `github.com/iver-wharf/wharf-api` to
