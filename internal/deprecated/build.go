@@ -101,7 +101,7 @@ func (m BuildModule) updateBuildHandler(c *gin.Context) {
 		return
 	}
 
-	resBuild := modelconv.DBBuildToResponse(dbBuild)
+	resBuild := modelconv.DBBuildToResponse(dbBuild, nilEngineLookup)
 	c.JSON(http.StatusOK, resBuild)
 }
 

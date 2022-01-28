@@ -115,7 +115,7 @@ func (m buildModule) getBuildHandler(c *gin.Context) {
 		return
 	}
 
-	resBuild := modelconv.DBBuildToResponse(dbBuild)
+	resBuild := modelconv.DBBuildToResponse(dbBuild, m.engineLookup)
 	c.JSON(http.StatusOK, resBuild)
 }
 
@@ -255,7 +255,7 @@ func (m buildModule) getBuildListHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response.PaginatedBuilds{
-		List:       modelconv.DBBuildsToResponses(dbBuilds),
+		List:       modelconv.DBBuildsToResponses(dbBuilds, m.engineLookup),
 		TotalCount: totalCount,
 	})
 }
@@ -568,7 +568,7 @@ func (m buildModule) startProjectBuildHandler(c *gin.Context) {
 }
 
 func (m buildModule) startBuildHandler(c *gin.Context, projectID uint, stageName string, engineID string) {
-	engine, ok := lookupEngineFromConfig(m.Config.CI, engineID)
+	engine, ok := lookupEngineOrDefaultFromConfig(m.Config.CI, engineID)
 	if !ok {
 		if engineID == "" {
 			ginutil.WriteProblem(c, problem.Response{
@@ -709,6 +709,10 @@ func (m buildModule) SaveBuildParams(dbParams []database.BuildParam) error {
 		}
 	}
 	return nil
+}
+
+func (m buildModule) engineLookup(id string) *response.Engine {
+	return lookupResponseEngineFromConfig(m.Config.CI, id)
 }
 
 func parseDBBuildParams(buildID uint, buildDef []byte, vars []byte) ([]database.BuildParam, error) {

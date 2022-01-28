@@ -61,6 +61,15 @@ func getDefaultEngineFromConfig(ciConf CIConfig) (CIEngineConfig, bool) {
 	}
 }
 
+func lookupEngineOrDefaultFromConfig(ciConf CIConfig, id string) (CIEngineConfig, bool) {
+	switch {
+	case id == "":
+		return getDefaultEngineFromConfig(ciConf)
+	default:
+		return lookupEngineFromConfig(ciConf, id)
+	}
+}
+
 func lookupEngineFromConfig(ciConf CIConfig, id string) (CIEngineConfig, bool) {
 	switch {
 	case id == "":
@@ -88,4 +97,13 @@ func convCIEnginesToResponses(engines []CIEngineConfig) []response.Engine {
 		resEngines[i] = convCIEngineToResponse(e)
 	}
 	return resEngines
+}
+
+func lookupResponseEngineFromConfig(ciConf CIConfig, id string) *response.Engine {
+	engine, ok := lookupEngineFromConfig(ciConf, id)
+	if !ok {
+		return nil
+	}
+	resEngine := convCIEngineToResponse(engine)
+	return &resEngine
 }

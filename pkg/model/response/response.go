@@ -103,6 +103,7 @@ type Build struct {
 	IsInvalid             bool                  `json:"isInvalid"`
 	TestResultSummaries   []TestResultSummary   `json:"testResultSummaries"`
 	TestResultListSummary TestResultListSummary `json:"testResultListSummary"`
+	Engine                *Engine               `json:"engine" extensions:"x-nullable"`
 }
 
 // BuildParam holds the name and value of an input parameter fed into a build.
