@@ -38,6 +38,9 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Added query parameter `?engine=ID` to `POST /api/project/{projectId}/build`
   to allow specifying which execution engine to use for the new build. (#134)
 
+- Fixed `testResultListSummary`, `testResultSummary` and `params` not filled
+  when fetching list of builds. (#131)
+
 ## v5.0.0 (2022-01-17)
 
 - BREAKING: Changed module path from `github.com/iver-wharf/wharf-api` to

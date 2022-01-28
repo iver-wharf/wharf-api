@@ -220,7 +220,7 @@ func (m buildModule) getBuildListHandler(c *gin.Context) {
 		where.AddFieldName(database.BuildFields.StatusID)
 	}
 
-	query := m.Database.
+	query := databaseBuildPreloaded(m.Database).
 		Clauses(orderBySlice.ClauseIfNone(defaultGetBuildsOrderBy)).
 		Where(&database.Build{
 			ProjectID:   where.Uint(database.BuildFields.ProjectID, params.ProjectID),
@@ -482,10 +482,8 @@ func setStatusDate(build *database.Build, statusID database.BuildStatus) {
 
 func (m buildModule) getBuild(buildID uint) (database.Build, error) {
 	var dbBuild database.Build
-	if err := m.Database.
+	if err := databaseBuildPreloaded(m.Database).
 		Where(&database.Build{BuildID: buildID}).
-		Preload(database.BuildFields.TestResultSummaries).
-		Preload(database.BuildFields.Params).
 		First(&dbBuild).
 		Error; err != nil {
 		return database.Build{}, err
@@ -853,4 +851,10 @@ func getDBJobParams(
 
 func validateBuildExistsByID(c *gin.Context, db *gorm.DB, buildID uint, whenMsg string) bool {
 	return validateDatabaseObjExistsByID(c, db, &database.Build{}, buildID, "build", whenMsg)
+}
+
+func databaseBuildPreloaded(db *gorm.DB) *gorm.DB {
+	return db.Set("gorm:auto_preload", false).
+		Preload(database.BuildFields.TestResultSummaries).
+		Preload(database.BuildFields.Params)
 }
