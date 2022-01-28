@@ -55,6 +55,8 @@ type CIConfig struct {
 	// This corresponds to the deprecated (and unsupported since v5.0.0)
 	// environment variable CI_URL, which was added back in v0.6.0.
 	//
+	// Deprecated: Use CI.Engines instead.
+	//
 	// Added in v4.2.0.
 	TriggerURL string
 
@@ -66,8 +68,22 @@ type CIConfig struct {
 	// This corresponds to the deprecated (and unsupported since v5.0.0)
 	// environment variable CI_TOKEN, which was added back in v0.6.0.
 	//
+	// Deprecated: Use CI.Engines instead.
+	//
 	// Added in v4.2.0.
 	TriggerToken string
+
+	// Name of the default engine to use. If no default engine is set, then HTTP
+	// requests to start a new build without specifying an engine will fail with
+	// the error code 400 "Bad Request".
+	//
+	// Added in v5.1.0.
+	DefaultEngine string
+
+	// Engines defines a set of execution engines to use.
+	//
+	// Added in v5.1.0.
+	Engines []CIEngineConfig
 
 	// MockTriggerResponse will, when set to true, hinder wharf-api from sending
 	// a HTTP POST trigger request when starting a new build and will instead
@@ -81,6 +97,31 @@ type CIConfig struct {
 	//
 	// Added in v4.2.0.
 	MockTriggerResponse bool
+}
+
+type CIEngineConfig struct {
+	// Name is the display name of the execution engine. If left unset, then the
+	// key name of the CI.Engines setting will be used instead.
+	Name string
+
+	// TriggerURL is the full URL that wharf-api will send a POST request to
+	// with all of the build metadata. For example to trigger a Jenkins job via
+	// the "Generic Webhook Trigger":
+	// https://plugins.jenkins.io/generic-webhook-trigger
+	//
+	// Added in v5.1.0.
+	TriggerURL string
+
+	// TriggerToken is passed along as a credentials token via the "token" query
+	// parameter. When using the Jenkins plugin "Generic Webhook Trigger"
+	// (https://plugins.jenkins.io/generic-webhook-trigger) then this token is
+	// configured in the webhook settings.
+	//
+	// This corresponds to the deprecated (and unsupported since v5.0.0)
+	// environment variable CI_TOKEN, which was added back in v0.6.0.
+	//
+	// Added in v5.1.0.
+	TriggerToken string
 }
 
 // HTTPConfig holds settings for the HTTP server.
