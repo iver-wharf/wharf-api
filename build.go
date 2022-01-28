@@ -532,7 +532,8 @@ func (m buildModule) oldStartProjectBuildHandler(c *gin.Context) {
 		return
 	}
 	stageName := c.Param("stage")
-	m.startBuildHandler(c, projectID, stageName)
+	engineID := ""
+	m.startBuildHandler(c, projectID, stageName, engineID)
 }
 
 // startProjectBuildHandler godoc
@@ -545,6 +546,7 @@ func (m buildModule) oldStartProjectBuildHandler(c *gin.Context) {
 // @param stage query string false "Name of stage to run, or specify `ALL` to run all stages." default(ALL)
 // @param branch query string false "Branch name. Uses project's default branch if omitted"
 // @param environment query string false "Environment name filter. If left empty it will run all stages without any environment filters."
+// @param engine query string false "Execution engine ID"
 // @param inputs body request.BuildInputs _ "Input variable values. Map of variable names (as defined in the project's `.wharf-ci.yml` file) as keys paired with their string, boolean, or numeric value."
 // @success 200 {object} response.BuildReferenceWrapper "Build scheduled"
 // @failure 400 {object} problem.Response "Bad request, such as invalid body JSON"
@@ -561,10 +563,29 @@ func (m buildModule) startProjectBuildHandler(c *gin.Context) {
 	if !hasStageName {
 		stageName = "ALL"
 	}
-	m.startBuildHandler(c, projectID, stageName)
+	engineID := c.Query("engine")
+	m.startBuildHandler(c, projectID, stageName, engineID)
 }
 
-func (m buildModule) startBuildHandler(c *gin.Context, projectID uint, stageName string) {
+func (m buildModule) startBuildHandler(c *gin.Context, projectID uint, stageName string, engineID string) {
+	engine, ok := lookupEngineFromConfig(m.Config.CI, engineID)
+	if !ok {
+		if engineID == "" {
+			ginutil.WriteProblem(c, problem.Response{
+				Type:   "/prob/api/engine/no-default",
+				Title:  "No default execution engine configured.",
+				Status: http.StatusInternalServerError,
+				Detail: "The wharf-api does not have any default execution engine configured, meaning it doesn't know where to run your Wharf build.",
+			})
+			return
+		}
+		err := fmt.Errorf("unknown engine by ID: %q", engineID)
+		ginutil.WriteInvalidParamError(c, err, "engine", fmt.Sprintf(
+			"No execution engine was found by ID %q. You can skip to specify the engine ID to use the default execution engine.",
+			engineID))
+		return
+	}
+
 	dbProject, ok := fetchProjectByID(c, m.Database, projectID, "when starting a new build")
 	if !ok {
 		return
@@ -659,7 +680,7 @@ func (m buildModule) startBuildHandler(c *gin.Context, projectID uint, stageName
 		return
 	}
 
-	_, err = triggerBuild(dbJobParams, m.Config.CI)
+	_, err = triggerBuild(dbJobParams, engine)
 	if err != nil {
 		dbBuild.IsInvalid = true
 		if saveErr := m.Database.Save(&dbBuild).Error; saveErr != nil {
@@ -735,7 +756,7 @@ func parseDBBuildParams(buildID uint, buildDef []byte, vars []byte) ([]database.
 	return params, nil
 }
 
-func triggerBuild(dbJobParams []database.Param, conf CIConfig) (string, error) {
+func triggerBuild(dbJobParams []database.Param, engine CIEngineConfig) (string, error) {
 	q := ""
 	for _, dbJobParam := range dbJobParams {
 		if dbJobParam.Value != "" {
@@ -743,13 +764,13 @@ func triggerBuild(dbJobParams []database.Param, conf CIConfig) (string, error) {
 		}
 	}
 
-	tokenStr := fmt.Sprintf("?token=%s", conf.TriggerToken)
+	tokenStr := fmt.Sprintf("?token=%s", engine.Token)
 
-	url := fmt.Sprintf("%s%s%s", conf.TriggerURL, tokenStr, q)
+	url := fmt.Sprintf("%s%s%s", engine.URL, tokenStr, q)
 	fmt.Printf("POSTing to url: %v\n", url)
 	log.Info().
 		WithString("method", "POST").
-		WithString("url", fmt.Sprintf("%s?token=%s%s", conf.TriggerURL, "*****", q)).
+		WithString("url", fmt.Sprintf("%s?token=%s%s", engine.URL, "*****", q)).
 		Message("Triggering build.")
 
 	var resp, err = http.Post(url, "", nil)
