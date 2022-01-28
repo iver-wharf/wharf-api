@@ -12,6 +12,32 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 	https://changelog.md/
 -->
 
+## v5.1.0 (WIP)
+
+- Deprecated trigger configs (YAML: `ci.triggerUrl` &amp; `ci.triggerToken`,
+  environment variables: `WHARF_CI_TRIGGERURL` &amp; `WHARF_CI_TRIGGERTOKEN`)
+  in favor of new configuration values that allow specifying up to two different
+  execution engines: (#134)
+
+  | YAML               | Environment variable     | Type                  |
+  | ------------------ | ------------------------ | --------------------- |
+  | `ci.engine.id`     | `WHARF_CI_ENGINE_ID`     | string (max 32 chars) |
+  | `ci.engine.name`   | `WHARF_CI_ENGINE_NAME`   | string                |
+  | `ci.engine.url`    | `WHARF_CI_ENGINE_URL`    | string                |
+  | `ci.engine.token`  | `WHARF_CI_ENGINE_TOKEN`  | string                |
+  | `ci.engine2.id`    | `WHARF_CI_ENGINE2_ID`    | string (max 32 chars) |
+  | `ci.engine2.name`  | `WHARF_CI_ENGINE2_NAME`  | string                |
+  | `ci.engine2.url`   | `WHARF_CI_ENGINE2_URL`   | string                |
+  | `ci.engine2.token` | `WHARF_CI_ENGINE2_TOKEN` | string                |
+
+  The deprecated trigger configs are used as defaults for the `ci.engine.url`
+  and `ci.engine.token` configs.
+
+- Added endpoint `GET /api/engine` for listing execution engines. (#134)
+
+- Added query parameter `?engine=ID` to `POST /api/project/{projectId}/build`
+  to allow specifying which execution engine to use for the new build. (#134)
+
 ## v5.0.0 (2022-01-17)
 
 - BREAKING: Changed module path from `github.com/iver-wharf/wharf-api` to
