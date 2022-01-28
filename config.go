@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"time"
 
+	"github.com/iver-wharf/wharf-api/v5/pkg/model/database"
 	"github.com/iver-wharf/wharf-core/pkg/config"
 )
 
@@ -425,6 +427,9 @@ func loadConfig() (Config, error) {
 		return Config{}, err
 	}
 	cfg.addBackwardCompatibleConfigs()
+	if err := cfg.validate(); err != nil {
+		return Config{}, err
+	}
 	return cfg, nil
 }
 
@@ -435,4 +440,14 @@ func (cfg *Config) addBackwardCompatibleConfigs() {
 	if cfg.CI.TriggerURL != "" {
 		cfg.CI.Engine.URL = cfg.CI.TriggerURL
 	}
+}
+
+func (cfg *Config) validate() error {
+	if len(cfg.CI.Engine.ID) > database.BuildSizes.EngineID {
+		return fmt.Errorf("primary engine ID is too large: max 32 chars, but was: %d", len(cfg.CI.Engine.ID))
+	}
+	if len(cfg.CI.Engine2.ID) > database.BuildSizes.EngineID {
+		return fmt.Errorf("secondary engine ID is too large: max 32 chars, but was: %d", len(cfg.CI.Engine2.ID))
+	}
+	return nil
 }

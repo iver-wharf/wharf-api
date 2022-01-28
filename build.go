@@ -620,6 +620,7 @@ func (m buildModule) startBuildHandler(c *gin.Context, projectID uint, stageName
 		GitBranch:   branch,
 		Environment: null.NewString(env, hasEnv),
 		Stage:       stageName,
+		EngineID:    engine.ID,
 	}
 	if err := m.Database.Create(&dbBuild).Error; err != nil {
 		ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
