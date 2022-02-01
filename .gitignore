@@ -4,7 +4,9 @@
 # Editor files
 *.swp
 .idea/
-.vscode/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
 
 # NPM
 /node_modules/
