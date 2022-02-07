@@ -1,4 +1,4 @@
-.PHONY: install tidy deps test \
+.PHONY: install tidy deps check \
 	docker docker-run serve swag-force swag \
 	lint lint-md lint-go \
 	lint-fix lint-md-fix
@@ -26,8 +26,8 @@ deps:
 	go mod download
 	npm install
 
-test: swag
-	go test -v ./...
+check: swag
+	go test ./...
 
 docker:
 	docker build . \
