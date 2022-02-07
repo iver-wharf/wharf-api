@@ -1,9 +1,27 @@
+.PHONY: install tidy deps test \
+	docker docker-run serve swag-force swag \
+	lint lint-md lint-go \
+	lint-fix lint-md-fix
+
 commit = $(shell git rev-parse HEAD)
 version = latest
 
-build: swag
+ifeq ($(OS),Windows_NT)
+wharf-api.exe: swag
+else
+wharf-api: swag
+endif
 	go build .
-	@echo "Built binary found at ./wharf-api or ./wharf-api.exe"
+
+install:
+	go install
+
+tidy:
+	go mod tidy
+
+deps:
+	cd .. && go get -u github.com/swaggo/swag/cmd/swag@v1.7.1
+	go mod download
 
 test: swag
 	go test -v ./...
@@ -29,6 +47,11 @@ docker-run:
 serve: swag
 	go run .
 
+clean:
+	@rm -vf docs/docs.go
+	@rm -vf docs/swagger.json
+	@rm -vf docs/swagger.yaml
+
 swag-force:
 	swag init --parseDependency --parseDepth 1
 
@@ -43,6 +66,14 @@ endif
 endif
 	@# This comment silences warning "make: Nothing to be done for 'swag'."
 
-deps:
-	cd .. && go get -u github.com/swaggo/swag/cmd/swag@v1.7.1
-	go mod download
+lint: lint-md lint-go
+lint-fix: lint-md-fix
+
+lint-md:
+	npx remark . .github
+
+lint-md-fix:
+	npx remark . .github -o
+
+lint-go:
+	revive -formatter stylish -config revive.toml ./...
