@@ -318,7 +318,7 @@ type Build struct {
 	Params              []BuildParam        `gorm:"foreignKey:BuildID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	IsInvalid           bool                `gorm:"not null;default:false"`
 	TestResultSummaries []TestResultSummary `gorm:"foreignKey:BuildID"`
-	EngineID            string              `gorm:"size:32;not null:default:''"`
+	EngineID            string              `gorm:"size:32;not null;default:''"`
 }
 
 // BuildStatus is an enum of different states for a build.
