@@ -20,8 +20,11 @@ tidy:
 	go mod tidy
 
 deps:
-	cd .. && go get -u github.com/swaggo/swag/cmd/swag@v1.7.1
+	go install github.com/mgechev/revive@latest
+	go install golang.org/x/tools/cmd/goimports@latest
+	go install github.com/swaggo/swag/cmd/swag@v1.7.1
 	go mod download
+	npm install
 
 test: swag
 	go test -v ./...
