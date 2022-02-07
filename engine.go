@@ -63,6 +63,12 @@ func getDefaultEngineFromConfig(ciConf CIConfig) (CIEngineConfig, bool) {
 
 func lookupEngineOrDefaultFromConfig(ciConf CIConfig, id string) (CIEngineConfig, bool) {
 	switch {
+	case ciConf.MockTriggerResponse:
+		return CIEngineConfig{
+			ID:   "mock",
+			Name: "Mock engine",
+			URL:  "http://mock-url.wharf-api.localhost",
+		}, true
 	case id == "":
 		return getDefaultEngineFromConfig(ciConf)
 	default:
