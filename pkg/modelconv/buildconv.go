@@ -30,16 +30,16 @@ func DBBuildParamToResponse(dbParam database.BuildParam) response.BuildParam {
 
 // DBBuildsToResponses converts a slice of database builds to a slice of
 // response builds.
-func DBBuildsToResponses(dbBuilds []database.Build) []response.Build {
+func DBBuildsToResponses(dbBuilds []database.Build, engineLookup EngineLookup) []response.Build {
 	resBuilds := make([]response.Build, len(dbBuilds))
 	for i, dbBuild := range dbBuilds {
-		resBuilds[i] = DBBuildToResponse(dbBuild)
+		resBuilds[i] = DBBuildToResponse(dbBuild, engineLookup)
 	}
 	return resBuilds
 }
 
 // DBBuildToResponse converts a database build to a response build.
-func DBBuildToResponse(dbBuild database.Build) response.Build {
+func DBBuildToResponse(dbBuild database.Build, engineLookup EngineLookup) response.Build {
 	var (
 		failed  uint
 		passed  uint
@@ -57,6 +57,10 @@ func DBBuildToResponse(dbBuild database.Build) response.Build {
 		Skipped: skipped,
 		Failed:  failed,
 	}
+	var engine *response.Engine
+	if dbBuild.EngineID != "" {
+		engine = engineLookup(dbBuild.EngineID)
+	}
 	return response.Build{
 		TimeMetadata:          DBTimeMetadataToResponse(dbBuild.TimeMetadata),
 		BuildID:               dbBuild.BuildID,
@@ -73,6 +77,7 @@ func DBBuildToResponse(dbBuild database.Build) response.Build {
 		IsInvalid:             dbBuild.IsInvalid,
 		TestResultSummaries:   DBTestResultSummariesToResponses(dbBuild.TestResultSummaries),
 		TestResultListSummary: resListSummary,
+		Engine:                engine,
 	}
 }
 

@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"time"
 
+	"github.com/iver-wharf/wharf-api/v5/pkg/model/database"
 	"github.com/iver-wharf/wharf-core/pkg/config"
 )
 
@@ -55,6 +57,9 @@ type CIConfig struct {
 	// This corresponds to the deprecated (and unsupported since v5.0.0)
 	// environment variable CI_URL, which was added back in v0.6.0.
 	//
+	// Deprecated: Use ci.engine.url (YAML) or WHARF_CI_ENGINE_URL (env var)
+	// instead. Planned for removal in v6.0.0.
+	//
 	// Added in v4.2.0.
 	TriggerURL string
 
@@ -66,8 +71,23 @@ type CIConfig struct {
 	// This corresponds to the deprecated (and unsupported since v5.0.0)
 	// environment variable CI_TOKEN, which was added back in v0.6.0.
 	//
+	// Deprecated: Use ci.engine.token (YAML) or WHARF_CI_ENGINE_TOKEN
+	// (env var) instead. Planned for removal in v6.0.0.
+	//
 	// Added in v4.2.0.
 	TriggerToken string
+
+	// Engine defines the primary and default execution engine to be used when
+	// starting new builds.
+	//
+	// Added in v5.1.0.
+	Engine CIEngineConfig
+
+	// Engine2 defines a secondary execution engine that can be used when
+	// starting new builds.
+	//
+	// Added in v5.1.0.
+	Engine2 CIEngineConfig
 
 	// MockTriggerResponse will, when set to true, hinder wharf-api from sending
 	// a HTTP POST trigger request when starting a new build and will instead
@@ -81,6 +101,43 @@ type CIConfig struct {
 	//
 	// Added in v4.2.0.
 	MockTriggerResponse bool
+}
+
+// CIEngineConfig holds settings for the execution engine used in CI
+// (Continuous Integration).
+type CIEngineConfig struct {
+	// ID is the identifying name of the execution engine. Defaults to "primary"
+	// or "secondary", depending on if this engine is defined by CIConfig.Engine
+	// or CIConfig.Engine2, respectively.
+	//
+	// Added in v5.1.0.
+	ID string
+
+	// Name is the display name of the execution engine. Defaults to "Primary"
+	// or "Secondary", depending on if this engine is defined by CIConfig.Engine
+	// or CIConfig.Engine2, respectively.
+	//
+	// Added in v5.1.0.
+	Name string
+
+	// URL is the full URL that wharf-api will send a POST request to
+	// with all of the build metadata. For example to trigger a Jenkins job via
+	// the "Generic Webhook Trigger":
+	// https://plugins.jenkins.io/generic-webhook-trigger
+	//
+	// Added in v5.1.0.
+	URL string
+
+	// Token is passed along as a credentials token via the "token" query
+	// parameter. When using the Jenkins plugin "Generic Webhook Trigger"
+	// (https://plugins.jenkins.io/generic-webhook-trigger) then this token is
+	// configured in the webhook settings.
+	//
+	// This corresponds to the deprecated (and unsupported since v5.0.0)
+	// environment variable CI_TOKEN, which was added back in v0.6.0.
+	//
+	// Added in v5.1.0.
+	Token string
 }
 
 // HTTPConfig holds settings for the HTTP server.
@@ -316,6 +373,16 @@ type DBConfig struct {
 
 // DefaultConfig is the hard-coded default values for wharf-api's configs.
 var DefaultConfig = Config{
+	CI: CIConfig{
+		Engine: CIEngineConfig{
+			ID:   "primary",
+			Name: "Primary",
+		},
+		Engine2: CIEngineConfig{
+			ID:   "secondary",
+			Name: "Secondary",
+		},
+	},
 	HTTP: HTTPConfig{
 		BindAddress: "0.0.0.0:8080",
 		CORS: CORSConfig{
@@ -359,5 +426,28 @@ func loadConfig() (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
-	return cfg, err
+	cfg.addBackwardCompatibleConfigs()
+	if err := cfg.validate(); err != nil {
+		return Config{}, err
+	}
+	return cfg, nil
+}
+
+func (cfg *Config) addBackwardCompatibleConfigs() {
+	if cfg.CI.TriggerToken != "" {
+		cfg.CI.Engine.Token = cfg.CI.TriggerToken
+	}
+	if cfg.CI.TriggerURL != "" {
+		cfg.CI.Engine.URL = cfg.CI.TriggerURL
+	}
+}
+
+func (cfg *Config) validate() error {
+	if len(cfg.CI.Engine.ID) > database.BuildSizes.EngineID {
+		return fmt.Errorf("primary engine ID is too large: max 32 chars, but was: %d", len(cfg.CI.Engine.ID))
+	}
+	if len(cfg.CI.Engine2.ID) > database.BuildSizes.EngineID {
+		return fmt.Errorf("secondary engine ID is too large: max 32 chars, but was: %d", len(cfg.CI.Engine2.ID))
+	}
+	return nil
 }

@@ -208,7 +208,7 @@ func (m ProjectModule) getProjectBuildListHandler(c *gin.Context) {
 	}
 
 	resPaginated := PaginatedBuilds{
-		Builds:     modelconv.DBBuildsToResponses(dbBuilds),
+		Builds:     modelconv.DBBuildsToResponses(dbBuilds, nilEngineLookup),
 		TotalCount: count,
 	}
 	c.JSON(http.StatusOK, resPaginated)

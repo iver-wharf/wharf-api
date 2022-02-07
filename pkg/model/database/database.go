@@ -292,6 +292,15 @@ var BuildColumns = struct {
 	IsInvalid:   "is_invalid",
 }
 
+// BuildSizes holds the DB column size limits.
+// Useful when validating the fields attempting to insert values into the
+// database.
+var BuildSizes = struct {
+	EngineID int
+}{
+	EngineID: 32,
+}
+
 // Build holds data about the state of a build. Which parameters was used to
 // start it, what status it holds, et.al.
 type Build struct {
@@ -309,6 +318,7 @@ type Build struct {
 	Params              []BuildParam        `gorm:"foreignKey:BuildID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	IsInvalid           bool                `gorm:"not null;default:false"`
 	TestResultSummaries []TestResultSummary `gorm:"foreignKey:BuildID"`
+	EngineID            string              `gorm:"size:32;not null;default:''"`
 }
 
 // BuildStatus is an enum of different states for a build.

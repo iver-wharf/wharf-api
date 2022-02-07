@@ -123,6 +123,7 @@ func main() {
 	setupBasicAuth(r, config)
 
 	modules := []httpModule{
+		engineModule{CIConfig: &config.CI},
 		branchModule{Database: db},
 		buildModule{Database: db, Config: &config},
 		projectModule{Database: db},
