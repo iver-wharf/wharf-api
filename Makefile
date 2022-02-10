@@ -70,7 +70,7 @@ endif
 	@# This comment silences warning "make: Nothing to be done for 'swag'."
 
 lint: lint-md lint-go
-lint-fix: lint-fix-md
+lint-fix: lint-fix-md lint-fix-go
 
 lint-md:
 	npx remark . .github
