@@ -75,7 +75,7 @@ lint-fix: lint-md-fix
 lint-md:
 	npx remark . .github
 
-lint-md-fix:
+lint-fix-md:
 	npx remark . .github -o
 
 lint-go:
