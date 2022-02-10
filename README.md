@@ -73,7 +73,7 @@ docker push quay.io/iver-wharf/wharf-api:v2.0.0
 
 ## Linting
 
-You can lint all of the above at the same time by running:
+Requires Node.js (npm) to be installed: <https://nodejs.org/en/download/>
 
 ```sh
 make lint
