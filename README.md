@@ -73,9 +73,9 @@ docker push quay.io/iver-wharf/wharf-api:v2.0.0
 
 ## Linting
 
-Requires Node.js (npm) to be installed: <https://nodejs.org/en/download/>
-
 ```sh
+make deps # download linting dependencies
+
 make lint
 
 make lint-go # only lint Go code
