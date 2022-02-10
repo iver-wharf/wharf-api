@@ -1,7 +1,7 @@
 .PHONY: install tidy deps check \
 	docker docker-run serve swag-force swag \
 	lint lint-md lint-go \
-	lint-fix lint-md-fix
+	lint-fix lint-fix-md
 
 commit = $(shell git rev-parse HEAD)
 version = latest
@@ -70,7 +70,7 @@ endif
 	@# This comment silences warning "make: Nothing to be done for 'swag'."
 
 lint: lint-md lint-go
-lint-fix: lint-md-fix
+lint-fix: lint-fix-md
 
 lint-md:
 	npx remark . .github
