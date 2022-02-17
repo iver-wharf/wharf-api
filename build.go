@@ -821,7 +821,7 @@ func getDBJobParams(
 
 	token := ""
 	if dbProject.Token != nil {
-		token = dbProject.Token.Token
+		token = dbProject.Token.Value
 	}
 
 	dbJobParams := []database.Param{

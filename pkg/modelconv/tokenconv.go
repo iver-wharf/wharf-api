@@ -20,7 +20,7 @@ func DBTokenToResponse(dbToken database.Token) response.Token {
 	return response.Token{
 		TimeMetadata: DBTimeMetadataToResponse(dbToken.TimeMetadata),
 		TokenID:      dbToken.TokenID,
-		Token:        dbToken.Token,
+		Token:        dbToken.Value,
 		UserName:     dbToken.UserName,
 	}
 }

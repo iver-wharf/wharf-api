@@ -94,7 +94,7 @@ func (m TokenModule) searchTokenListHandler(c *gin.Context) {
 	var dbTokens []database.Token
 	err := m.Database.
 		Where(&database.Token{
-			Token:    reqToken.Token,
+			Value:    reqToken.Token,
 			UserName: reqToken.UserName,
 		}, database.TokenFields.Token, database.TokenFields.UserName).
 		Find(&dbTokens).
@@ -134,7 +134,7 @@ func (m TokenModule) updateTokenHandler(c *gin.Context) {
 		return
 	}
 	dbToken := database.Token{
-		Token:    reqToken.Token,
+		Value:    reqToken.Token,
 		UserName: reqToken.UserName,
 	}
 	var dbProvider database.Provider

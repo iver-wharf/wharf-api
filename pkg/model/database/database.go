@@ -115,7 +115,7 @@ var TokenColumns = struct {
 type Token struct {
 	TimeMetadata
 	TokenID  uint   `gorm:"primaryKey"`
-	Token    string `gorm:"size:500;not null"`
+	Value    string `gorm:"size:500;not null"`
 	UserName string `gorm:"size:500;not null;default:''"`
 }
 
