@@ -20,22 +20,7 @@ var migrationOptions = gormigrate.Options{
 }
 
 var migrations = []*gormigrate.Migration{
-	// create persons table
-	{
-		ID: "201608301400",
-		Migrate: func(tx *gorm.DB) error {
-			// it's a good pratice to copy the struct inside the function,
-			// so side effects are prevented if the original struct changes during the time
-			type Person struct {
-				gorm.Model
-				Name string
-			}
-			return tx.AutoMigrate(&Person{})
-		},
-		Rollback: func(tx *gorm.DB) error {
-			return tx.Migrator().DropTable("people")
-		},
-	},
+	// None yet.
 }
 
 // migrateInitSchema is called when no previous migrations were found, while
