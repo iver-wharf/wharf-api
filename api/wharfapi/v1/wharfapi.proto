@@ -1,0 +1,25 @@
+syntax = "proto3";
+import "google/protobuf/timestamp.proto";
+
+service Logger {
+  rpc CreateLogStream(stream CreateLogStreamRequest) returns (CreateLogStreamResponse);
+}
+
+message CreateLogStreamRequest {
+  uint64 build_id = 1;
+  uint64 worker_step_id = 2;
+  uint64 worker_log_id = 3;
+  string log_message = 4;
+  google.protobuf.Timestamp timestamp = 5;
+}
+
+message CreateLogStreamResponse {
+  // empty message, but left here in case of future usage
+}
+
+message LogLine {
+  int64 log_id = 1; // not DB value; worker's own ID of the log line
+  int32 step_id = 2; // not DB value; worker's own ID of the step ID
+  google.protobuf.Timestamp timestamp = 3;
+  string line = 4;
+}

@@ -1,5 +1,5 @@
 .PHONY: install tidy deps check \
-	docker docker-run serve swag-force swag \
+	docker docker-run serve swag-force swag proto \
 	lint lint-md lint-go \
 	lint-fix lint-fix-md lint-fix-go
 
@@ -23,6 +23,8 @@ deps:
 	go install github.com/mgechev/revive@latest
 	go install golang.org/x/tools/cmd/goimports@latest
 	go install github.com/swaggo/swag/cmd/swag@v1.7.1
+	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.26
+	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1
 	go mod download
 	npm install
 
@@ -68,6 +70,13 @@ ifeq ("$(filter $(MAKECMDGOALS),swag-force)","")
 endif
 endif
 	@# This comment silences warning "make: Nothing to be done for 'swag'."
+
+proto:
+	protoc --go_out=. --go_opt=paths=source_relative \
+		--go-grpc_out=. --go-grpc_opt=paths=source_relative \
+		./api/wharfapi/v1/wharfapi.proto
+# Generated files have some non-standard formatting, so let's format it.
+	goimports -w ./api/wharfapi/v1/.
 
 lint: lint-md lint-go
 lint-fix: lint-fix-md lint-fix-go
