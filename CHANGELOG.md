@@ -38,6 +38,15 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Added query parameter `?engine=ID` to `POST /api/project/{projectId}/build`
   to allow specifying which execution engine to use for the new build. (#134)
 
+- Added migrations support via new dependency on
+  `github.com/go-gormigrate/gormigrate/v2` v2.0.0. Thanks to this, wharf-api now
+  initializes much quicker as it can skip applying migrations that are already
+  applied. (#144)
+
+- Changed database column name `token.token` to `token.value` due to a bug in
+  the Sqlite database driver. The HTTP response model still uses the field name
+  `"token"`. (#144)
+
 - Fixed `testResultListSummary`, `testResultSummary` and `params` not filled
   when fetching list of builds. (#131)
 
