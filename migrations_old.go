@@ -8,8 +8,12 @@ import (
 	"gorm.io/gorm/schema"
 )
 
-// migrateBeforeGormigrate applies all our migrations written before the
-// introduction of Gormigrate, which was added in v5.1.0.
+// This entire file contains our migration logic written before the introduction
+// of Gormigrate to wharf-api, which was added in v5.1.0.
+//
+// We need to keep this for backward compatibility, but can discard it after
+// reaching wharf-api v6.0.0.
+
 func migrateBeforeGormigrate(db *gorm.DB) error {
 	// since v5.1.0, we updated the Sqlite driver. This included a bug where a
 	// database column cannot have the same name as the database table.
