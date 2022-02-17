@@ -154,7 +154,7 @@ func (m tokenModule) createTokenHandler(c *gin.Context) {
 	}
 
 	dbToken := database.Token{
-		Token:    reqToken.Token,
+		Value:    reqToken.Token,
 		UserName: reqToken.UserName,
 	}
 
@@ -212,7 +212,7 @@ func (m tokenModule) updateTokenHandler(c *gin.Context) {
 		return
 	}
 
-	dbToken.Token = reqToken.Token
+	dbToken.Value = reqToken.Token
 	dbToken.UserName = reqToken.UserName
 
 	if err := m.Database.Save(&dbToken).Error; err != nil {

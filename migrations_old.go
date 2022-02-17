@@ -11,6 +11,15 @@ import (
 // migrateBeforeGormigrate applies all our migrations written before the
 // introduction of Gormigrate, which was added in v5.1.0.
 func migrateBeforeGormigrate(db *gorm.DB) error {
+	// since v5.1.0, we updated the Sqlite driver. This included a bug where a
+	// database column cannot have the same name as the database table.
+	// Therefore, we had to rename Token.Token -> Token.Value.
+	if db.Migrator().HasColumn(&database.Token{}, "Token") {
+		if err := db.Migrator().RenameColumn(&database.Token{}, "Token", "Value"); err != nil {
+			return err
+		}
+	}
+
 	if err := migrateConstraints(db); err != nil {
 		return err
 	}
