@@ -33,7 +33,7 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   The deprecated trigger configs are used as defaults for the `ci.engine.url`
   and `ci.engine.token` configs.
 
-- Added endpoint `GET /api/engine` for listing execution engines. (#134)
+- Added endpoint `GET /api/engine` for listing execution engines. (#134, #140)
 
 - Added query parameter `?engine=ID` to `POST /api/project/{projectId}/build`
   to allow specifying which execution engine to use for the new build. (#134)
