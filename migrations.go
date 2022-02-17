@@ -44,45 +44,16 @@ var migrations = []*gormigrate.Migration{
 // This speeds up the initial migration to not require applying all migrations
 // one by one on the first run.
 func migrateInitSchema(db *gorm.DB) error {
-	tables := []interface{}{
+	if err := migrateBeforeGormigrate(db); err != nil {
+		return err
+	}
+	return db.AutoMigrate(
 		&database.Token{}, &database.Provider{},
 		&database.Project{}, &database.ProjectOverrides{},
 		&database.Branch{}, &database.Build{}, &database.Log{},
 		&database.Artifact{}, &database.BuildParam{}, &database.Param{},
 		&database.TestResultDetail{}, &database.TestResultSummary{},
-	}
-
-	migrateConstraints(db, tables)
-
-	// since v5.0.0, all columns that were not nil'able in the GORM models
-	// has been migrated to not be nullable in the database either.
-	if err := migrateWharfColumnsToNotNull(db); err != nil {
-		return err
-	}
-
-	oldColumns := []columnToDrop{
-		// since v3.1.0, the token.provider_id column was removed as it induced a
-		// circular dependency between the token and provider tables
-		{&database.Token{}, "provider_id"},
-		// Since v5.0.0, the Provider.upload_url column was removed as it was
-		// unused.
-		{&database.Provider{}, "upload_url"},
-	}
-	if err := dropOldColumns(db, oldColumns); err != nil {
-		return err
-	}
-
-	// In v4.2.0 the index param_idx_build_id for artifact was
-	// changed to artifact_idx_build_id to match the name of the
-	// table.
-	oldIndices := []indexToDrop{
-		{"artifact", "param_idx_build_id"},
-	}
-	if err := dropOldIndices(db, oldIndices); err != nil {
-		return err
-	}
-
-	return db.AutoMigrate(tables...)
+	)
 }
 
 func newMigrator(db *gorm.DB) *gormigrate.Gormigrate {

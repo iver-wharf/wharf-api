@@ -8,7 +8,41 @@ import (
 	"gorm.io/gorm/schema"
 )
 
-func migrateConstraints(db *gorm.DB, tables []interface{}) error {
+// migrateBeforeGormigrate applies all our migrations written before the
+// introduction of Gormigrate, which was added in v5.1.0.
+func migrateBeforeGormigrate(db *gorm.DB) error {
+	if err := migrateConstraints(db); err != nil {
+		return err
+	}
+
+	// since v5.0.0, all columns that were not nil'able in the GORM models
+	// has been migrated to not be nullable in the database either.
+	if err := migrateWharfColumnsToNotNull(db); err != nil {
+		return err
+	}
+
+	oldColumns := []columnToDrop{
+		// since v3.1.0, the token.provider_id column was removed as it induced a
+		// circular dependency between the token and provider tables
+		{&database.Token{}, "provider_id"},
+		// Since v5.0.0, the Provider.upload_url column was removed as it was
+		// unused.
+		{&database.Provider{}, "upload_url"},
+	}
+	if err := dropOldColumns(db, oldColumns); err != nil {
+		return err
+	}
+
+	// In v4.2.0 the index param_idx_build_id for artifact was
+	// changed to artifact_idx_build_id to match the name of the
+	// table.
+	oldIndices := []indexToDrop{
+		{"artifact", "param_idx_build_id"},
+	}
+	return dropOldIndices(db, oldIndices)
+}
+
+func migrateConstraints(db *gorm.DB) error {
 	// since v4.2.1, drop these constraints to refresh the constraint behavior.
 	// Previously it was RESTRICT, now it's CASCADE.
 	if err := dropOldConstraints(db, []constraintToDrop{
