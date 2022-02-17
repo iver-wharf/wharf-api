@@ -17,15 +17,6 @@ import (
 
 var errUnsupportedDBDriver = errors.New("unsupported database driver")
 
-func dbDriverSupportsForeignKeyConstraints(driver DBDriver) bool {
-	switch driver {
-	case DBDriverSqlite:
-		return false
-	default:
-		return true
-	}
-}
-
 func openDatabase(config DBConfig) (*gorm.DB, error) {
 	log.Info().WithString("driver", string(config.Driver)).Message("Connecting to database.")
 
@@ -98,7 +89,7 @@ func openDatabasePostgres(config DBConfig) (*gorm.DB, error) {
 		return db, err
 	}
 
-	sqlDb, err := db.DB()
+	sqlDB, err := db.DB()
 	if err != nil {
 		return db, err
 	}
@@ -108,11 +99,11 @@ func openDatabasePostgres(config DBConfig) (*gorm.DB, error) {
 		WithInt("maxOpenConns", config.MaxOpenConns).
 		WithDuration("maxConnLifetime", config.MaxConnLifetime).
 		Message("Setting database config.")
-	sqlDb.SetMaxIdleConns(config.MaxIdleConns)
-	sqlDb.SetMaxOpenConns(config.MaxOpenConns)
-	sqlDb.SetConnMaxLifetime(config.MaxConnLifetime)
+	sqlDB.SetMaxIdleConns(config.MaxIdleConns)
+	sqlDB.SetMaxOpenConns(config.MaxOpenConns)
+	sqlDB.SetConnMaxLifetime(config.MaxConnLifetime)
 
-	err = sqlDb.Ping()
+	err = sqlDB.Ping()
 	return db, err
 }
 
