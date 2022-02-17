@@ -32,7 +32,7 @@ func (m engineModule) getEngineList(c *gin.Context) {
 	var res response.EngineList
 	if defaultEng, hasDefault := getDefaultEngineFromConfig(conf); hasDefault {
 		resDefaultEng := convCIEngineToResponse(defaultEng)
-		res.Default = &resDefaultEng
+		res.DefaultEngine = &resDefaultEng
 	}
 	engines := getEnginesFromConfig(conf)
 	res.List = convCIEnginesToResponses(engines)

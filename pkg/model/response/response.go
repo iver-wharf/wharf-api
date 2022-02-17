@@ -150,8 +150,8 @@ type Engine struct {
 // configured with, as well as a declaration of which one is the default engine
 // that will be used on new builds if no engine is specified.
 type EngineList struct {
-	Default *Engine  `json:"default" extensions:"x-nullable"`
-	List    []Engine `json:"list"`
+	DefaultEngine *Engine  `json:"defaultEngine" extensions:"x-nullable"`
+	List          []Engine `json:"list"`
 }
 
 // HealthStatus holds a human-readable string stating the health of the API and
