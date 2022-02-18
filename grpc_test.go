@@ -82,6 +82,7 @@ func TestInsertJoin_sqlite(t *testing.T) {
 		{BuildID: 1, Message: "third", Timestamp: time.Now()},
 	}
 
+	// https://database.guide/how-to-skip-rows-that-violate-constraints-when-inserting-data-in-sqlite/
 	rawSql := db.Clauses(clause.Insert{Modifier: "OR IGNORE"}).
 		Create(dbLogs).Statement.SQL.String()
 	t.Error(rawSql)
