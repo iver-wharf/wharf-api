@@ -23,7 +23,9 @@ message CreateLogStreamRequest {
 // CreateLogStreamResponse is the response returned after closing a log creation
 // stream.
 message CreateLogStreamResponse {
-  // empty message, but left here in case of future usage
+  // LinesInserted is the number of lines that has been inserted in total by
+  // this stream.
+  uint64 lines_inserted = 1;
 }
 
 // NewLogLine is a single log line produced by a Wharf build to be added to the
@@ -39,6 +41,6 @@ message NewLogLine {
   uint64 step_id = 3; // not DB value; worker's own ID of the step ID
   // Timestamp is when the log line was outputted from the build step.
   google.protobuf.Timestamp timestamp = 4;
-  // Line is the log line text.
-  string line = 5;
+  // Message is the log line text.
+  string message = 5;
 }
