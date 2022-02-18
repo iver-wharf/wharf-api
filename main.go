@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math/rand"
+	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -12,10 +13,13 @@ import (
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"github.com/iver-wharf/wharf-core/pkg/logger"
 	"github.com/iver-wharf/wharf-core/pkg/logger/consolepretty"
+	"github.com/soheilhy/cmux"
+	"google.golang.org/grpc"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 
+	v1 "github.com/iver-wharf/wharf-api/v5/api/wharfapi/v1"
 	"github.com/iver-wharf/wharf-api/v5/docs"
 	"github.com/iver-wharf/wharf-api/v5/internal/deprecated"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -144,7 +148,35 @@ func main() {
 	api.GET("/version", getVersionHandler)
 	api.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	_ = r.Run(config.HTTP.BindAddress)
+	listener, err := net.Listen("tcp", config.HTTP.BindAddress)
+	if err != nil {
+		log.Error().WithError(err).
+			WithString("address", config.HTTP.BindAddress).
+			Message("Failed to bind address.")
+	}
+	mux := cmux.New(listener)
+	grpcListener := mux.MatchWithWriters(
+		cmux.HTTP2MatchHeaderFieldSendSettings("content-type", "application/grpc"))
+	httpListener := mux.Match(cmux.HTTP1Fast())
+
+	grpcServer := grpc.NewServer()
+	v1.RegisterBuildsServer(grpcServer, v1.UnimplementedBuildsServer{})
+
+	go func() {
+		if err := grpcServer.Serve(grpcListener); err != nil {
+			log.Error().WithError(err).Message("Failed to run gRPC server.")
+		}
+	}()
+	go func() {
+		if err := r.RunListener(httpListener); err != nil {
+			log.Error().WithError(err).Message("Failed to run HTTP server.")
+		}
+	}()
+
+	if err := mux.Serve(); err != nil {
+		log.Error().WithError(err).
+			Message("Failed to run multiplexed server.")
+	}
 }
 
 func setupBasicAuth(router *gin.Engine, config Config) {
