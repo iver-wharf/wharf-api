@@ -20,6 +20,8 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type BuildsClient interface {
 	// CreateLogStream allows creating logs as a client-side stream.
+	// Logs targeting non-existing builds as well as logs that has already been
+	// added before (based on the build, log, and step IDs) will be discarded.
 	CreateLogStream(ctx context.Context, opts ...grpc.CallOption) (Builds_CreateLogStreamClient, error)
 }
 
@@ -70,6 +72,8 @@ func (x *buildsCreateLogStreamClient) CloseAndRecv() (*CreateLogStreamResponse, 
 // for forward compatibility
 type BuildsServer interface {
 	// CreateLogStream allows creating logs as a client-side stream.
+	// Logs targeting non-existing builds as well as logs that has already been
+	// added before (based on the build, log, and step IDs) will be discarded.
 	CreateLogStream(Builds_CreateLogStreamServer) error
 	mustEmbedUnimplementedBuildsServer()
 }
