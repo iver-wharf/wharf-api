@@ -368,9 +368,11 @@ type BuildParam struct {
 // Useful in GORM .Order() statements to order the results based on a specific
 // column, which does not support the regular Go field names.
 var LogColumns = struct {
-	BuildID SafeSQLName
+	BuildID   SafeSQLName
+	Timestamp SafeSQLName
 }{
-	BuildID: "build_id",
+	BuildID:   "build_id",
+	Timestamp: "timestamp",
 }
 
 // Log is a single logged line for a build.
