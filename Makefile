@@ -74,7 +74,7 @@ endif
 proto:
 	protoc --go_out=. --go_opt=paths=source_relative \
 		--go-grpc_out=. --go-grpc_opt=paths=source_relative \
-		./api/wharfapi/v1/wharfapi.proto
+		./api/wharfapi/v1/buildservice.proto
 # Generated files have some non-standard formatting, so let's format it.
 	goimports -w ./api/wharfapi/v1/.
 
