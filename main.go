@@ -160,7 +160,8 @@ func main() {
 	httpListener := mux.Match(cmux.HTTP1Fast())
 
 	grpcServer := grpc.NewServer()
-	v1.RegisterBuildsServer(grpcServer, v1.UnimplementedBuildsServer{})
+	grpcWharf := &grpcWharfServer{db: db}
+	v1.RegisterBuildsServer(grpcServer, grpcWharf)
 
 	go func() {
 		if err := grpcServer.Serve(grpcListener); err != nil {

@@ -364,6 +364,15 @@ type BuildParam struct {
 	Value        string `gorm:"not null;default:''"`
 }
 
+// LogColumns holds the DB column names for each field.
+// Useful in GORM .Order() statements to order the results based on a specific
+// column, which does not support the regular Go field names.
+var LogColumns = struct {
+	BuildID SafeSQLName
+}{
+	BuildID: "build_id",
+}
+
 // Log is a single logged line for a build.
 type Log struct {
 	LogID     uint      `gorm:"primaryKey"`
