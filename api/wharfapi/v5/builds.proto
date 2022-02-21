@@ -2,7 +2,7 @@ syntax = "proto3";
 
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/iver-wharf/wharf-api/v5/api/wharfapi/v1";
+option go_package = "github.com/iver-wharf/wharf-api/v5/api/wharfapi/v5";
 
 // Builds contains Wharf build-oriented RPCs.
 service Builds {

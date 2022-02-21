@@ -19,7 +19,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 
-	v1 "github.com/iver-wharf/wharf-api/v5/api/wharfapi/v1"
+	v5 "github.com/iver-wharf/wharf-api/v5/api/wharfapi/v5"
 	"github.com/iver-wharf/wharf-api/v5/docs"
 	"github.com/iver-wharf/wharf-api/v5/internal/deprecated"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -161,7 +161,7 @@ func main() {
 
 	grpcServer := grpc.NewServer()
 	grpcWharf := &grpcWharfServer{db: db}
-	v1.RegisterBuildsServer(grpcServer, grpcWharf)
+	v5.RegisterBuildsServer(grpcServer, grpcWharf)
 
 	go grpcServer.Serve(grpcListener)
 	go r.RunListener(httpListener)

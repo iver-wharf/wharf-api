@@ -4,7 +4,7 @@ import (
 	"io"
 	"math"
 
-	v1 "github.com/iver-wharf/wharf-api/v5/api/wharfapi/v1"
+	v5 "github.com/iver-wharf/wharf-api/v5/api/wharfapi/v5"
 	"github.com/iver-wharf/wharf-api/v5/pkg/model/database"
 	"github.com/iver-wharf/wharf-api/v5/pkg/model/response"
 	"google.golang.org/grpc/codes"
@@ -13,16 +13,16 @@ import (
 )
 
 type grpcWharfServer struct {
-	v1.UnimplementedBuildsServer
+	v5.UnimplementedBuildsServer
 	db *gorm.DB
 }
 
-func (s *grpcWharfServer) CreateLogStream(stream v1.Builds_CreateLogStreamServer) error {
+func (s *grpcWharfServer) CreateLogStream(stream v5.Builds_CreateLogStreamServer) error {
 	var logsInserted uint64
 	for {
 		msg, err := stream.Recv()
 		if err == io.EOF {
-			stream.SendAndClose(&v1.CreateLogStreamResponse{
+			stream.SendAndClose(&v5.CreateLogStreamResponse{
 				LinesInserted: logsInserted,
 			})
 			return nil
