@@ -3,10 +3,12 @@ package main
 import (
 	"io"
 	"math"
+	"net"
 
 	v5 "github.com/iver-wharf/wharf-api/v5/api/wharfapi/v5"
 	"github.com/iver-wharf/wharf-api/v5/pkg/model/database"
 	"github.com/iver-wharf/wharf-api/v5/pkg/model/response"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"gorm.io/gorm"
@@ -15,6 +17,13 @@ import (
 type grpcWharfServer struct {
 	v5.UnimplementedBuildsServer
 	db *gorm.DB
+}
+
+func serveGRPC(listener net.Listener, db *gorm.DB) {
+	grpcServer := grpc.NewServer()
+	grpcWharf := &grpcWharfServer{db: db}
+	v5.RegisterBuildsServer(grpcServer, grpcWharf)
+	grpcServer.Serve(listener)
 }
 
 func (s *grpcWharfServer) CreateLogStream(stream v5.Builds_CreateLogStreamServer) error {
