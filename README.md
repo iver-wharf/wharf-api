@@ -27,7 +27,7 @@ optional config files. See the docs on the `Config` type over at:
 
 ## Development
 
-1. Install Go 1.16 or later: <https://golang.org/>
+1. Install Go 1.17 or later: <https://golang.org/>
 
 2. Install dependencies using [GNU Make](https://www.gnu.org/software/make/) or
    [GNUWin32](http://gnuwin32.sourceforge.net/install.html)
@@ -56,7 +56,7 @@ or [GNUWin32](http://gnuwin32.sourceforge.net/install.html):
 
 ```console
 $ make docker version=v2.0.0
-STEP 1: FROM golang:1.16.5 AS build
+STEP 1: FROM golang:1.17 AS build
 STEP 2: WORKDIR /src
 --> Using cache de3476fd68836750f453d9d4e7b592549fa924c14e68c9b80069881de8aacc9b
 --> de3476fd688
