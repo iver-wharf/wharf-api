@@ -54,6 +54,8 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   - `gorm.io/driver/sqlite` from v1.1.5 to v1.2.6 (#144)
   - `gorm.io/gorm` from v1.21.15 to v1.22.5 (#144)
 
+- Changed Go runtime from v1.16 to v1.17. (#148)
+
 - Fixed `testResultListSummary`, `testResultSummary` and `params` not filled
   when fetching list of builds. (#131)
 
