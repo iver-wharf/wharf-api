@@ -38,6 +38,10 @@ func (s *grpcWharfServer) CreateLogStream(stream v1.Builds_CreateLogStreamServer
 					Message("Received invalid log timestamp, skipping.")
 				continue
 			}
+			if line.BuildId == 0 {
+				log.Warn().Message("Received log with build ID: 0, skipping.")
+				continue
+			}
 			if line.BuildId > math.MaxUint {
 				log.Warn().WithUint64("buildId", line.BuildId).
 					Message("Received too big log build ID, skipping.")
