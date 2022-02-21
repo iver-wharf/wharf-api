@@ -3,3 +3,5 @@ engines:
     enabled: true
     exclude_paths:
       - internal/deprecated/**
+      # Generated protobuf files
+      - api/wharfapi/*/*.pb.go
