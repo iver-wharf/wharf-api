@@ -6,8 +6,10 @@ import (
 
 	v1 "github.com/iver-wharf/wharf-api/v5/api/wharfapi/v1"
 	"github.com/iver-wharf/wharf-api/v5/pkg/model/database"
+	"github.com/iver-wharf/wharf-api/v5/pkg/model/response"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 type grpcWharfServer struct {
@@ -47,21 +49,18 @@ func (s *grpcWharfServer) CreateLogStream(stream v1.Builds_CreateLogStreamServer
 		if len(dbLogs) == 0 {
 			continue
 		}
-		// TODO: Join on build table to ignore non-existing build_id's
-		// Something like:
-		//
-		// INSERT INTO log (build_id, message, timestamp)
-		// SELECT val.build_id,val.message,val.timestamp
-		// FROM (
-		//   VALUES (9, 'hello', CURRENT_TIMESTAMP)
-		// ) val(build_id, message, timestamp)
-		// JOIN build USING (build_id);
-		//
-		// TODO: Publish logs on logs broadcast channels
-		s.db.WithContext(stream.Context()).
-			Clauses(clause.Insert{}).
-			Create(dbLogs)
-		logsInserted += uint64(len(dbLogs))
-
+		createdLogs, err := createLogBatch(s.db.WithContext(stream.Context()), dbLogs)
+		if err != nil {
+			return status.Errorf(codes.Internal, "insert logs: %v", err)
+		}
+		for _, dbLog := range createdLogs {
+			build(dbLog.BuildID).Submit(response.Log{
+				LogID:     dbLog.LogID,
+				BuildID:   dbLog.BuildID,
+				Message:   dbLog.Message,
+				Timestamp: dbLog.Timestamp,
+			})
+		}
+		logsInserted += uint64(len(createdLogs))
 	}
 }

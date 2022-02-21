@@ -27,6 +27,7 @@ import (
 	"github.com/iver-wharf/wharf-core/pkg/problem"
 	"gopkg.in/guregu/null.v4"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type buildModule struct {
@@ -380,6 +381,93 @@ func (m buildModule) createBuildLogHandler(c *gin.Context) {
 	}
 
 	c.Status(http.StatusCreated)
+}
+
+func createLogBatch(db *gorm.DB, dbLogs []database.Log) ([]database.Log, error) {
+	if len(dbLogs) == 0 {
+		return nil, nil
+	}
+	var resultLogs []database.Log
+	var err error
+	switch db.Dialector.Name() {
+	case string(DBDriverPostgres):
+		resultLogs, err = createLogBatchPostgres(db, dbLogs)
+	case string(DBDriverSqlite):
+		resultLogs, err = createLogBatchSqlite(db, dbLogs)
+	default:
+		return nil, fmt.Errorf("unsupported DB dialect: %q", db.Dialector.Name())
+	}
+	if err != nil {
+		return nil, err
+	}
+	return resultLogs, nil
+}
+
+func createLogBatchPostgres(db *gorm.DB, dbLogs []database.Log) ([]database.Log, error) {
+	var result []database.Log
+	q := createLogBatchPostgresQuery(db, dbLogs).Find(&result)
+	return result, q.Error
+}
+
+// TODO: Use database names from pkg/model/database
+var createLogBatchPostgresSQLFormat = fmt.Sprintf(`
+INSERT INTO %[1]s (%[2]s, %[3]s, %[4]s)
+SELECT val.%[2]s, val.%[3]s, val.%[4]s
+FROM (
+  VALUES%%s
+) AS val (%[2]s, %[3]s, %[4]s)
+JOIN %[6]s USING (%[2]s)
+RETURNING %[5]s, %[2]s, %[3]s, %[4]s
+`,
+	database.LogTable,             // %[1]s
+	database.LogColumns.BuildID,   // %[2]s
+	database.LogColumns.Message,   // %[3]s
+	database.LogColumns.Timestamp, // %[4]s
+	database.LogColumns.LogID,     // %[5]s
+	database.BuildTable,           // %[6]s
+)
+
+func createLogBatchPostgresQuery(db *gorm.DB, dbLogs []database.Log) *gorm.DB {
+	// Based on:
+	// https://stackoverflow.com/a/36039580
+	var sb strings.Builder
+	var params []interface{}
+	// Looping in reverse order as the "RETURNING" produces rows in reverse
+	for i := len(dbLogs) - 1; i >= 0; i-- {
+		if sb.Len() == 0 {
+			// Only need to annotate the types on the first row
+			sb.WriteString(" (?::bigint,?::text,?::timestamp with time zone)")
+		} else {
+			// Remember the extra comma as row delimiter
+			sb.WriteString(", (?,?,?)")
+		}
+		dbLog := dbLogs[i]
+		params = append(params,
+			dbLog.BuildID, dbLog.Message, dbLog.Timestamp)
+	}
+	return db.Raw(fmt.Sprintf(createLogBatchPostgresSQLFormat, sb.String()), params...)
+}
+
+func createLogBatchSqlite(db *gorm.DB, dbLogs []database.Log) ([]database.Log, error) {
+	result := make([]database.Log, 0, len(dbLogs))
+	if err := createLogBatchPostgresQuery(db, dbLogs).Error; err != nil {
+		return nil, err
+	}
+	for _, dbLog := range dbLogs {
+		if dbLog.LogID == 0 {
+			continue
+		}
+		result = append(result, dbLog)
+	}
+	return result, nil
+}
+
+func createLogBatchSqliteQuery(db *gorm.DB, dbLogs []database.Log) *gorm.DB {
+	// Based on:
+	// https://database.guide/how-to-skip-rows-that-violate-constraints-when-inserting-data-in-sqlite/
+	return db.
+		Clauses(clause.Insert{Modifier: "OR IGNORE"}).
+		Create(dbLogs)
 }
 
 // updateBuildStatusHandler godoc
