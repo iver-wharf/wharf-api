@@ -55,7 +55,7 @@ func TestCreateLogsBatchSqlite(t *testing.T) {
 	query := createLogBatchSqliteQuery(db, testingDBLogs)
 	got := query.Statement.SQL.String()
 	want := "INSERT OR IGNORE INTO `log` (`build_id`,`message`,`timestamp`) " +
-		"VALUES (?,?,?),(?,?,?),(?,?,?)"
+		"VALUES (?,?,?),(?,?,?),(?,?,?) RETURNING `log_id`"
 	assert.Equal(t, want, got)
 }
 
