@@ -38,6 +38,10 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Added query parameter `?engine=ID` to `POST /api/project/{projectId}/build`
   to allow specifying which execution engine to use for the new build. (#134)
 
+- Added gRPC server (on the same port) for injecting logs in a single stream.
+  See [`api/wharfapi/v5/builds.proto`](./api/wharfapi/v5/builds.proto) for full
+  documentation of the API. (#147)
+
 - Added granular migrations support. Thanks to this, wharf-api now initializes
   much quicker as it can skip applying migrations that are already
   applied. (#144)
