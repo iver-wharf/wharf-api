@@ -34,7 +34,7 @@ func NewBuildsClient(cc grpc.ClientConnInterface) BuildsClient {
 }
 
 func (c *buildsClient) CreateLogStream(ctx context.Context, opts ...grpc.CallOption) (Builds_CreateLogStreamClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Builds_ServiceDesc.Streams[0], "/Builds/CreateLogStream", opts...)
+	stream, err := c.cc.NewStream(ctx, &Builds_ServiceDesc.Streams[0], "/wharf.api.v5.Builds/CreateLogStream", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +128,7 @@ func (x *buildsCreateLogStreamServer) Recv() (*CreateLogStreamRequest, error) {
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Builds_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "Builds",
+	ServiceName: "wharf.api.v5.Builds",
 	HandlerType: (*BuildsServer)(nil),
 	Methods:     []grpc.MethodDesc{},
 	Streams: []grpc.StreamDesc{
