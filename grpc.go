@@ -25,11 +25,14 @@ func (s *grpcWharfServer) CreateLogStream(stream v1.Builds_CreateLogStreamServer
 			stream.SendAndClose(&v1.CreateLogStreamResponse{
 				LinesInserted: logsInserted,
 			})
+			return nil
 		} else if err != nil {
 			return err
+		} else if msg == nil {
+			return status.Error(codes.InvalidArgument, "received nil message")
 		}
-		dbLogs := make([]database.Log, len(msg.Lines))
-		for i, line := range msg.Lines {
+		dbLogs := make([]database.Log, 0, len(msg.Lines))
+		for _, line := range msg.Lines {
 			if err := line.Timestamp.CheckValid(); err != nil {
 				log.Warn().WithError(err).
 					Message("Received invalid log timestamp, skipping.")
@@ -38,14 +41,17 @@ func (s *grpcWharfServer) CreateLogStream(stream v1.Builds_CreateLogStreamServer
 			if line.BuildId > math.MaxUint {
 				log.Warn().WithUint64("buildId", line.BuildId).
 					Message("Received too big log build ID, skipping.")
-				continue
+				return status.Errorf(codes.InvalidArgument,
+					"received build ID is too big: %d (build ID) > %d (max)",
+					line.BuildId, uint(math.MaxUint))
 			}
-			dbLogs[i] = database.Log{
+			dbLogs = append(dbLogs, database.Log{
 				BuildID:   uint(line.BuildId),
 				Message:   line.Message,
 				Timestamp: line.Timestamp.AsTime(),
-			}
+			})
 		}
+		log.Debug().WithInt("lines", len(msg.Lines)).Message("Received logs")
 		if len(dbLogs) == 0 {
 			continue
 		}
@@ -53,6 +59,7 @@ func (s *grpcWharfServer) CreateLogStream(stream v1.Builds_CreateLogStreamServer
 		if err != nil {
 			return status.Errorf(codes.Internal, "insert logs: %v", err)
 		}
+		log.Debug().WithInt("created", len(createdLogs)).Message("Inserted logs into database")
 		for _, dbLog := range createdLogs {
 			build(dbLog.BuildID).Submit(response.Log{
 				LogID:     dbLog.LogID,

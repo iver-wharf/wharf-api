@@ -157,22 +157,14 @@ func main() {
 	mux := cmux.New(listener)
 	grpcListener := mux.MatchWithWriters(
 		cmux.HTTP2MatchHeaderFieldSendSettings("content-type", "application/grpc"))
-	httpListener := mux.Match(cmux.HTTP1Fast())
+	httpListener := mux.Match(cmux.Any())
 
 	grpcServer := grpc.NewServer()
 	grpcWharf := &grpcWharfServer{db: db}
 	v1.RegisterBuildsServer(grpcServer, grpcWharf)
 
-	go func() {
-		if err := grpcServer.Serve(grpcListener); err != nil {
-			log.Error().WithError(err).Message("Failed to run gRPC server.")
-		}
-	}()
-	go func() {
-		if err := r.RunListener(httpListener); err != nil {
-			log.Error().WithError(err).Message("Failed to run HTTP server.")
-		}
-	}()
+	go grpcServer.Serve(grpcListener)
+	go r.RunListener(httpListener)
 
 	if err := mux.Serve(); err != nil {
 		log.Error().WithError(err).

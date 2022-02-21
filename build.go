@@ -450,7 +450,7 @@ func createLogBatchPostgresQuery(db *gorm.DB, dbLogs []database.Log) *gorm.DB {
 
 func createLogBatchSqlite(db *gorm.DB, dbLogs []database.Log) ([]database.Log, error) {
 	result := make([]database.Log, 0, len(dbLogs))
-	if err := createLogBatchPostgresQuery(db, dbLogs).Error; err != nil {
+	if err := createLogBatchSqliteQuery(db, dbLogs).Error; err != nil {
 		return nil, err
 	}
 	for _, dbLog := range dbLogs {
