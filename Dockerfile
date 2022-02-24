@@ -1,7 +1,7 @@
 ARG REG=docker.io
-FROM ${REG}/library/golang:1.16 AS build
+FROM ${REG}/library/golang:1.17 AS build
 WORKDIR /src
-RUN go get -u github.com/swaggo/swag/cmd/swag@v1.7.1
+RUN go install github.com/swaggo/swag/cmd/swag@v1.7.1
 COPY go.mod go.sum ./
 RUN go mod download
 
