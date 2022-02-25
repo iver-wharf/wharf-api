@@ -50,7 +50,12 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   the Sqlite database driver. The HTTP response model still uses the field name
   `"token"`. (#144)
 
-- Added dependency `github.com/go-gormigrate/gormigrate/v2` v2.0.0. (#144)
+- Added numerous dependencies:
+
+  - `github.com/alta/protopatch` v0.5.0 (#147)
+  - `github.com/go-gormigrate/gormigrate/v2` v2.0.0. (#144)
+  - `google.golang.org/grpc` v1.44.0 (#147)
+  - `google.golang.org/protobuf` v1.27.1 (#147)
 
 - Changed version of numerous dependencies:
 
