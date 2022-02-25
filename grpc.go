@@ -47,19 +47,19 @@ func (s *grpcWharfServer) CreateLogStream(stream v5.Builds_CreateLogStreamServer
 					Message("Received invalid log timestamp, skipping.")
 				continue
 			}
-			if line.BuildId == 0 {
+			if line.BuildID == 0 {
 				log.Warn().Message("Received log with build ID: 0, skipping.")
 				continue
 			}
-			if line.BuildId > math.MaxUint {
-				log.Warn().WithUint64("buildId", line.BuildId).
+			if line.BuildID > math.MaxUint {
+				log.Warn().WithUint64("buildId", line.BuildID).
 					Message("Received too big log build ID, skipping.")
 				return status.Errorf(codes.InvalidArgument,
 					"received build ID is too big: %d (build ID) > %d (max)",
-					line.BuildId, uint(math.MaxUint))
+					line.BuildID, uint(math.MaxUint))
 			}
 			dbLogs = append(dbLogs, database.Log{
-				BuildID:   uint(line.BuildId),
+				BuildID:   uint(line.BuildID),
 				Message:   line.Message,
 				Timestamp: line.Timestamp.AsTime(),
 			})
