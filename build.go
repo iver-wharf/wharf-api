@@ -409,7 +409,6 @@ func createLogBatchPostgres(db *gorm.DB, dbLogs []database.Log) ([]database.Log,
 	return result, q.Error
 }
 
-// TODO: Use database names from pkg/model/database
 var createLogBatchPostgresSQLFormat = fmt.Sprintf(`
 INSERT INTO %[1]s (%[2]s, %[3]s, %[4]s)
 SELECT val.%[2]s, val.%[3]s, val.%[4]s
