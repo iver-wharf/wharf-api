@@ -59,15 +59,18 @@ func main() {
 	seed()
 
 	db := setupDB(config.DB)
-	serve(config, db)
-}
-
-func serve(config Config, db *gorm.DB) {
-	listener, err := net.Listen("tcp", config.HTTP.BindAddress)
-	if err != nil {
+	if err := serve(config, db); err != nil {
 		log.Error().WithError(err).
 			WithString("address", config.HTTP.BindAddress).
-			Message("Failed to bind address.")
+			Message("Failed to serve API.")
+		os.Exit(1)
+	}
+}
+
+func serve(config Config, db *gorm.DB) error {
+	listener, err := net.Listen("tcp", config.HTTP.BindAddress)
+	if err != nil {
+		return err
 	}
 	mux := cmux.New(listener)
 	grpcListener := mux.MatchWithWriters(
@@ -77,10 +80,7 @@ func serve(config Config, db *gorm.DB) {
 	go serveGRPC(grpcListener, db)
 	go serveHTTP(httpListener, config, db)
 
-	if err := mux.Serve(); err != nil {
-		log.Error().WithError(err).
-			Message("Failed to run multiplexed server.")
-	}
+	return mux.Serve()
 }
 
 func setupDB(dbConfig DBConfig) *gorm.DB {
