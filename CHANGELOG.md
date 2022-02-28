@@ -17,16 +17,18 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Deprecated trigger configs (YAML: `ci.triggerUrl` &amp; `ci.triggerToken`,
   environment variables: `WHARF_CI_TRIGGERURL` &amp; `WHARF_CI_TRIGGERTOKEN`)
   in favor of new configuration values that allow specifying up to two different
-  execution engines: (#134)
+  execution engines: (#134, #156)
 
   | YAML               | Environment variable     | Type                  |
   | ------------------ | ------------------------ | --------------------- |
   | `ci.engine.id`     | `WHARF_CI_ENGINE_ID`     | string (max 32 chars) |
   | `ci.engine.name`   | `WHARF_CI_ENGINE_NAME`   | string                |
+  | `ci.engine.api`    | `WHARF_CI_ENGINE_API`    | string                |
   | `ci.engine.url`    | `WHARF_CI_ENGINE_URL`    | string                |
   | `ci.engine.token`  | `WHARF_CI_ENGINE_TOKEN`  | string                |
   | `ci.engine2.id`    | `WHARF_CI_ENGINE2_ID`    | string (max 32 chars) |
   | `ci.engine2.name`  | `WHARF_CI_ENGINE2_NAME`  | string                |
+  | `ci.engine2.api`   | `WHARF_CI_ENGINE2_API`   | string                |
   | `ci.engine2.url`   | `WHARF_CI_ENGINE2_URL`   | string                |
   | `ci.engine2.token` | `WHARF_CI_ENGINE2_TOKEN` | string                |
 
@@ -37,6 +39,9 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
 - Added query parameter `?engine=ID` to `POST /api/project/{projectId}/build`
   to allow specifying which execution engine to use for the new build. (#134)
+
+- Added build field `workerId` that is automatically populated if the engine
+  API is `wharf-cmd.v1`. (#156)
 
 - Added granular migrations support. Thanks to this, wharf-api now initializes
   much quicker as it can skip applying migrations that are already
