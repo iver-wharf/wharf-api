@@ -369,13 +369,11 @@ type BuildParam struct {
 
 // Log is a single logged line for a build.
 type Log struct {
-	LogID        uint      `gorm:"primaryKey"`
-	BuildID      uint      `gorm:"not null;index:log_idx_build_id"`
-	Build        *Build    `gorm:"foreignKey:BuildID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-	Message      string    `sql:"type:text"`
-	Timestamp    time.Time `gorm:"not null"`
-	WorkerLogID  uint      `gorm:"not null;default:0;index:log_idx_worker_log_id"`
-	WorkerStepID uint      `gorm:"not null;default:0;index:log_idx_worker_step_id"`
+	LogID     uint      `gorm:"primaryKey"`
+	BuildID   uint      `gorm:"not null;index:log_idx_build_id"`
+	Build     *Build    `gorm:"foreignKey:BuildID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	Message   string    `sql:"type:text"`
+	Timestamp time.Time `gorm:"not null"`
 }
 
 // ParamFields holds the Go struct field names for each field.
