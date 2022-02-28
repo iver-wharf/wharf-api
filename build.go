@@ -151,6 +151,7 @@ var defaultGetBuildsOrderBy = orderby.Column{Name: database.BuildColumns.BuildID
 // @param environment query string false "Filter by verbatim build environment."
 // @param gitBranch query string false "Filter by verbatim build Git branch."
 // @param stage query string false "Filter by verbatim build stage."
+// @param workerId query string false "Filter by verbatim worker ID."
 // @param isInvalid query bool false "Filter by build's valid/invalid state."
 // @param status query string false "Filter by build status name" enums(Scheduling,Running,Completed,Failed)
 // @param statusId query int false "Filter by build status ID. Cannot be used with `status`." enums(0,1,2,3)
@@ -176,6 +177,7 @@ func (m buildModule) getBuildListHandler(c *gin.Context) {
 		Environment *string `form:"environment"`
 		GitBranch   *string `form:"gitBranch"`
 		Stage       *string `form:"stage"`
+		WorkerID    *string `form:"workerId"`
 
 		IsInvalid *bool `form:"isInvalid"`
 
@@ -228,6 +230,7 @@ func (m buildModule) getBuildListHandler(c *gin.Context) {
 			GitBranch:   where.String(database.BuildFields.GitBranch, params.GitBranch),
 			IsInvalid:   where.Bool(database.BuildFields.IsInvalid, params.IsInvalid),
 			Stage:       where.String(database.BuildFields.Stage, params.Stage),
+			WorkerID:    where.String(database.BuildFields.WorkerID, params.WorkerID),
 			StatusID:    statusID,
 		}, where.NonNilFieldNames()...).
 		Scopes(

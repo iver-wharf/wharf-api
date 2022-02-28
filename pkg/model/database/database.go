@@ -253,6 +253,7 @@ var BuildFields = struct {
 	GitBranch           string
 	Environment         string
 	Stage               string
+	WorkerID            string
 	IsInvalid           string
 	Params              string
 	TestResultSummaries string
@@ -262,6 +263,7 @@ var BuildFields = struct {
 	GitBranch:           "GitBranch",
 	Environment:         "Environment",
 	Stage:               "Stage",
+	WorkerID:            "WorkerID",
 	IsInvalid:           "IsInvalid",
 	Params:              "Params",
 	TestResultSummaries: "TestResultSummaries",
@@ -315,6 +317,7 @@ type Build struct {
 	GitBranch           string              `gorm:"size:300;not null;default:''"`
 	Environment         null.String         `gorm:"nullable;size:40" swaggertype:"string"`
 	Stage               string              `gorm:"size:40;not null;default:''"`
+	WorkerID            string              `gorm:"size:40;not null;default:'';index:build_idx_worker_id"`
 	Params              []BuildParam        `gorm:"foreignKey:BuildID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	IsInvalid           bool                `gorm:"not null;default:false"`
 	TestResultSummaries []TestResultSummary `gorm:"foreignKey:BuildID"`
@@ -366,11 +369,13 @@ type BuildParam struct {
 
 // Log is a single logged line for a build.
 type Log struct {
-	LogID     uint      `gorm:"primaryKey"`
-	BuildID   uint      `gorm:"not null;index:log_idx_build_id"`
-	Build     *Build    `gorm:"foreignKey:BuildID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-	Message   string    `sql:"type:text"`
-	Timestamp time.Time `gorm:"not null"`
+	LogID        uint      `gorm:"primaryKey"`
+	BuildID      uint      `gorm:"not null;index:log_idx_build_id"`
+	Build        *Build    `gorm:"foreignKey:BuildID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	Message      string    `sql:"type:text"`
+	Timestamp    time.Time `gorm:"not null"`
+	WorkerLogID  uint      `gorm:"not null;default:0;index:log_idx_worker_log_id"`
+	WorkerStepID uint      `gorm:"not null;default:0;index:log_idx_worker_step_id"`
 }
 
 // ParamFields holds the Go struct field names for each field.
