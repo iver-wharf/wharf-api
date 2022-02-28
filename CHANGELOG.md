@@ -42,6 +42,10 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   much quicker as it can skip applying migrations that are already
   applied. (#144)
 
+- Changed query parameter `?status` and `?statusId` in `GET /api/build` to
+  support multiple values, where it will respond with builds matching any of the
+  supplied statuses. (#150)
+
 - Changed database column name `token.token` to `token.value` due to a bug in
   the Sqlite database driver. The HTTP response model still uses the field name
   `"token"`. (#144)
