@@ -481,7 +481,7 @@ func parseCIEngineAPI(api CIEngineAPI) (CIEngineAPI, error) {
 	case string(CIEngineAPIWharfCMDv1):
 		return CIEngineAPIWharfCMDv1, nil
 	default:
-		return "", fmt.Errorf("invalid CI engine API value: %q", *api)
+		return "", fmt.Errorf("invalid CI engine API value: %q", api)
 	}
 }
 
