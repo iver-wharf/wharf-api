@@ -58,16 +58,10 @@ clean:
 swag-force:
 	swag init --parseDependency --parseDepth 1
 
-swag:
-ifeq ("$(wildcard docs/docs.go)","")
+swag: docs/docs.go
+
+docs/docs.go:
 	swag init --parseDependency --parseDepth 1
-else
-ifeq ("$(filter $(MAKECMDGOALS),swag-force)","")
-	@echo "-- Skipping 'swag init' because docs/docs.go exists."
-	@echo "-- Run 'make' with additional target 'swag-force' to always run it."
-endif
-endif
-	@# This comment silences warning "make: Nothing to be done for 'swag'."
 
 lint: lint-md lint-go
 lint-fix: lint-fix-md lint-fix-go
