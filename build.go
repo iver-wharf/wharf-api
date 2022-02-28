@@ -805,7 +805,7 @@ func triggerBuild(dbJobParams []database.Param, engine CIEngineConfig) (string, 
 			return "", prob
 		}
 		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-			return "", fmt.Errorf("non-2xx response: %s")
+			return "", fmt.Errorf("non-2xx response: %s", resp.Status)
 		}
 		var worker struct {
 			WorkerID string `json:"workerId"`
