@@ -22,7 +22,7 @@ tidy:
 deps:
 	go install github.com/mgechev/revive@latest
 	go install golang.org/x/tools/cmd/goimports@latest
-	go install github.com/swaggo/swag/cmd/swag@v1.7.1
+	go install github.com/swaggo/swag/cmd/swag@v1.8.0
 	go mod download
 	npm install
 
