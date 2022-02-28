@@ -410,20 +410,22 @@ func createLogBatchPostgres(db *gorm.DB, dbLogs []database.Log) ([]database.Log,
 }
 
 var createLogBatchPostgresSQLFormat = fmt.Sprintf(`
-INSERT INTO %[1]s (%[2]s, %[3]s, %[4]s)
-SELECT val.%[2]s, val.%[3]s, val.%[4]s
+INSERT INTO %[1]s (%[2]s, %[3]s, %[4]s, %[5]s, %[6]s)
+SELECT val.%[2]s, val.%[3]s, val.%[4]s, val.%[5]s, val.%[6]s
 FROM (
   VALUES%%s
-) AS val (%[2]s, %[3]s, %[4]s)
-JOIN %[6]s USING (%[2]s)
-RETURNING %[5]s, %[2]s, %[3]s, %[4]s
+) AS val (%[2]s, %[3]s, %[4]s, %[5]s, %[6]s)
+JOIN %[8]s USING (%[2]s)
+RETURNING %[7]s, %[2]s, %[3]s, %[4]s, %[5]s, %[6]s
 `,
-	database.LogTable,             // %[1]s
-	database.LogColumns.BuildID,   // %[2]s
-	database.LogColumns.Message,   // %[3]s
-	database.LogColumns.Timestamp, // %[4]s
-	database.LogColumns.LogID,     // %[5]s
-	database.BuildTable,           // %[6]s
+	database.LogTable,                // %[1]s
+	database.LogColumns.BuildID,      // %[2]s
+	database.LogColumns.Message,      // %[3]s
+	database.LogColumns.Timestamp,    // %[4]s
+	database.LogColumns.WorkerLogID,  // %[5]s
+	database.LogColumns.WorkerStepID, // %[6]s
+	database.LogColumns.LogID,        // %[7]s
+	database.BuildTable,              // %[8]s
 )
 
 func createLogBatchPostgresQuery(db *gorm.DB, dbLogs []database.Log) *gorm.DB {
@@ -435,14 +437,14 @@ func createLogBatchPostgresQuery(db *gorm.DB, dbLogs []database.Log) *gorm.DB {
 	for i := len(dbLogs) - 1; i >= 0; i-- {
 		if sb.Len() == 0 {
 			// Only need to annotate the types on the first row
-			sb.WriteString(" (?::bigint,?::text,?::timestamp with time zone)")
+			sb.WriteString(" (?::bigint,?::text,?::timestamp with time zone,?::bigint,?::bigint)")
 		} else {
 			// Remember the extra comma as row delimiter
-			sb.WriteString(", (?,?,?)")
+			sb.WriteString(", (?,?,?,?,?)")
 		}
 		dbLog := dbLogs[i]
 		params = append(params,
-			dbLog.BuildID, dbLog.Message, dbLog.Timestamp)
+			dbLog.BuildID, dbLog.Message, dbLog.Timestamp, dbLog.WorkerLogID, dbLog.WorkerStepID)
 	}
 	return db.Raw(fmt.Sprintf(createLogBatchPostgresSQLFormat, sb.String()), params...)
 }

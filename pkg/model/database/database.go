@@ -371,15 +371,19 @@ type BuildParam struct {
 // Useful in GORM .Order() statements to order the results based on a specific
 // column, which does not support the regular Go field names.
 var LogColumns = struct {
-	LogID     SafeSQLName
-	BuildID   SafeSQLName
-	Message   SafeSQLName
-	Timestamp SafeSQLName
+	LogID        SafeSQLName
+	BuildID      SafeSQLName
+	Message      SafeSQLName
+	Timestamp    SafeSQLName
+	WorkerLogID  SafeSQLName
+	WorkerStepID SafeSQLName
 }{
-	LogID:     "log_id",
-	BuildID:   "build_id",
-	Message:   "message",
-	Timestamp: "timestamp",
+	LogID:        "log_id",
+	BuildID:      "build_id",
+	Message:      "message",
+	Timestamp:    "timestamp",
+	WorkerLogID:  "worker_log_id",
+	WorkerStepID: "worker_step_id",
 }
 
 // LogTable is the name of the Log DB table.
@@ -387,11 +391,14 @@ const LogTable = "log"
 
 // Log is a single logged line for a build.
 type Log struct {
-	LogID     uint      `gorm:"primaryKey"`
-	BuildID   uint      `gorm:"not null;index:log_idx_build_id"`
-	Build     *Build    `gorm:"foreignKey:BuildID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-	Message   string    `sql:"type:text"`
-	Timestamp time.Time `gorm:"not null"`
+	LogID        uint      `gorm:"primaryKey"`
+	BuildID      uint      `gorm:"not null;index:log_idx_build_id"`
+	Build        *Build    `gorm:"foreignKey:BuildID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	Message      string    `sql:"type:text"`
+	Timestamp    time.Time `gorm:"not null"`
+	WorkerLogID  uint      `gorm:"not null;default:0;uniqueIndex:log_idx_worker_id"`
+	WorkerStepID uint      `gorm:"not null;default:0;uniqueIndex:log_idx_worker_id"`
+	// TODO: Figure out how to uniqueIndex for logs without log & step ID...
 }
 
 // ParamFields holds the Go struct field names for each field.
