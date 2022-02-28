@@ -682,7 +682,7 @@ func (m buildModule) startBuildHandler(c *gin.Context, projectID uint, stageName
 		return
 	}
 
-	_, err = triggerBuild(dbJobParams, engine)
+	workerID, err := triggerBuild(dbJobParams, engine)
 	if err != nil {
 		dbBuild.IsInvalid = true
 		if saveErr := m.Database.Save(&dbBuild).Error; saveErr != nil {
@@ -698,6 +698,16 @@ func (m buildModule) startBuildHandler(c *gin.Context, projectID uint, stageName
 				dbBuild.BuildID, stageName, branch, projectID),
 		})
 		return
+	}
+
+	if workerID != "" {
+		dbBuild.WorkerID = workerID
+		if saveErr := m.Database.Save(&dbBuild).Error; saveErr != nil {
+			ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
+				"Failed saving worker ID %q for build on stage %q and branch %q for project with ID %d in database.",
+				workerID, stageName, branch, projectID))
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, modelconv.DBBuildToResponseBuildReferenceWrapper(dbBuild))
@@ -785,17 +795,37 @@ func triggerBuild(dbJobParams []database.Param, engine CIEngineConfig) (string, 
 	}
 
 	defer resp.Body.Close()
-	var body, err2 = ioutil.ReadAll(resp.Body)
-	if err2 != nil {
-		return "", err2
-	}
+	switch engine.API {
+	case CIEngineAPIWharfCMDv1:
+		if problem.IsHTTPResponse(resp) {
+			prob, err := problem.ParseHTTPResponse(resp)
+			if err != nil {
+				return "", fmt.Errorf("parse response as problem: %w", err)
+			}
+			return "", prob
+		}
+		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+			return "", fmt.Errorf("non-2xx response: %s")
+		}
+		var worker struct {
+			WorkerID string `json:"workerId"`
+		}
+		dec := json.NewDecoder(resp.Body)
+		if err := dec.Decode(&worker); err != nil {
+			return "", fmt.Errorf("decode wharf-cmd.v1 response: %w", err)
+		}
+		return worker.WorkerID, nil
 
-	var strBody = string(body)
-	if resp.StatusCode != 200 && resp.StatusCode != 201 {
-		return "", fmt.Errorf(strBody)
+	default:
+		if resp.StatusCode != 200 && resp.StatusCode != 201 {
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return "", err
+			}
+			return "", fmt.Errorf("non-2xx response: %s: %q", resp.Status, string(body))
+		}
+		return "", nil
 	}
-
-	return strBody, err2
 }
 
 func getDBJobParams(
