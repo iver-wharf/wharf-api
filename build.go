@@ -773,13 +773,13 @@ func triggerBuild(dbJobParams []database.Param, engine CIEngineConfig) (string, 
 	q.Set("token", engine.Token)
 	u.RawQuery = q.Encode()
 
-	redactedUrl := &(*u)
+	redactedURL := &(*u)
 	q.Set("token", "*****")
-	redactedUrl.RawQuery = q.Encode()
+	redactedURL.RawQuery = q.Encode()
 
 	log.Info().
 		WithString("method", "POST").
-		WithString("url", redactedUrl.Redacted()).
+		WithString("url", redactedURL.Redacted()).
 		Message("Triggering build.")
 
 	resp, err := http.Post(u.String(), "", nil)
