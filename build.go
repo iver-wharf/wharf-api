@@ -817,7 +817,7 @@ func triggerBuild(dbJobParams []database.Param, engine CIEngineConfig) (string, 
 		return worker.WorkerID, nil
 
 	default:
-		if resp.StatusCode != 200 && resp.StatusCode != 201 {
+		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 			body, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
 				return "", err
