@@ -4,6 +4,7 @@ import (
 	"io"
 	"math"
 	"net"
+	"time"
 
 	v5 "github.com/iver-wharf/wharf-api/v5/api/wharfapi/v5"
 	"github.com/iver-wharf/wharf-api/v5/pkg/model/database"
@@ -27,21 +28,20 @@ func serveGRPC(listener net.Listener, db *gorm.DB) {
 }
 
 func (s *grpcWharfServer) CreateLogStream(stream v5.Builds_CreateLogStreamServer) error {
+	logReqChan := make(chan *v5.CreateLogStreamRequest, 10)
+	var streamErr error
+	go func() {
+		streamErr = recvLogStreamIntoChan(stream, logReqChan)
+	}()
+
 	var logsInserted uint64
 	for {
-		msg, err := stream.Recv()
-		if err == io.EOF {
-			stream.SendAndClose(&v5.CreateLogStreamResponse{
-				LinesInserted: logsInserted,
-			})
-			return nil
-		} else if err != nil {
-			return err
-		} else if msg == nil {
-			return status.Error(codes.InvalidArgument, "received nil message")
+		lines := recvBufferedLogsFromChan(logReqChan)
+		if len(lines) == 0 {
+			break
 		}
-		dbLogs := make([]database.Log, 0, len(msg.Lines))
-		for _, line := range msg.Lines {
+		dbLogs := make([]database.Log, 0, len(lines))
+		for _, line := range lines {
 			if err := line.Timestamp.CheckValid(); err != nil {
 				log.Warn().WithError(err).
 					Message("Received invalid log timestamp, skipping.")
@@ -64,7 +64,7 @@ func (s *grpcWharfServer) CreateLogStream(stream v5.Builds_CreateLogStreamServer
 				Timestamp: line.Timestamp.AsTime(),
 			})
 		}
-		log.Debug().WithInt("lines", len(msg.Lines)).Message("Received logs")
+		log.Debug().WithInt("lines", len(lines)).Message("Received log lines")
 		if len(dbLogs) == 0 {
 			continue
 		}
@@ -82,5 +82,54 @@ func (s *grpcWharfServer) CreateLogStream(stream v5.Builds_CreateLogStreamServer
 			})
 		}
 		logsInserted += uint64(len(createdLogs))
+		time.Sleep(time.Second)
+	}
+
+	if streamErr != nil {
+		return streamErr
+	}
+	err := stream.SendAndClose(&v5.CreateLogStreamResponse{
+		LinesInserted: logsInserted,
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func recvBufferedLogsFromChan(ch <-chan *v5.CreateLogStreamRequest) []*v5.CreateLogStreamRequest {
+	const bufferSize = 100
+	firstLine, ok := <-ch
+	if !ok {
+		return nil
+	}
+	buf := make([]*v5.CreateLogStreamRequest, 0, bufferSize)
+	buf = append(buf, firstLine)
+	for len(buf) < bufferSize {
+		select {
+		case line, ok := <-ch:
+			if !ok {
+				return buf
+			}
+			buf = append(buf, line)
+		default:
+			break
+		}
+	}
+	return buf
+}
+
+func recvLogStreamIntoChan(stream v5.Builds_CreateLogStreamServer, ch chan<- *v5.CreateLogStreamRequest) error {
+	defer close(ch)
+	for {
+		msg, err := stream.Recv()
+		if err == io.EOF {
+			return nil
+		} else if err != nil {
+			return err
+		} else if msg == nil {
+			return status.Error(codes.InvalidArgument, "received nil message")
+		}
+		ch <- msg
 	}
 }
