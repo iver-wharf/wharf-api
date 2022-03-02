@@ -24,14 +24,14 @@ service Builds {
 message CreateLogStreamRequest {
   // BuildID is the database ID of the build this log line belongs to.
   uint64 build_id = 1;
-  // LogID is the worker's own ID of the log line. It's unique per build step
+  // WorkerLogID is the worker's own ID of the log line. It's unique per build step
   // for a given build, but may have collisons across multiple steps or builds.
   // Not database value, but instead worker's own ID of the log line.
-  uint64 log_id = 2;
-  // StepID is the worker's own ID of the step. It's unique for a given build,
+  uint64 worker_log_id = 2;
+  // WorkerStepID is the worker's own ID of the step. It's unique for a given build,
   // but may have collisions across multiple builds.
   // Not database value, but instead worker's own ID of the step ID.
-  uint64 step_id = 3;
+  uint64 worker_step_id = 3;
   // Timestamp is when the log line was outputted from the build step.
   google.protobuf.Timestamp timestamp = 4;
   // Message is the log line text.
