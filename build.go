@@ -152,6 +152,7 @@ var defaultGetBuildsOrderBy = orderby.Column{Name: database.BuildColumns.BuildID
 // @param environment query string false "Filter by verbatim build environment."
 // @param gitBranch query string false "Filter by verbatim build Git branch."
 // @param stage query string false "Filter by verbatim build stage."
+// @param workerId query string false "Filter by verbatim worker ID."
 // @param isInvalid query bool false "Filter by build's valid/invalid state."
 // @param status query []string false "Filter by build status name" enums(Scheduling,Running,Completed,Failed)
 // @param statusId query []int false "Filter by build status ID. Cannot be used with `status`." enums(0,1,2,3)
@@ -177,6 +178,7 @@ func (m buildModule) getBuildListHandler(c *gin.Context) {
 		Environment *string `form:"environment"`
 		GitBranch   *string `form:"gitBranch"`
 		Stage       *string `form:"stage"`
+		WorkerID    *string `form:"workerId"`
 
 		IsInvalid *bool `form:"isInvalid"`
 
@@ -209,6 +211,7 @@ func (m buildModule) getBuildListHandler(c *gin.Context) {
 			GitBranch:   where.String(database.BuildFields.GitBranch, params.GitBranch),
 			IsInvalid:   where.Bool(database.BuildFields.IsInvalid, params.IsInvalid),
 			Stage:       where.String(database.BuildFields.Stage, params.Stage),
+			WorkerID:    where.String(database.BuildFields.WorkerID, params.WorkerID),
 		}, where.NonNilFieldNames()...).
 		Scopes(
 			optionalTimeRangeScope(database.BuildColumns.ScheduledOn, params.ScheduledAfter, params.ScheduledBefore),
@@ -791,7 +794,7 @@ func (m buildModule) startBuildHandler(c *gin.Context, projectID uint, stageName
 		return
 	}
 
-	_, err = triggerBuild(dbJobParams, engine)
+	workerID, err := triggerBuild(dbJobParams, engine)
 	if err != nil {
 		dbBuild.IsInvalid = true
 		if saveErr := m.Database.Save(&dbBuild).Error; saveErr != nil {
@@ -807,6 +810,16 @@ func (m buildModule) startBuildHandler(c *gin.Context, projectID uint, stageName
 				dbBuild.BuildID, stageName, branch, projectID),
 		})
 		return
+	}
+
+	if workerID != "" {
+		dbBuild.WorkerID = workerID
+		if saveErr := m.Database.Save(&dbBuild).Error; saveErr != nil {
+			ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
+				"Failed saving worker ID %q for build on stage %q and branch %q for project with ID %d in database.",
+				workerID, stageName, branch, projectID))
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, modelconv.DBBuildToResponseBuildReferenceWrapper(dbBuild))
@@ -900,17 +913,37 @@ func triggerBuild(dbJobParams []database.Param, engine CIEngineConfig) (string, 
 	}
 
 	defer resp.Body.Close()
-	var body, err2 = ioutil.ReadAll(resp.Body)
-	if err2 != nil {
-		return "", err2
-	}
+	switch engine.API {
+	case CIEngineAPIWharfCMDv1:
+		if problem.IsHTTPResponse(resp) {
+			prob, err := problem.ParseHTTPResponse(resp)
+			if err != nil {
+				return "", fmt.Errorf("parse response as problem: %w", err)
+			}
+			return "", prob
+		}
+		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+			return "", fmt.Errorf("non-2xx response: %s", resp.Status)
+		}
+		var worker struct {
+			WorkerID string `json:"workerId"`
+		}
+		dec := json.NewDecoder(resp.Body)
+		if err := dec.Decode(&worker); err != nil {
+			return "", fmt.Errorf("decode wharf-cmd.v1 response: %w", err)
+		}
+		return worker.WorkerID, nil
 
-	var strBody = string(body)
-	if resp.StatusCode != 200 && resp.StatusCode != 201 {
-		return "", fmt.Errorf(strBody)
+	default:
+		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return "", err
+			}
+			return "", fmt.Errorf("non-2xx response: %s: %q", resp.Status, string(body))
+		}
+		return "", nil
 	}
-
-	return strBody, err2
 }
 
 func getDBJobParams(

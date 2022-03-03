@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/iver-wharf/wharf-api/v5/pkg/model/database"
@@ -120,6 +121,19 @@ type CIEngineConfig struct {
 	// Added in v5.1.0.
 	Name string
 
+	// API is the type of API for this engine. If set to "wharf-cmd.v1" then the
+	// wharf-api will have additional integration with this engine, such as
+	// supporting cancelling builds. Possible values are:
+	//
+	// 	jenkins-generic-webhook-trigger
+	// 	wharf-cmd.v1
+	//
+	// If no value is supplied, then "jenkins-generic-webhook-trigger" is
+	// assumed.
+	//
+	// Added in v5.1.0.
+	API CIEngineAPI
+
 	// URL is the full URL that wharf-api will send a POST request to
 	// with all of the build metadata. For example to trigger a Jenkins job via
 	// the "Generic Webhook Trigger":
@@ -139,6 +153,19 @@ type CIEngineConfig struct {
 	// Added in v5.1.0.
 	Token string
 }
+
+// CIEngineAPI is an enum of different engine API values.
+type CIEngineAPI string
+
+const (
+	// CIEngineAPIJenkinsGenericWebhookTrigger means wharf-api will target the
+	// Jenkins Generic Webhook Trigger plugin:
+	// https://plugins.jenkins.io/generic-webhook-trigger/
+	CIEngineAPIJenkinsGenericWebhookTrigger CIEngineAPI = "jenkins-generic-webhook-trigger"
+	// CIEngineAPIWharfCMDv1 means that wharf-api will target the v1 of the
+	// wharf-cmd-provisioner API.
+	CIEngineAPIWharfCMDv1 CIEngineAPI = "wharf-cmd.v1"
+)
 
 // HTTPConfig holds settings for the HTTP server.
 type HTTPConfig struct {
@@ -377,10 +404,12 @@ var DefaultConfig = Config{
 		Engine: CIEngineConfig{
 			ID:   "primary",
 			Name: "Primary",
+			API:  CIEngineAPIJenkinsGenericWebhookTrigger,
 		},
 		Engine2: CIEngineConfig{
 			ID:   "secondary",
 			Name: "Secondary",
+			API:  CIEngineAPIJenkinsGenericWebhookTrigger,
 		},
 	},
 	HTTP: HTTPConfig{
@@ -430,7 +459,30 @@ func loadConfig() (Config, error) {
 	if err := cfg.validate(); err != nil {
 		return Config{}, err
 	}
+	if cfg.CI.Engine.URL != "" {
+		cfg.CI.Engine.API, err = parseCIEngineAPI(cfg.CI.Engine.API)
+		if err != nil {
+			return Config{}, err
+		}
+	}
+	if cfg.CI.Engine2.URL != "" {
+		cfg.CI.Engine2.API, err = parseCIEngineAPI(cfg.CI.Engine2.API)
+		if err != nil {
+			return Config{}, err
+		}
+	}
 	return cfg, nil
+}
+
+func parseCIEngineAPI(api CIEngineAPI) (CIEngineAPI, error) {
+	switch strings.TrimSpace(strings.ToLower(string(api))) {
+	case "", string(CIEngineAPIJenkinsGenericWebhookTrigger):
+		return CIEngineAPIJenkinsGenericWebhookTrigger, nil
+	case string(CIEngineAPIWharfCMDv1):
+		return CIEngineAPIWharfCMDv1, nil
+	default:
+		return "", fmt.Errorf("invalid CI engine API value: %q", api)
+	}
 }
 
 func (cfg *Config) addBackwardCompatibleConfigs() {

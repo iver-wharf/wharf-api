@@ -99,6 +99,7 @@ type Build struct {
 	GitBranch             string                `json:"gitBranch"`
 	Environment           null.String           `json:"environment" swaggertype:"string" extensions:"x-nullable"`
 	Stage                 string                `json:"stage"`
+	WorkerID              string                `json:"workerId" example:"5d6bcf20-81fd-4ad8-a446-735aa8423dfe"`
 	Params                []BuildParam          `json:"params"`
 	IsInvalid             bool                  `json:"isInvalid"`
 	TestResultSummaries   []TestResultSummary   `json:"testResultSummaries"`
