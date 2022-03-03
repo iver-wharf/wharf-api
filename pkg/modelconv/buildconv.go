@@ -73,6 +73,7 @@ func DBBuildToResponse(dbBuild database.Build, engineLookup EngineLookup) respon
 		GitBranch:             dbBuild.GitBranch,
 		Environment:           dbBuild.Environment,
 		Stage:                 dbBuild.Stage,
+		WorkerID:              dbBuild.WorkerID,
 		Params:                DBBuildParamsToResponses(dbBuild.Params),
 		IsInvalid:             dbBuild.IsInvalid,
 		TestResultSummaries:   DBTestResultSummariesToResponses(dbBuild.TestResultSummaries),

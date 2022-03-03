@@ -17,16 +17,18 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Deprecated trigger configs (YAML: `ci.triggerUrl` &amp; `ci.triggerToken`,
   environment variables: `WHARF_CI_TRIGGERURL` &amp; `WHARF_CI_TRIGGERTOKEN`)
   in favor of new configuration values that allow specifying up to two different
-  execution engines: (#134)
+  execution engines: (#134, #156)
 
   | YAML               | Environment variable     | Type                  |
   | ------------------ | ------------------------ | --------------------- |
   | `ci.engine.id`     | `WHARF_CI_ENGINE_ID`     | string (max 32 chars) |
   | `ci.engine.name`   | `WHARF_CI_ENGINE_NAME`   | string                |
+  | `ci.engine.api`    | `WHARF_CI_ENGINE_API`    | string                |
   | `ci.engine.url`    | `WHARF_CI_ENGINE_URL`    | string                |
   | `ci.engine.token`  | `WHARF_CI_ENGINE_TOKEN`  | string                |
   | `ci.engine2.id`    | `WHARF_CI_ENGINE2_ID`    | string (max 32 chars) |
   | `ci.engine2.name`  | `WHARF_CI_ENGINE2_NAME`  | string                |
+  | `ci.engine2.api`   | `WHARF_CI_ENGINE2_API`   | string                |
   | `ci.engine2.url`   | `WHARF_CI_ENGINE2_URL`   | string                |
   | `ci.engine2.token` | `WHARF_CI_ENGINE2_TOKEN` | string                |
 
@@ -38,13 +40,24 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Added query parameter `?engine=ID` to `POST /api/project/{projectId}/build`
   to allow specifying which execution engine to use for the new build. (#134)
 
-- Added automatic JSON indentation in HTTP responses based on the user agent, if
-  they are a desktop, mobile, or tablet device, or specifically cURL. Can be
-  disabled by the new query parameter `?pretty=false`. (#158)
+- Added gRPC server (on the same port) for injecting logs in a single stream.
+  See [`api/wharfapi/v5/builds.proto`](./api/wharfapi/v5/builds.proto) for full
+  documentation of the API. (#147)
+
+- Added build field `workerId` that is automatically populated if the engine
+  API is `wharf-cmd.v1`. (#156)
 
 - Added granular migrations support. Thanks to this, wharf-api now initializes
   much quicker as it can skip applying migrations that are already
   applied. (#144)
+
+- Added automatic JSON indentation in HTTP responses based on the user agent, if
+  they are a desktop, mobile, or tablet device, or specifically cURL. Can be
+  disabled by the new query parameter `?pretty=false`. (#158)
+
+- Changed query parameter `?status` and `?statusId` in `GET /api/build` to
+  support multiple values, where it will respond with builds matching any of the
+  supplied statuses. (#150)
 
 - Changed database column name `token.token` to `token.value` due to a bug in
   the Sqlite database driver. The HTTP response model still uses the field name
@@ -52,11 +65,18 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
 - Added dependencies:
 
+  - `github.com/alta/protopatch` v0.5.0 (#147)
   - `github.com/go-gormigrate/gormigrate/v2` v2.0.0 (#144)
   - `github.com/mileusna/useragent` v1.0.2 (#158)
+  - `github.com/soheilhy/cmux` v0.1.5 (#147)
+  - `google.golang.org/grpc` v1.44.0 (#147)
+  - `google.golang.org/protobuf` v1.27.1 (#147)
 
 - Changed version of numerous dependencies:
 
+  - `github.com/gin-gonic/gin` from v1.7.4 to v1.7.7 (#151)
+  - `github.com/swaggo/gin-swagger` from v1.3.1 to v1.4.1 (#151)
+  - `github.com/swaggo/swag` from v1.7.1 to v1.8.0 (#151)
   - `gorm.io/driver/postgres` from v1.1.1 to v1.2.3 (#144)
   - `gorm.io/driver/sqlite` from v1.1.5 to v1.2.6 (#144)
   - `gorm.io/gorm` from v1.21.15 to v1.22.5 (#144)

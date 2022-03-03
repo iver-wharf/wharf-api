@@ -253,6 +253,7 @@ var BuildFields = struct {
 	GitBranch           string
 	Environment         string
 	Stage               string
+	WorkerID            string
 	IsInvalid           string
 	Params              string
 	TestResultSummaries string
@@ -262,6 +263,7 @@ var BuildFields = struct {
 	GitBranch:           "GitBranch",
 	Environment:         "Environment",
 	Stage:               "Stage",
+	WorkerID:            "WorkerID",
 	IsInvalid:           "IsInvalid",
 	Params:              "Params",
 	TestResultSummaries: "TestResultSummaries",
@@ -301,6 +303,9 @@ var BuildSizes = struct {
 	EngineID: 32,
 }
 
+// BuildTable is the name of the Build DB table.
+const BuildTable = "build"
+
 // Build holds data about the state of a build. Which parameters was used to
 // start it, what status it holds, et.al.
 type Build struct {
@@ -315,6 +320,7 @@ type Build struct {
 	GitBranch           string              `gorm:"size:300;not null;default:''"`
 	Environment         null.String         `gorm:"nullable;size:40" swaggertype:"string"`
 	Stage               string              `gorm:"size:40;not null;default:''"`
+	WorkerID            string              `gorm:"size:40;not null;default:'';index:build_idx_worker_id"`
 	Params              []BuildParam        `gorm:"foreignKey:BuildID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	IsInvalid           bool                `gorm:"not null;default:false"`
 	TestResultSummaries []TestResultSummary `gorm:"foreignKey:BuildID"`
@@ -363,6 +369,24 @@ type BuildParam struct {
 	Name         string `gorm:"not null"`
 	Value        string `gorm:"not null;default:''"`
 }
+
+// LogColumns holds the DB column names for each field.
+// Useful in GORM .Order() statements to order the results based on a specific
+// column, which does not support the regular Go field names.
+var LogColumns = struct {
+	LogID     SafeSQLName
+	BuildID   SafeSQLName
+	Message   SafeSQLName
+	Timestamp SafeSQLName
+}{
+	LogID:     "log_id",
+	BuildID:   "build_id",
+	Message:   "message",
+	Timestamp: "timestamp",
+}
+
+// LogTable is the name of the Log DB table.
+const LogTable = "log"
 
 // Log is a single logged line for a build.
 type Log struct {

@@ -27,6 +27,7 @@ import (
 	"github.com/iver-wharf/wharf-core/pkg/problem"
 	"gopkg.in/guregu/null.v4"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type buildModule struct {
@@ -154,9 +155,10 @@ var defaultGetBuildsOrderBy = orderby.Column{Name: database.BuildColumns.BuildID
 // @param environment query string false "Filter by verbatim build environment."
 // @param gitBranch query string false "Filter by verbatim build Git branch."
 // @param stage query string false "Filter by verbatim build stage."
+// @param workerId query string false "Filter by verbatim worker ID."
 // @param isInvalid query bool false "Filter by build's valid/invalid state."
-// @param status query string false "Filter by build status name" enums(Scheduling,Running,Completed,Failed)
-// @param statusId query int false "Filter by build status ID. Cannot be used with `status`." enums(0,1,2,3)
+// @param status query []string false "Filter by build status name" enums(Scheduling,Running,Completed,Failed)
+// @param statusId query []int false "Filter by build status ID. Cannot be used with `status`." enums(0,1,2,3)
 // @param environmentMatch query string false "Filter by matching build environment. Cannot be used with `environment`."
 // @param gitBranchMatch query string false "Filter by matching build Git branch. Cannot be used with `gitBranch`."
 // @param stageMatch query string false "Filter by matching build stage. Cannot be used with `stage`."
@@ -180,11 +182,12 @@ func (m buildModule) getBuildListHandler(c *gin.Context) {
 		Environment *string `form:"environment"`
 		GitBranch   *string `form:"gitBranch"`
 		Stage       *string `form:"stage"`
+		WorkerID    *string `form:"workerId"`
 
 		IsInvalid *bool `form:"isInvalid"`
 
-		Status   *string `form:"status"`
-		StatusID *int    `form:"statusId" binding:"excluded_with=Status"`
+		Status   []string `form:"status"`
+		StatusID []int    `form:"statusId" binding:"excluded_with=Status"`
 
 		EnvironmentMatch *string `form:"environmentMatch" binding:"excluded_with=Environment"`
 		GitBranchMatch   *string `form:"gitBranchMatch" binding:"excluded_with=GitBranch"`
@@ -204,26 +207,6 @@ func (m buildModule) getBuildListHandler(c *gin.Context) {
 
 	var where wherefields.Collection
 
-	var statusID database.BuildStatus
-	if params.StatusID != nil {
-		statusID = database.BuildStatus(*params.StatusID)
-		if !statusID.IsValid() {
-			err := fmt.Errorf("invalid database build status: %v", statusID)
-			ginutil.WriteInvalidParamError(c, err, "statusId", fmt.Sprintf("Invalid build status ID: %d", *params.StatusID))
-			return
-		}
-		where.AddFieldName(database.BuildFields.StatusID)
-	} else if params.Status != nil {
-		reqStatusID := request.BuildStatus(*params.Status)
-		statusID, ok = modelconv.ReqBuildStatusToDatabase(reqStatusID)
-		if !ok {
-			err := fmt.Errorf("invalid request build status: %v", reqStatusID)
-			ginutil.WriteInvalidParamError(c, err, "status", fmt.Sprintf("Invalid build status: %q", *params.Status))
-			return
-		}
-		where.AddFieldName(database.BuildFields.StatusID)
-	}
-
 	query := databaseBuildPreloaded(m.Database).
 		Clauses(orderBySlice.ClauseIfNone(defaultGetBuildsOrderBy)).
 		Where(&database.Build{
@@ -232,7 +215,7 @@ func (m buildModule) getBuildListHandler(c *gin.Context) {
 			GitBranch:   where.String(database.BuildFields.GitBranch, params.GitBranch),
 			IsInvalid:   where.Bool(database.BuildFields.IsInvalid, params.IsInvalid),
 			Stage:       where.String(database.BuildFields.Stage, params.Stage),
-			StatusID:    statusID,
+			WorkerID:    where.String(database.BuildFields.WorkerID, params.WorkerID),
 		}, where.NonNilFieldNames()...).
 		Scopes(
 			optionalTimeRangeScope(database.BuildColumns.ScheduledOn, params.ScheduledAfter, params.ScheduledBefore),
@@ -250,6 +233,41 @@ func (m buildModule) getBuildListHandler(c *gin.Context) {
 			),
 		)
 
+	type statusID struct {
+		param string
+		id    database.BuildStatus
+	}
+	var statusIDs []statusID
+
+	for _, str := range params.Status {
+		id, ok := parseBuildStatusOrWriteError(c, str, "status")
+		if !ok {
+			return
+		}
+		statusIDs = append(statusIDs, statusID{"status", id})
+	}
+
+	for _, id := range params.StatusID {
+		statusIDs = append(statusIDs, statusID{"statusId", database.BuildStatus(id)})
+	}
+
+	for _, status := range statusIDs {
+		if !status.id.IsValid() {
+			err := fmt.Errorf("invalid database build status: %d", status.id)
+			ginutil.WriteInvalidParamError(c, err, status.param,
+				fmt.Sprintf("Invalid build status ID: %d", status.id))
+			return
+		}
+	}
+
+	if len(statusIDs) > 0 {
+		ids := make([]interface{}, len(statusIDs))
+		for i, status := range statusIDs {
+			ids[i] = int(status.id)
+		}
+		query = query.Where(fmt.Sprintf("%s IN ?", database.BuildColumns.StatusID), ids)
+	}
+
 	var dbBuilds []database.Build
 	var totalCount int64
 	err := findDBPaginatedSliceAndTotalCount(query, params.Limit, params.Offset, &dbBuilds, &totalCount)
@@ -262,6 +280,17 @@ func (m buildModule) getBuildListHandler(c *gin.Context) {
 		List:       modelconv.DBBuildsToResponses(dbBuilds, m.engineLookup),
 		TotalCount: totalCount,
 	})
+}
+
+func parseBuildStatusOrWriteError(c *gin.Context, str, paramName string) (database.BuildStatus, bool) {
+	reqStatusID := request.BuildStatus(str)
+	id, ok := modelconv.ReqBuildStatusToDatabase(reqStatusID)
+	if !ok {
+		err := fmt.Errorf("invalid request build status: %v", reqStatusID)
+		ginutil.WriteInvalidParamError(c, err, paramName, fmt.Sprintf("Invalid build status: %q", str))
+		return database.BuildFailed, false
+	}
+	return id, true
 }
 
 // getBuildLogListHandler godoc
@@ -388,6 +417,92 @@ func (m buildModule) createBuildLogHandler(c *gin.Context) {
 	}
 
 	c.Status(http.StatusCreated)
+}
+
+func createLogBatch(db *gorm.DB, dbLogs []database.Log) ([]database.Log, error) {
+	if len(dbLogs) == 0 {
+		return nil, nil
+	}
+	var resultLogs []database.Log
+	var err error
+	switch db.Dialector.Name() {
+	case string(DBDriverPostgres):
+		resultLogs, err = createLogBatchPostgres(db, dbLogs)
+	case string(DBDriverSqlite):
+		resultLogs, err = createLogBatchSqlite(db, dbLogs)
+	default:
+		return nil, fmt.Errorf("unsupported DB dialect: %q", db.Dialector.Name())
+	}
+	if err != nil {
+		return nil, err
+	}
+	return resultLogs, nil
+}
+
+func createLogBatchPostgres(db *gorm.DB, dbLogs []database.Log) ([]database.Log, error) {
+	var result []database.Log
+	q := createLogBatchPostgresQuery(db, dbLogs).Find(&result)
+	return result, q.Error
+}
+
+var createLogBatchPostgresSQLFormat = fmt.Sprintf(`
+INSERT INTO %[1]s (%[2]s, %[3]s, %[4]s)
+SELECT val.%[2]s, val.%[3]s, val.%[4]s
+FROM (
+  VALUES%%s
+) AS val (%[2]s, %[3]s, %[4]s)
+JOIN %[6]s USING (%[2]s)
+RETURNING %[5]s, %[2]s, %[3]s, %[4]s
+`,
+	database.LogTable,             // %[1]s
+	database.LogColumns.BuildID,   // %[2]s
+	database.LogColumns.Message,   // %[3]s
+	database.LogColumns.Timestamp, // %[4]s
+	database.LogColumns.LogID,     // %[5]s
+	database.BuildTable,           // %[6]s
+)
+
+func createLogBatchPostgresQuery(db *gorm.DB, dbLogs []database.Log) *gorm.DB {
+	// Based on:
+	// https://stackoverflow.com/a/36039580
+	var sb strings.Builder
+	var params []interface{}
+	// Looping in reverse order as the "RETURNING" produces rows in reverse
+	for i := len(dbLogs) - 1; i >= 0; i-- {
+		if sb.Len() == 0 {
+			// Only need to annotate the types on the first row
+			sb.WriteString(" (?::bigint,?::text,?::timestamp with time zone)")
+		} else {
+			// Remember the extra comma as row delimiter
+			sb.WriteString(", (?,?,?)")
+		}
+		dbLog := dbLogs[i]
+		params = append(params,
+			dbLog.BuildID, dbLog.Message, dbLog.Timestamp)
+	}
+	return db.Raw(fmt.Sprintf(createLogBatchPostgresSQLFormat, sb.String()), params...)
+}
+
+func createLogBatchSqlite(db *gorm.DB, dbLogs []database.Log) ([]database.Log, error) {
+	result := make([]database.Log, 0, len(dbLogs))
+	if err := createLogBatchSqliteQuery(db, dbLogs).Error; err != nil {
+		return nil, err
+	}
+	for _, dbLog := range dbLogs {
+		if dbLog.LogID == 0 {
+			continue
+		}
+		result = append(result, dbLog)
+	}
+	return result, nil
+}
+
+func createLogBatchSqliteQuery(db *gorm.DB, dbLogs []database.Log) *gorm.DB {
+	// Based on:
+	// https://database.guide/how-to-skip-rows-that-violate-constraints-when-inserting-data-in-sqlite/
+	return db.
+		Clauses(clause.Insert{Modifier: "OR IGNORE"}).
+		Create(dbLogs)
 }
 
 // updateBuildStatusHandler godoc
@@ -692,7 +807,7 @@ func (m buildModule) startBuildHandler(c *gin.Context, projectID uint, stageName
 		return
 	}
 
-	_, err = triggerBuild(dbJobParams, engine)
+	workerID, err := triggerBuild(dbJobParams, engine)
 	if err != nil {
 		dbBuild.IsInvalid = true
 		if saveErr := m.Database.Save(&dbBuild).Error; saveErr != nil {
@@ -710,7 +825,18 @@ func (m buildModule) startBuildHandler(c *gin.Context, projectID uint, stageName
 		return
 	}
 
+	if workerID != "" {
+		dbBuild.WorkerID = workerID
+		if saveErr := m.Database.Save(&dbBuild).Error; saveErr != nil {
+			ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
+				"Failed saving worker ID %q for build on stage %q and branch %q for project with ID %d in database.",
+				workerID, stageName, branch, projectID))
+			return
+		}
+	}
+
 	renderJSON(c, http.StatusOK, modelconv.DBBuildToResponseBuildReferenceWrapper(dbBuild))
+	c.JSON(http.StatusOK, modelconv.DBBuildToResponseBuildReferenceWrapper(dbBuild))
 }
 
 func (m buildModule) SaveBuildParams(dbParams []database.BuildParam) error {
@@ -773,39 +899,65 @@ func parseDBBuildParams(buildID uint, buildDef []byte, vars []byte) ([]database.
 }
 
 func triggerBuild(dbJobParams []database.Param, engine CIEngineConfig) (string, error) {
-	q := ""
+	u, err := url.Parse(engine.URL)
+	if err != nil {
+		return "", fmt.Errorf("parse engine URL: %w", err)
+	}
+	q := url.Values{}
 	for _, dbJobParam := range dbJobParams {
 		if dbJobParam.Value != "" {
-			q = fmt.Sprintf("%s&%s=%s", q, url.QueryEscape(dbJobParam.Name), url.QueryEscape(dbJobParam.Value))
+			q.Set(dbJobParam.Name, dbJobParam.Value)
 		}
 	}
+	q.Set("token", engine.Token)
+	u.RawQuery = q.Encode()
 
-	tokenStr := fmt.Sprintf("?token=%s", engine.Token)
+	redactedURL := &(*u)
+	q.Set("token", "*****")
+	redactedURL.RawQuery = q.Encode()
 
-	url := fmt.Sprintf("%s%s%s", engine.URL, tokenStr, q)
-	fmt.Printf("POSTing to url: %v\n", url)
 	log.Info().
 		WithString("method", "POST").
-		WithString("url", fmt.Sprintf("%s?token=%s%s", engine.URL, "*****", q)).
+		WithString("url", redactedURL.Redacted()).
 		Message("Triggering build.")
 
-	var resp, err = http.Post(url, "", nil)
+	resp, err := http.Post(u.String(), "", nil)
 	if err != nil {
 		return "", err
 	}
 
 	defer resp.Body.Close()
-	var body, err2 = ioutil.ReadAll(resp.Body)
-	if err2 != nil {
-		return "", err2
-	}
+	switch engine.API {
+	case CIEngineAPIWharfCMDv1:
+		if problem.IsHTTPResponse(resp) {
+			prob, err := problem.ParseHTTPResponse(resp)
+			if err != nil {
+				return "", fmt.Errorf("parse response as problem: %w", err)
+			}
+			return "", prob
+		}
+		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+			return "", fmt.Errorf("non-2xx response: %s", resp.Status)
+		}
+		var worker struct {
+			WorkerID string `json:"workerId"`
+		}
+		dec := json.NewDecoder(resp.Body)
+		if err := dec.Decode(&worker); err != nil {
+			return "", fmt.Errorf("decode wharf-cmd.v1 response: %w", err)
+		}
+		return worker.WorkerID, nil
 
-	var strBody = string(body)
-	if resp.StatusCode != 200 && resp.StatusCode != 201 {
-		return "", fmt.Errorf(strBody)
+	default:
+		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return "", err
+			}
+			return "", fmt.Errorf("non-2xx response: %s: %q", resp.Status, string(body))
+		}
+		return "", nil
 	}
-
-	return strBody, err2
 }
 
 func getDBJobParams(
