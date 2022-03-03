@@ -785,23 +785,29 @@ func parseDBBuildParams(buildID uint, buildDef []byte, vars []byte) ([]database.
 }
 
 func triggerBuild(dbJobParams []database.Param, engine CIEngineConfig) (string, error) {
-	q := ""
+	u, err := url.Parse(engine.URL)
+	if err != nil {
+		return "", fmt.Errorf("parse engine URL: %w", err)
+	}
+	q := url.Values{}
 	for _, dbJobParam := range dbJobParams {
 		if dbJobParam.Value != "" {
-			q = fmt.Sprintf("%s&%s=%s", q, url.QueryEscape(dbJobParam.Name), url.QueryEscape(dbJobParam.Value))
+			q.Set(dbJobParam.Name, dbJobParam.Value)
 		}
 	}
+	q.Set("token", engine.Token)
+	u.RawQuery = q.Encode()
 
-	tokenStr := fmt.Sprintf("?token=%s", engine.Token)
+	redactedURL := &(*u)
+	q.Set("token", "*****")
+	redactedURL.RawQuery = q.Encode()
 
-	url := fmt.Sprintf("%s%s%s", engine.URL, tokenStr, q)
-	fmt.Printf("POSTing to url: %v\n", url)
 	log.Info().
 		WithString("method", "POST").
-		WithString("url", fmt.Sprintf("%s?token=%s%s", engine.URL, "*****", q)).
+		WithString("url", redactedURL.Redacted()).
 		Message("Triggering build.")
 
-	var resp, err = http.Post(url, "", nil)
+	resp, err := http.Post(u.String(), "", nil)
 	if err != nil {
 		return "", err
 	}
