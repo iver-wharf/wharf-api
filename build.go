@@ -153,8 +153,8 @@ var defaultGetBuildsOrderBy = orderby.Column{Name: database.BuildColumns.BuildID
 // @param stage query string false "Filter by verbatim build stage."
 // @param workerId query string false "Filter by verbatim worker ID."
 // @param isInvalid query bool false "Filter by build's valid/invalid state."
-// @param status query string false "Filter by build status name" enums(Scheduling,Running,Completed,Failed)
-// @param statusId query int false "Filter by build status ID. Cannot be used with `status`." enums(0,1,2,3)
+// @param status query []string false "Filter by build status name" enums(Scheduling,Running,Completed,Failed)
+// @param statusId query []int false "Filter by build status ID. Cannot be used with `status`." enums(0,1,2,3)
 // @param environmentMatch query string false "Filter by matching build environment. Cannot be used with `environment`."
 // @param gitBranchMatch query string false "Filter by matching build Git branch. Cannot be used with `gitBranch`."
 // @param stageMatch query string false "Filter by matching build stage. Cannot be used with `stage`."
@@ -181,8 +181,8 @@ func (m buildModule) getBuildListHandler(c *gin.Context) {
 
 		IsInvalid *bool `form:"isInvalid"`
 
-		Status   *string `form:"status"`
-		StatusID *int    `form:"statusId" binding:"excluded_with=Status"`
+		Status   []string `form:"status"`
+		StatusID []int    `form:"statusId" binding:"excluded_with=Status"`
 
 		EnvironmentMatch *string `form:"environmentMatch" binding:"excluded_with=Environment"`
 		GitBranchMatch   *string `form:"gitBranchMatch" binding:"excluded_with=GitBranch"`
@@ -202,26 +202,6 @@ func (m buildModule) getBuildListHandler(c *gin.Context) {
 
 	var where wherefields.Collection
 
-	var statusID database.BuildStatus
-	if params.StatusID != nil {
-		statusID = database.BuildStatus(*params.StatusID)
-		if !statusID.IsValid() {
-			err := fmt.Errorf("invalid database build status: %v", statusID)
-			ginutil.WriteInvalidParamError(c, err, "statusId", fmt.Sprintf("Invalid build status ID: %d", *params.StatusID))
-			return
-		}
-		where.AddFieldName(database.BuildFields.StatusID)
-	} else if params.Status != nil {
-		reqStatusID := request.BuildStatus(*params.Status)
-		statusID, ok = modelconv.ReqBuildStatusToDatabase(reqStatusID)
-		if !ok {
-			err := fmt.Errorf("invalid request build status: %v", reqStatusID)
-			ginutil.WriteInvalidParamError(c, err, "status", fmt.Sprintf("Invalid build status: %q", *params.Status))
-			return
-		}
-		where.AddFieldName(database.BuildFields.StatusID)
-	}
-
 	query := databaseBuildPreloaded(m.Database).
 		Clauses(orderBySlice.ClauseIfNone(defaultGetBuildsOrderBy)).
 		Where(&database.Build{
@@ -231,7 +211,6 @@ func (m buildModule) getBuildListHandler(c *gin.Context) {
 			IsInvalid:   where.Bool(database.BuildFields.IsInvalid, params.IsInvalid),
 			Stage:       where.String(database.BuildFields.Stage, params.Stage),
 			WorkerID:    where.String(database.BuildFields.WorkerID, params.WorkerID),
-			StatusID:    statusID,
 		}, where.NonNilFieldNames()...).
 		Scopes(
 			optionalTimeRangeScope(database.BuildColumns.ScheduledOn, params.ScheduledAfter, params.ScheduledBefore),
@@ -249,6 +228,41 @@ func (m buildModule) getBuildListHandler(c *gin.Context) {
 			),
 		)
 
+	type statusID struct {
+		param string
+		id    database.BuildStatus
+	}
+	var statusIDs []statusID
+
+	for _, str := range params.Status {
+		id, ok := parseBuildStatusOrWriteError(c, str, "status")
+		if !ok {
+			return
+		}
+		statusIDs = append(statusIDs, statusID{"status", id})
+	}
+
+	for _, id := range params.StatusID {
+		statusIDs = append(statusIDs, statusID{"statusId", database.BuildStatus(id)})
+	}
+
+	for _, status := range statusIDs {
+		if !status.id.IsValid() {
+			err := fmt.Errorf("invalid database build status: %d", status.id)
+			ginutil.WriteInvalidParamError(c, err, status.param,
+				fmt.Sprintf("Invalid build status ID: %d", status.id))
+			return
+		}
+	}
+
+	if len(statusIDs) > 0 {
+		ids := make([]interface{}, len(statusIDs))
+		for i, status := range statusIDs {
+			ids[i] = int(status.id)
+		}
+		query = query.Where(fmt.Sprintf("%s IN ?", database.BuildColumns.StatusID), ids)
+	}
+
 	var dbBuilds []database.Build
 	var totalCount int64
 	err := findDBPaginatedSliceAndTotalCount(query, params.Limit, params.Offset, &dbBuilds, &totalCount)
@@ -261,6 +275,17 @@ func (m buildModule) getBuildListHandler(c *gin.Context) {
 		List:       modelconv.DBBuildsToResponses(dbBuilds, m.engineLookup),
 		TotalCount: totalCount,
 	})
+}
+
+func parseBuildStatusOrWriteError(c *gin.Context, str, paramName string) (database.BuildStatus, bool) {
+	reqStatusID := request.BuildStatus(str)
+	id, ok := modelconv.ReqBuildStatusToDatabase(reqStatusID)
+	if !ok {
+		err := fmt.Errorf("invalid request build status: %v", reqStatusID)
+		ginutil.WriteInvalidParamError(c, err, paramName, fmt.Sprintf("Invalid build status: %q", str))
+		return database.BuildFailed, false
+	}
+	return id, true
 }
 
 // getBuildLogListHandler godoc
@@ -773,23 +798,29 @@ func parseDBBuildParams(buildID uint, buildDef []byte, vars []byte) ([]database.
 }
 
 func triggerBuild(dbJobParams []database.Param, engine CIEngineConfig) (string, error) {
-	q := ""
+	u, err := url.Parse(engine.URL)
+	if err != nil {
+		return "", fmt.Errorf("parse engine URL: %w", err)
+	}
+	q := url.Values{}
 	for _, dbJobParam := range dbJobParams {
 		if dbJobParam.Value != "" {
-			q = fmt.Sprintf("%s&%s=%s", q, url.QueryEscape(dbJobParam.Name), url.QueryEscape(dbJobParam.Value))
+			q.Set(dbJobParam.Name, dbJobParam.Value)
 		}
 	}
+	q.Set("token", engine.Token)
+	u.RawQuery = q.Encode()
 
-	tokenStr := fmt.Sprintf("?token=%s", engine.Token)
+	redactedURL := &(*u)
+	q.Set("token", "*****")
+	redactedURL.RawQuery = q.Encode()
 
-	url := fmt.Sprintf("%s%s%s", engine.URL, tokenStr, q)
-	fmt.Printf("POSTing to url: %v\n", url)
 	log.Info().
 		WithString("method", "POST").
-		WithString("url", fmt.Sprintf("%s?token=%s%s", engine.URL, "*****", q)).
+		WithString("url", redactedURL.Redacted()).
 		Message("Triggering build.")
 
-	var resp, err = http.Post(url, "", nil)
+	resp, err := http.Post(u.String(), "", nil)
 	if err != nil {
 		return "", err
 	}

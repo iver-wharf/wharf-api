@@ -47,6 +47,10 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   much quicker as it can skip applying migrations that are already
   applied. (#144)
 
+- Changed query parameter `?status` and `?statusId` in `GET /api/build` to
+  support multiple values, where it will respond with builds matching any of the
+  supplied statuses. (#150)
+
 - Changed database column name `token.token` to `token.value` due to a bug in
   the Sqlite database driver. The HTTP response model still uses the field name
   `"token"`. (#144)
@@ -55,6 +59,9 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
 - Changed version of numerous dependencies:
 
+  - `github.com/gin-gonic/gin` from v1.7.4 to v1.7.7. (#151)
+  - `github.com/swaggo/gin-swagger` from v1.3.1 to v1.4.1. (#151)
+  - `github.com/swaggo/swag` from v1.7.1 to v1.8.0. (#151)
   - `gorm.io/driver/postgres` from v1.1.1 to v1.2.3 (#144)
   - `gorm.io/driver/sqlite` from v1.1.5 to v1.2.6 (#144)
   - `gorm.io/gorm` from v1.21.15 to v1.22.5 (#144)
