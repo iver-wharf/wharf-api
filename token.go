@@ -51,11 +51,13 @@ var defaultGetTokensOrderBy = orderby.Column{Name: database.TokenColumns.TokenID
 // @description while the matching filters are meant for searches by humans where it tries to find soft matches and is therefore inaccurate by nature.
 // @description Added in v5.0.0.
 // @tags token
+// @produce json
 // @param limit query int false "Number of results to return. No limiting is applied if empty (`?limit=`) or non-positive (`?limit=0`). Required if `offset` is used." default(100)
 // @param offset query int false "Skipped results, where 0 means from the start." minimum(0) default(0)
 // @param orderby query []string false "Sorting orders. Takes the property name followed by either 'asc' or 'desc'. Can be specified multiple times for more granular sorting. Defaults to `?orderby=tokenId desc`"
 // @param userName query string false "Filter by verbatim token user name."
 // @param userNameMatch query string false "Filter by matching token user name. Cannot be used with `userName`."
+// @param pretty query bool false "Pretty indented JSON output"
 // @success 200 {object} response.PaginatedTokens
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
@@ -98,7 +100,7 @@ func (m tokenModule) getTokenListHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, response.PaginatedTokens{
+	renderJSON(c, http.StatusOK, response.PaginatedTokens{
 		List:       modelconv.DBTokensToResponses(dbTokens),
 		TotalCount: totalCount,
 	})
@@ -109,7 +111,9 @@ func (m tokenModule) getTokenListHandler(c *gin.Context) {
 // @summary Returns token with selected token ID
 // @description Added in v0.2.2.
 // @tags token
+// @produce json
 // @param tokenId path uint true "Token ID" minimum(0)
+// @param pretty query bool false "Pretty indented JSON output"
 // @success 200 {object} response.Token
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
@@ -127,7 +131,7 @@ func (m tokenModule) getTokenHandler(c *gin.Context) {
 	}
 
 	resToken := modelconv.DBTokenToResponse(dbToken)
-	c.JSON(http.StatusOK, resToken)
+	renderJSON(c, http.StatusOK, resToken)
 }
 
 // createTokenHandler godoc
@@ -139,6 +143,7 @@ func (m tokenModule) getTokenHandler(c *gin.Context) {
 // @accept json
 // @produce json
 // @param token body request.Token _ "Token to create"
+// @param pretty query bool false "Pretty indented JSON output"
 // @success 201 {object} response.Token
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
@@ -178,7 +183,7 @@ func (m tokenModule) createTokenHandler(c *gin.Context) {
 	}
 
 	resToken := modelconv.DBTokenToResponse(dbToken)
-	c.JSON(http.StatusCreated, resToken)
+	renderJSON(c, http.StatusCreated, resToken)
 }
 
 // updateTokenHandler godoc
@@ -191,6 +196,7 @@ func (m tokenModule) createTokenHandler(c *gin.Context) {
 // @produce json
 // @param tokenId path uint true "ID of token to update" minimum(0)
 // @param token body request.TokenUpdate _ "New token values"
+// @param pretty query bool false "Pretty indented JSON output"
 // @success 200 {object} response.Token
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
@@ -222,7 +228,7 @@ func (m tokenModule) updateTokenHandler(c *gin.Context) {
 	}
 
 	resToken := modelconv.DBTokenToResponse(dbToken)
-	c.JSON(http.StatusOK, resToken)
+	renderJSON(c, http.StatusOK, resToken)
 }
 
 func fetchTokenByID(c *gin.Context, db *gorm.DB, tokenID uint, whenMsg string) (database.Token, bool) {

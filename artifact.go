@@ -47,6 +47,7 @@ var defaultGetArtifactsOrderBy = orderby.Column{Name: database.ArtifactColumns.A
 // @description while the matching filters are meant for searches by humans where it tries to find soft matches and is therefore inaccurate by nature.
 // @description Added in v5.0.0.
 // @tags artifact
+// @produce json
 // @param buildId path uint true "Build ID" minimum(0)
 // @param limit query int false "Number of results to return. No limiting is applied if empty (`?limit=`) or non-positive (`?limit=0`). Required if `offset` is used." default(100)
 // @param offset query int false "Skipped results, where 0 means from the start." minimum(0) default(0)
@@ -56,6 +57,7 @@ var defaultGetArtifactsOrderBy = orderby.Column{Name: database.ArtifactColumns.A
 // @param nameMatch query string false "Filter by matching artifact name. Cannot be used with `name`."
 // @param fileNameMatch query string false "Filter by matching artifact file name. Cannot be used with `fileName`."
 // @param match query string false "Filter by matching on any supported fields."
+// @param pretty query bool false "Pretty indented JSON output"
 // @success 200 {object} response.PaginatedArtifacts
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
@@ -120,7 +122,7 @@ func (m artifactModule) getBuildArtifactListHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, response.PaginatedArtifacts{
+	renderJSON(c, http.StatusOK, response.PaginatedArtifacts{
 		List:       modelconv.DBArtifactsToResponses(dbArtifacts),
 		TotalCount: totalCount,
 	})
@@ -131,6 +133,7 @@ func (m artifactModule) getBuildArtifactListHandler(c *gin.Context) {
 // @summary Get build artifact
 // @description Added in v0.7.1.
 // @tags artifact
+// @produce multipart/form-data
 // @param buildId path uint true "Build ID" minimum(0)
 // @param artifactId path uint true "Artifact ID" minimum(0)
 // @success 200 {file} string "OK"
@@ -193,6 +196,7 @@ func (m artifactModule) getBuildArtifactHandler(c *gin.Context) {
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @router /build/{buildId}/artifact [post]
 func (m artifactModule) createBuildArtifactHandler(c *gin.Context) {
+	log.Debug().Message("Start of createBuildArtifactHandler")
 	buildID, ok := ginutil.ParseParamUint(c, "buildId")
 	if !ok {
 		return
@@ -221,7 +225,9 @@ func (m artifactModule) createBuildArtifactHandler(c *gin.Context) {
 // @description Deprecated, /build/{buildid}/test-result/list-summary should be used instead.
 // @description Added in v0.7.0.
 // @tags artifact
+// @produce json
 // @param buildId path uint true "Build ID" minimum(0)
+// @param pretty query bool false "Pretty indented JSON output"
 // @success 200 {object} response.TestsResults
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
@@ -264,7 +270,7 @@ func (m artifactModule) getBuildTestResultListHandler(c *gin.Context) {
 		resResults.Status = response.TestStatusFailed
 	}
 
-	c.JSON(http.StatusOK, resResults)
+	renderJSON(c, http.StatusOK, resResults)
 }
 
 func createArtifacts(c *gin.Context, db *gorm.DB, files []ctxparser.File, buildID uint) ([]database.Artifact, bool) {

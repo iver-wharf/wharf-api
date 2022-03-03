@@ -51,6 +51,7 @@ var defaultGetProvidersOrderBy = orderby.Column{Name: database.ProviderColumns.P
 // @description while the matching filters are meant for searches by humans where it tries to find soft matches and is therefore inaccurate by nature.
 // @description Added in v5.0.0.
 // @tags provider
+// @produce json
 // @param limit query int false "Number of results to return. No limiting is applied if empty (`?limit=`) or non-positive (`?limit=0`). Required if `offset` is used." default(100)
 // @param offset query int false "Skipped results, where 0 means from the start." minimum(0) default(0)
 // @param orderby query []string false "Sorting orders. Takes the property name followed by either 'asc' or 'desc'. Can be specified multiple times for more granular sorting. Defaults to `?orderby=providerId desc`"
@@ -59,6 +60,7 @@ var defaultGetProvidersOrderBy = orderby.Column{Name: database.ProviderColumns.P
 // @param nameMatch query string false "Filter by matching provider name. Cannot be used with `name`."
 // @param urlMatch query string false "Filter by matching provider URL. Cannot be used with `url`."
 // @param match query string false "Filter by matching on any supported fields."
+// @param pretty query bool false "Pretty indented JSON output"
 // @success 200 {object} response.PaginatedProviders
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt provider"
@@ -113,7 +115,7 @@ func (m providerModule) getProviderListHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, response.PaginatedProviders{
+	renderJSON(c, http.StatusOK, response.PaginatedProviders{
 		List:       modelconv.DBProvidersToResponses(dbProviders),
 		TotalCount: totalCount,
 	})
@@ -124,7 +126,9 @@ func (m providerModule) getProviderListHandler(c *gin.Context) {
 // @summary Returns provider with selected provider ID
 // @description Added in v0.3.9.
 // @tags provider
+// @produce json
 // @param providerId path uint true "Provider ID" minimum(0)
+// @param pretty query bool false "Pretty indented JSON output"
 // @success 200 {object} response.Provider
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 404 {object} problem.Response "Provider not found"
@@ -143,7 +147,7 @@ func (m providerModule) getProviderHandler(c *gin.Context) {
 	}
 
 	resProvider := modelconv.DBProviderToResponse(dbProvider)
-	c.JSON(http.StatusOK, resProvider)
+	renderJSON(c, http.StatusOK, resProvider)
 }
 
 // createProviderHandler godoc
@@ -156,6 +160,7 @@ func (m providerModule) getProviderHandler(c *gin.Context) {
 // @accept json
 // @produce json
 // @param provider body request.Provider _ "Provider to create"
+// @param pretty query bool false "Pretty indented JSON output"
 // @success 201 {object} response.Provider
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
@@ -189,7 +194,7 @@ func (m providerModule) createProviderHandler(c *gin.Context) {
 	}
 
 	resProvider := modelconv.DBProviderToResponse(dbProvider)
-	c.JSON(http.StatusCreated, resProvider)
+	renderJSON(c, http.StatusCreated, resProvider)
 }
 
 // updateProviderHandler godoc
@@ -202,6 +207,7 @@ func (m providerModule) createProviderHandler(c *gin.Context) {
 // @produce json
 // @param providerId path uint _ "ID of provider to update" minimum(0)
 // @param provider body request.ProviderUpdate _ "New provider values"
+// @param pretty query bool false "Pretty indented JSON output"
 // @success 200 {object} response.Provider
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
@@ -247,7 +253,7 @@ func (m providerModule) updateProviderHandler(c *gin.Context) {
 	}
 
 	resProvider := modelconv.DBProviderToResponse(dbProvider)
-	c.JSON(http.StatusOK, resProvider)
+	renderJSON(c, http.StatusOK, resProvider)
 }
 
 func fetchProviderByID(c *gin.Context, db *gorm.DB, providerID uint, whenMsg string) (database.Provider, bool) {

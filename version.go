@@ -26,8 +26,10 @@ func loadEmbeddedVersionFile() error {
 // @summary Returns the version of this API
 // @description Added in v4.0.0.
 // @tags meta
+// @produce json
+// @param pretty query bool false "Pretty indented JSON output"
 // @success 200 {object} app.Version
 // @router /version [get]
 func getVersionHandler(c *gin.Context) {
-	c.JSON(http.StatusOK, AppVersion)
+	renderJSON(c, http.StatusOK, AppVersion)
 }

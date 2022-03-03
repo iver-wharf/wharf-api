@@ -28,10 +28,11 @@ func (m healthModule) DeprecatedRegister(e *gin.Engine) {
 // @description Added in v4.2.0.
 // @tags health
 // @produce json
+// @param pretty query bool false "Pretty indented JSON output"
 // @success 200 {object} response.Ping
 // @router /ping [get]
 func (m healthModule) pingHandler(c *gin.Context) {
-	c.JSON(200, response.Ping{Message: "pong"})
+	renderJSON(c, 200, response.Ping{Message: "pong"})
 }
 
 // healthHandler godoc
@@ -41,8 +42,9 @@ func (m healthModule) pingHandler(c *gin.Context) {
 // @description Added in v0.7.1.
 // @tags health
 // @produce json
+// @param pretty query bool false "Pretty indented JSON output"
 // @success 200 {object} response.HealthStatus
 // @router /health [get]
 func (m healthModule) healthHandler(c *gin.Context) {
-	c.JSON(200, response.HealthStatus{Message: "API is healthy.", IsHealthy: true})
+	renderJSON(c, 200, response.HealthStatus{Message: "API is healthy.", IsHealthy: true})
 }

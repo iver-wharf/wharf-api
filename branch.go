@@ -32,7 +32,9 @@ func (m branchModule) Register(g *gin.RouterGroup) {
 // @summary Get list of branches.
 // @description Added in v5.0.0.
 // @tags branch
+// @produce json
 // @param projectId path uint true "project ID" minimum(0)
+// @param pretty query bool false "Pretty indented JSON output"
 // @success 200 {object} response.PaginatedBranches "Branches"
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
@@ -58,7 +60,7 @@ func (m branchModule) getProjectBranchListHandler(c *gin.Context) {
 		return
 	}
 	dbDefaultBranch := findDefaultDBBranch(dbBranches)
-	c.JSON(http.StatusOK, modelconv.DBBranchListToPaginatedResponse(dbBranches, int64(len(dbBranches)), dbDefaultBranch))
+	renderJSON(c, http.StatusOK, modelconv.DBBranchListToPaginatedResponse(dbBranches, int64(len(dbBranches)), dbDefaultBranch))
 }
 
 // createProjectBranchHandler godoc
@@ -72,6 +74,7 @@ func (m branchModule) getProjectBranchListHandler(c *gin.Context) {
 // @produce json
 // @param projectId path uint true "project ID" minimum(0)
 // @param branch body request.Branch true "Branch object"
+// @param pretty query bool false "Pretty indented JSON output"
 // @success 201 {object} response.Branch "Created branch"
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
@@ -121,7 +124,7 @@ func (m branchModule) createProjectBranchHandler(c *gin.Context) {
 			projectID))
 		return
 	}
-	c.JSON(http.StatusCreated, modelconv.DBBranchToResponse(dbBranch))
+	renderJSON(c, http.StatusCreated, modelconv.DBBranchToResponse(dbBranch))
 }
 
 // updateProjectBranchListHandler godoc
@@ -137,6 +140,7 @@ func (m branchModule) createProjectBranchHandler(c *gin.Context) {
 // @produce json
 // @param projectId path uint true "project ID" minimum(0)
 // @param branches body request.BranchListUpdate true "Branch update"
+// @param pretty query bool false "Pretty indented JSON output"
 // @success 200 {object} response.BranchList "Updated branches"
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
@@ -164,7 +168,7 @@ func (m branchModule) updateProjectBranchListHandler(c *gin.Context) {
 		return
 	}
 	resBranchList := modelconv.DBBranchListToResponse(dbBranchList.branches, dbBranchList.defaultBranch)
-	c.JSON(http.StatusOK, resBranchList)
+	renderJSON(c, http.StatusOK, resBranchList)
 }
 
 type databaseBranchList struct {

@@ -89,7 +89,9 @@ func build(buildID uint) broadcast.Broadcaster {
 // @summary Finds build by build ID
 // @description Added in v0.3.5.
 // @tags build
+// @produce json
 // @param buildId path uint true "build id" minimum(0)
+// @param pretty query bool false "Pretty indented JSON output"
 // @success 200 {object} response.Build
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
@@ -116,7 +118,7 @@ func (m buildModule) getBuildHandler(c *gin.Context) {
 	}
 
 	resBuild := modelconv.DBBuildToResponse(dbBuild, m.engineLookup)
-	c.JSON(http.StatusOK, resBuild)
+	renderJSON(c, http.StatusOK, resBuild)
 }
 
 var buildJSONToColumns = map[string]database.SafeSQLName{
@@ -140,6 +142,7 @@ var defaultGetBuildsOrderBy = orderby.Column{Name: database.BuildColumns.BuildID
 // @description while the matching filters are meant for searches by humans where it tries to find soft matches and is therefore inaccurate by nature.
 // @description Added in v5.0.0.
 // @tags build
+// @produce json
 // @param limit query int false "Number of results to return. No limiting is applied if empty (`?limit=`) or non-positive (`?limit=0`). Required if `offset` is used." default(100)
 // @param offset query int false "Skipped results, where 0 means from the start." minimum(0) default(0)
 // @param orderby query []string false "Sorting orders. Takes the property name followed by either 'asc' or 'desc'. Can be specified multiple times for more granular sorting. Defaults to `?orderby=buildId desc`"
@@ -158,6 +161,7 @@ var defaultGetBuildsOrderBy = orderby.Column{Name: database.BuildColumns.BuildID
 // @param gitBranchMatch query string false "Filter by matching build Git branch. Cannot be used with `gitBranch`."
 // @param stageMatch query string false "Filter by matching build stage. Cannot be used with `stage`."
 // @param match query string false "Filter by matching on any supported fields."
+// @param pretty query bool false "Pretty indented JSON output"
 // @success 200 {object} response.PaginatedBuilds
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
@@ -254,7 +258,7 @@ func (m buildModule) getBuildListHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, response.PaginatedBuilds{
+	renderJSON(c, http.StatusOK, response.PaginatedBuilds{
 		List:       modelconv.DBBuildsToResponses(dbBuilds, m.engineLookup),
 		TotalCount: totalCount,
 	})
@@ -265,7 +269,9 @@ func (m buildModule) getBuildListHandler(c *gin.Context) {
 // @summary Finds logs for build with selected build ID
 // @description Added in v0.3.8.
 // @tags build
+// @produce json
 // @param buildId path uint true "build id" minimum(0)
+// @param pretty query bool false "Pretty indented JSON output"
 // @success 200 {object} []response.Log "logs from selected build"
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
@@ -295,7 +301,7 @@ func (m buildModule) getBuildLogListHandler(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, resLogs)
+	renderJSON(c, http.StatusOK, resLogs)
 }
 
 // streamBuildLogHandler godoc
@@ -303,6 +309,7 @@ func (m buildModule) getBuildLogListHandler(c *gin.Context) {
 // @summary Opens stream listener
 // @description Added in v0.3.8.
 // @tags build
+// @produce json-stream
 // @param buildId path uint true "build id" minimum(0)
 // @success 200 "Open stream"
 // @failure 400 {object} problem.Response "Bad request"
@@ -334,6 +341,7 @@ func (m buildModule) streamBuildLogHandler(c *gin.Context) {
 // @summary Post a log to selected build
 // @description Added in v0.1.0.
 // @tags build
+// @accept json
 // @param buildId path uint true "build id" minimum(0)
 // @param data body request.LogOrStatusUpdate true "data"
 // @success 201 "Created"
@@ -387,6 +395,7 @@ func (m buildModule) createBuildLogHandler(c *gin.Context) {
 // @summary Update a build's status.
 // @description Added in v5.0.0.
 // @tags build
+// @accept json
 // @param buildId path uint true "Build ID" minimum(0)
 // @param data body request.BuildStatusUpdate true "Status update"
 // @success 204 "Updated"
@@ -511,11 +520,13 @@ func (m buildModule) getLogs(buildID uint) ([]database.Log, error) {
 // @description Added in v0.2.4.
 // @tags project
 // @accept json
+// @produce json
 // @param projectId path uint true "project ID" minimum(0)
 // @param stage path string true "name of stage to run, or specify ALL to run everything"
 // @param branch query string false "branch name, uses default branch if omitted"
 // @param environment query string false "environment name"
 // @param inputs body string _ "user inputs" example(foo:bar)
+// @param pretty query bool false "Pretty indented JSON output"
 // @success 200 {object} response.BuildReferenceWrapper "Build scheduled"
 // @failure 400 {object} problem.Response "Bad request, such as invalid body JSON"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
@@ -540,12 +551,14 @@ func (m buildModule) oldStartProjectBuildHandler(c *gin.Context) {
 // @description Added in v5.0.0.
 // @tags build
 // @accept json
+// @produce json
 // @param projectId path uint true "Project ID" minimum(0)
 // @param stage query string false "Name of stage to run, or specify `ALL` to run all stages." default(ALL)
 // @param branch query string false "Branch name. Uses project's default branch if omitted"
 // @param environment query string false "Environment name filter. If left empty it will run all stages without any environment filters."
 // @param engine query string false "Execution engine ID"
 // @param inputs body request.BuildInputs _ "Input variable values. Map of variable names (as defined in the project's `.wharf-ci.yml` file) as keys paired with their string, boolean, or numeric value."
+// @param pretty query bool false "Pretty indented JSON output"
 // @success 200 {object} response.BuildReferenceWrapper "Build scheduled"
 // @failure 400 {object} problem.Response "Bad request, such as invalid body JSON"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
@@ -697,7 +710,7 @@ func (m buildModule) startBuildHandler(c *gin.Context, projectID uint, stageName
 		return
 	}
 
-	c.JSON(http.StatusOK, modelconv.DBBuildToResponseBuildReferenceWrapper(dbBuild))
+	renderJSON(c, http.StatusOK, modelconv.DBBuildToResponseBuildReferenceWrapper(dbBuild))
 }
 
 func (m buildModule) SaveBuildParams(dbParams []database.BuildParam) error {
