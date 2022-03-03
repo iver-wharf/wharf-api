@@ -40,6 +40,10 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Added query parameter `?engine=ID` to `POST /api/project/{projectId}/build`
   to allow specifying which execution engine to use for the new build. (#134)
 
+- Added gRPC server (on the same port) for injecting logs in a single stream.
+  See [`api/wharfapi/v5/builds.proto`](./api/wharfapi/v5/builds.proto) for full
+  documentation of the API. (#147)
+
 - Added build field `workerId` that is automatically populated if the engine
   API is `wharf-cmd.v1`. (#156)
 
@@ -55,7 +59,13 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   the Sqlite database driver. The HTTP response model still uses the field name
   `"token"`. (#144)
 
-- Added dependency `github.com/go-gormigrate/gormigrate/v2` v2.0.0. (#144)
+- Added numerous dependencies:
+
+  - `github.com/alta/protopatch` v0.5.0 (#147)
+  - `github.com/go-gormigrate/gormigrate/v2` v2.0.0. (#144)
+  - `github.com/soheilhy/cmux` v0.1.5 (#147)
+  - `google.golang.org/grpc` v1.44.0 (#147)
+  - `google.golang.org/protobuf` v1.27.1 (#147)
 
 - Changed version of numerous dependencies:
 
