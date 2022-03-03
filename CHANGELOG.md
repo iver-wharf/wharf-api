@@ -38,6 +38,10 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Added query parameter `?engine=ID` to `POST /api/project/{projectId}/build`
   to allow specifying which execution engine to use for the new build. (#134)
 
+- Added automatic JSON indentation in HTTP responses based on the user agent, if
+  they are a desktop, mobile, or tablet device, or specifically cURL. Can be
+  disabled by the new query parameter `?pretty=false`. (#158)
+
 - Added granular migrations support. Thanks to this, wharf-api now initializes
   much quicker as it can skip applying migrations that are already
   applied. (#144)
@@ -46,7 +50,10 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   the Sqlite database driver. The HTTP response model still uses the field name
   `"token"`. (#144)
 
-- Added dependency `github.com/go-gormigrate/gormigrate/v2` v2.0.0. (#144)
+- Added dependencies:
+
+  - `github.com/go-gormigrate/gormigrate/v2` v2.0.0 (#144)
+  - `github.com/mileusna/useragent` v1.0.2 (#158)
 
 - Changed version of numerous dependencies:
 
