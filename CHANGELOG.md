@@ -12,7 +12,7 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 	https://changelog.md/
 -->
 
-## v5.1.0 (WIP)
+## v5.1.0 (2022-03-04)
 
 - Deprecated trigger configs (YAML: `ci.triggerUrl` &amp; `ci.triggerToken`,
   environment variables: `WHARF_CI_TRIGGERURL` &amp; `WHARF_CI_TRIGGERTOKEN`)
