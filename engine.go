@@ -20,6 +20,8 @@ func (m engineModule) Register(r *gin.RouterGroup) {
 // @summary Get list of engines.
 // @description Added in v5.1.0.
 // @tags engine
+// @produce json
+// @param pretty query bool false "Pretty indented JSON output"
 // @success 200 {object} response.EngineList "Engines"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @router /engine [get]
@@ -36,7 +38,7 @@ func (m engineModule) getEngineList(c *gin.Context) {
 	}
 	engines := getEnginesFromConfig(conf)
 	res.List = convCIEnginesToResponses(engines)
-	c.JSON(200, res)
+	renderJSON(c, 200, res)
 }
 
 func getEnginesFromConfig(ciConf CIConfig) []CIEngineConfig {

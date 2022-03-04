@@ -63,6 +63,7 @@ var defaultGetProjectsOrderBy = orderby.Column{Name: database.ProjectColumns.Pro
 // @description while the matching filters are meant for searches by humans where it tries to find soft matches and is therefore inaccurate by nature.
 // @description Added in v5.0.0.
 // @tags project
+// @produce json
 // @param orderby query []string false "Sorting orders. Takes the property name followed by either 'asc' or 'desc'. Can be specified multiple times for more granular sorting. Defaults to `?orderby=projectId desc`"
 // @param limit query int false "Number of results to return. No limiting is applied if empty (`?limit=`) or non-positive (`?limit=0`). Required if `offset` is used." default(100)
 // @param offset query int false "Skipped results, where 0 means from the start." minimum(0) default(0)
@@ -77,6 +78,7 @@ var defaultGetProjectsOrderBy = orderby.Column{Name: database.ProjectColumns.Pro
 // @param descriptionMatch query string false "Filter by matching description. Cannot be used with `description`."
 // @param gitUrlMatch query string false "Filter by matching Git URL. Cannot be used with `gitUrl`."
 // @param match query string false "Filter by matching on any supported fields."
+// @param pretty query bool false "Pretty indented JSON output"
 // @success 200 {object} response.PaginatedProjects
 // @failure 502 {object} problem.Response "Database is unreachable"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
@@ -143,7 +145,7 @@ func (m projectModule) getProjectListHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, response.PaginatedProjects{
+	renderJSON(c, http.StatusOK, response.PaginatedProjects{
 		List:       modelconv.DBProjectsToResponses(dbProjects),
 		TotalCount: totalCount,
 	})
@@ -154,7 +156,9 @@ func (m projectModule) getProjectListHandler(c *gin.Context) {
 // @summary Returns project with selected project ID
 // @description Added in v0.1.8.
 // @tags project
+// @produce json
 // @param projectId path uint true "project ID" minimum(0)
+// @param pretty query bool false "Pretty indented JSON output"
 // @success 200 {object} response.Project
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
@@ -171,7 +175,7 @@ func (m projectModule) getProjectHandler(c *gin.Context) {
 		return
 	}
 	resProject := modelconv.DBProjectToResponse(dbProject)
-	c.JSON(http.StatusOK, resProject)
+	renderJSON(c, http.StatusOK, resProject)
 }
 
 // createProjectHandler godoc
@@ -183,6 +187,7 @@ func (m projectModule) getProjectHandler(c *gin.Context) {
 // @accept json
 // @produce json
 // @param project body request.Project true "Project to create"
+// @param pretty query bool false "Pretty indented JSON output"
 // @success 201 {object} response.Project
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 404 {object} problem.Response "Project to update is not found"
@@ -206,7 +211,7 @@ func (m projectModule) createProjectHandler(c *gin.Context) {
 	}
 
 	resProject := modelconv.DBProjectToResponse(dbProject)
-	c.JSON(http.StatusCreated, resProject)
+	renderJSON(c, http.StatusCreated, resProject)
 }
 
 // deleteProjectHandler godoc
@@ -248,6 +253,7 @@ func (m projectModule) deleteProjectHandler(c *gin.Context) {
 // @produce json
 // @param projectId path uint true "project ID" minimum(0)
 // @param project body request.ProjectUpdate _ "New project values"
+// @param pretty query bool false "Pretty indented JSON output"
 // @success 200 {object} response.Project
 // @failure 400 {object} problem.Response "Bad request, such as invalid body JSON"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
@@ -287,7 +293,7 @@ func (m projectModule) updateProjectHandler(c *gin.Context) {
 	}
 
 	resProject := modelconv.DBProjectToResponse(dbProject)
-	c.JSON(http.StatusOK, resProject)
+	renderJSON(c, http.StatusOK, resProject)
 }
 
 // getProjectOverridesHandler godoc
@@ -301,6 +307,7 @@ func (m projectModule) updateProjectHandler(c *gin.Context) {
 // @tags project
 // @produce json
 // @param projectId path uint true "project ID" minimum(0)
+// @param pretty query bool false "Pretty indented JSON output"
 // @success 200 {object} response.ProjectOverrides
 // @failure 400 {object} problem.Response "Bad request, such as invalid body JSON"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
@@ -330,7 +337,7 @@ func (m projectModule) getProjectOverridesHandler(c *gin.Context) {
 	}
 
 	resProject := modelconv.DBProjectOverridesToResponse(dbProjectOverrides)
-	c.JSON(http.StatusOK, resProject)
+	renderJSON(c, http.StatusOK, resProject)
 }
 
 // updateProjectOverridesHandler godoc
@@ -346,6 +353,7 @@ func (m projectModule) getProjectOverridesHandler(c *gin.Context) {
 // @produce json
 // @param projectId path uint true "project ID" minimum(0)
 // @param overrides body request.ProjectOverridesUpdate _ "New project overrides"
+// @param pretty query bool false "Pretty indented JSON output"
 // @success 200 {object} response.ProjectOverrides
 // @failure 400 {object} problem.Response "Bad request, such as invalid body JSON"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
@@ -389,7 +397,7 @@ func (m projectModule) updateProjectOverridesHandler(c *gin.Context) {
 	}
 
 	resProject := modelconv.DBProjectOverridesToResponse(dbProjectOverrides)
-	c.JSON(http.StatusOK, resProject)
+	renderJSON(c, http.StatusOK, resProject)
 }
 
 // deleteProjectOverridesHandler godoc

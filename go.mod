@@ -10,6 +10,7 @@ require (
 	github.com/go-gormigrate/gormigrate/v2 v2.0.0
 	github.com/golang-jwt/jwt/v4 v4.1.0
 	github.com/iver-wharf/wharf-core v1.3.0
+	github.com/mileusna/useragent v1.0.2
 	github.com/stretchr/testify v1.7.0
 	github.com/swaggo/gin-swagger v1.4.1
 	github.com/swaggo/swag v1.8.0

@@ -8,6 +8,7 @@ import (
 	"github.com/iver-wharf/wharf-api/v5/pkg/model/database"
 	"github.com/iver-wharf/wharf-api/v5/pkg/orderby"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
+	ua "github.com/mileusna/useragent"
 )
 
 type commonGetQueryParams struct {
@@ -41,4 +42,24 @@ func parseCommonOrderBySlice(c *gin.Context, orders []string, fieldToColumnNames
 		return nil, false
 	}
 	return orderBySlice, true
+}
+
+func renderJSON(c *gin.Context, code int, response interface{}) {
+	indent := false
+	prettyQuery, ok := c.GetQuery("pretty")
+	if ok {
+		if prettyQuery == "" || strings.EqualFold(prettyQuery, "true") {
+			indent = true
+		}
+	} else {
+		agent := ua.Parse(c.Request.UserAgent())
+		if agent.Name == "curl" || agent.Desktop || agent.Mobile || agent.Tablet {
+			indent = true
+		}
+	}
+	if indent {
+		c.IndentedJSON(code, response)
+	} else {
+		c.JSON(code, response)
+	}
 }

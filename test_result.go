@@ -41,8 +41,10 @@ func (m buildTestResultModule) Register(r gin.IRouter) {
 // @description Added in v5.0.0.
 // @tags test-result
 // @accept multipart/form-data
+// @produce json
 // @param buildId path uint true "Build ID" minimum(0)
 // @param files formData file true "Test result file"
+// @param pretty query bool false "Pretty indented JSON output"
 // @success 201 {object} []response.ArtifactMetadata "Added new test result data and created summaries"
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 502 {object} problem.Response "Database unreachable or bad gateway"
@@ -120,7 +122,7 @@ func (m buildTestResultModule) createBuildTestResultHandler(c *gin.Context) {
 			buildID))
 	}
 
-	c.JSON(http.StatusOK, resArtifactMetadataList)
+	renderJSON(c, http.StatusOK, resArtifactMetadataList)
 }
 
 // getBuildAllTestResultDetailListHandler godoc
@@ -128,7 +130,9 @@ func (m buildTestResultModule) createBuildTestResultHandler(c *gin.Context) {
 // @summary Get all test result details for specified build
 // @description Added in v5.0.0.
 // @tags test-result
+// @produce json
 // @param buildId path uint true "Build ID" minimum(0)
+// @param pretty query bool false "Pretty indented JSON output"
 // @success 200 {object} response.PaginatedTestResultDetails
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 502 {object} problem.Response "Database is unreachable"
@@ -153,7 +157,7 @@ func (m buildTestResultModule) getBuildAllTestResultDetailListHandler(c *gin.Con
 	}
 
 	resDetails := modelconv.DBTestResultDetailsToResponses(dbDetails)
-	c.JSON(http.StatusOK, response.PaginatedTestResultDetails{
+	renderJSON(c, http.StatusOK, response.PaginatedTestResultDetails{
 		List:       resDetails,
 		TotalCount: int64(len(resDetails)),
 	})
@@ -164,7 +168,9 @@ func (m buildTestResultModule) getBuildAllTestResultDetailListHandler(c *gin.Con
 // @summary Get all test result summaries for specified build
 // @description Added in v5.0.0.
 // @tags test-result
+// @produce json
 // @param buildId path uint true "Build ID" minimum(0)
+// @param pretty query bool false "Pretty indented JSON output"
 // @success 200 {object} response.PaginatedTestResultSummaries
 // @failure 400 {object} problem.Response "Bad Request"
 // @failure 502 {object} problem.Response "Database is unreachable"
@@ -193,7 +199,7 @@ func (m buildTestResultModule) getBuildAllTestResultSummaryListHandler(c *gin.Co
 		resSummaries[i] = modelconv.DBTestResultSummaryToResponse(dbSummary)
 	}
 
-	c.JSON(http.StatusOK, response.PaginatedTestResultSummaries{
+	renderJSON(c, http.StatusOK, response.PaginatedTestResultSummaries{
 		List:       resSummaries,
 		TotalCount: int64(len(resSummaries)),
 	})
@@ -204,8 +210,10 @@ func (m buildTestResultModule) getBuildAllTestResultSummaryListHandler(c *gin.Co
 // @summary Get test result summary for specified test
 // @description Added in v5.0.0.
 // @tags test-result
+// @produce json
 // @param buildId path uint true "Build ID" minimum(0)
 // @param artifactId path uint true "Artifact ID" minimum(0)
+// @param pretty query bool false "Pretty indented JSON output"
 // @success 200 {object} response.TestResultSummary
 // @failure 400 {object} problem.Response "Bad Request"
 // @failure 502 {object} problem.Response "Database is unreachable"
@@ -235,7 +243,7 @@ func (m buildTestResultModule) getBuildTestResultSummaryHandler(c *gin.Context) 
 	}
 
 	resSummary := modelconv.DBTestResultSummaryToResponse(dbSummary)
-	c.JSON(http.StatusOK, resSummary)
+	renderJSON(c, http.StatusOK, resSummary)
 }
 
 // getBuildTestResultDetailListHandler godoc
@@ -243,8 +251,10 @@ func (m buildTestResultModule) getBuildTestResultSummaryHandler(c *gin.Context) 
 // @summary Get all test result details for specified test
 // @description Added in v5.0.0.
 // @tags test-result
+// @produce json
 // @param buildId path uint true "Build ID" minimum(0)
 // @param artifactId path uint true "Artifact ID" minimum(0)
+// @param pretty query bool false "Pretty indented JSON output"
 // @success 200 {object} response.PaginatedTestResultDetails
 // @failure 400 {object} problem.Response "Bad Request"
 // @failure 502 {object} problem.Response "Database is unreachable"
@@ -274,7 +284,7 @@ func (m buildTestResultModule) getBuildTestResultDetailListHandler(c *gin.Contex
 	}
 
 	resDetails := modelconv.DBTestResultDetailsToResponses(dbDetails)
-	c.JSON(http.StatusOK, response.PaginatedTestResultDetails{
+	renderJSON(c, http.StatusOK, response.PaginatedTestResultDetails{
 		List:       resDetails,
 		TotalCount: int64(len(dbDetails)),
 	})
@@ -285,7 +295,9 @@ func (m buildTestResultModule) getBuildTestResultDetailListHandler(c *gin.Contex
 // @summary Get test result list summary of all tests for specified build
 // @description Added in v5.0.0.
 // @tags test-result
+// @produce json
 // @param buildId path uint true "Build ID" minimum(0)
+// @param pretty query bool false "Pretty indented JSON output"
 // @success 200 {object} response.TestResultListSummary
 // @failure 400 {object} problem.Response "Bad Request"
 // @failure 502 {object} problem.Response "Database is unreachable"
@@ -324,7 +336,7 @@ func (m buildTestResultModule) getBuildAllTestResultListSummaryHandler(c *gin.Co
 		Failed:  dbListSummary.Failed,
 	}
 
-	c.JSON(http.StatusOK, resListSummary)
+	renderJSON(c, http.StatusOK, resListSummary)
 }
 
 type xmlInnerString struct {
