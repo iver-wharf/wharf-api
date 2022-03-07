@@ -836,7 +836,6 @@ func (m buildModule) startBuildHandler(c *gin.Context, projectID uint, stageName
 	}
 
 	renderJSON(c, http.StatusOK, modelconv.DBBuildToResponseBuildReferenceWrapper(dbBuild))
-	c.JSON(http.StatusOK, modelconv.DBBuildToResponseBuildReferenceWrapper(dbBuild))
 }
 
 func (m buildModule) SaveBuildParams(dbParams []database.BuildParam) error {
@@ -912,8 +911,9 @@ func triggerBuild(dbJobParams []database.Param, engine CIEngineConfig) (string, 
 	q.Set("token", engine.Token)
 	u.RawQuery = q.Encode()
 
-	redactedURL := &(*u)
-	q.Set("token", "*****")
+	redactedURL := *u
+	redactedURL.User = nil
+	q.Set("token", "~~redacted~~")
 	redactedURL.RawQuery = q.Encode()
 
 	log.Info().
