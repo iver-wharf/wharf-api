@@ -32,13 +32,19 @@ func migrateInitSchema(db *gorm.DB) error {
 	if err := migrateBeforeGormigrate(db); err != nil {
 		return err
 	}
-	return db.AutoMigrate(
+	tables := []interface{}{
 		&database.Token{}, &database.Provider{},
 		&database.Project{}, &database.ProjectOverrides{},
 		&database.Branch{}, &database.Build{}, &database.Log{},
 		&database.Artifact{}, &database.BuildParam{}, &database.Param{},
 		&database.TestResultDetail{}, &database.TestResultSummary{},
-	)
+	}
+	db.DisableForeignKeyConstraintWhenMigrating = true
+	if err := db.AutoMigrate(tables...); err != nil {
+		return err
+	}
+	db.DisableForeignKeyConstraintWhenMigrating = false
+	return db.AutoMigrate(tables...)
 }
 
 func newMigrator(db *gorm.DB) *gormigrate.Gormigrate {
