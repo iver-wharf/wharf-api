@@ -82,7 +82,7 @@ type Provider struct {
 	Name       string `gorm:"size:20;not null"`
 	URL        string `gorm:"size:500;not null"`
 	TokenID    uint   `gorm:"nullable;default:NULL;index:provider_idx_token_id"`
-	Token      *Token `gorm:"foreignKey:TokenID;constraint:OnUpdate:RESTRICT,OnDelete:RESTRICT"`
+	Token      *Token `gorm:"constraint:OnUpdate:RESTRICT,OnDelete:RESTRICT"`
 }
 
 // TokenFields holds the Go struct field names for each field.
@@ -186,11 +186,11 @@ type Project struct {
 	Description     string    `gorm:"size:500;not null;default:''"`
 	AvatarURL       string    `gorm:"size:500;not null;default:''"`
 	TokenID         *uint     `gorm:"nullable;default:NULL;index:project_idx_token_id"`
-	Token           *Token    `gorm:"foreignKey:TokenID;constraint:OnUpdate:RESTRICT,OnDelete:RESTRICT"`
+	Token           *Token    `gorm:"constraint:OnUpdate:RESTRICT,OnDelete:RESTRICT"`
 	ProviderID      *uint     `gorm:"nullable;default:NULL;index:project_idx_provider_id"`
-	Provider        *Provider `gorm:"foreignKey:ProviderID;constraint:OnUpdate:RESTRICT,OnDelete:RESTRICT"`
+	Provider        *Provider `gorm:"constraint:OnUpdate:RESTRICT,OnDelete:RESTRICT"`
 	BuildDefinition string    `gorm:"not null;default:''"`
-	Branches        []Branch  `gorm:"foreignKey:ProjectID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	Branches        []Branch  `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	GitURL          string    `gorm:"not null;default:''"`
 
 	Overrides ProjectOverrides `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
@@ -199,7 +199,7 @@ type Project struct {
 // ProjectOverrides holds data about a project's overridden values.
 type ProjectOverrides struct {
 	ProjectOverridesID uint   `gorm:"primaryKey"`
-	ProjectID          uint   `gorm:"foreignKey:ProjectID;uniqueIndex:project_overrides_idx_project_id"`
+	ProjectID          uint   `gorm:"uniqueIndex:project_overrides_idx_project_id"`
 	Description        string `gorm:"size:500;not null;default:''"`
 	AvatarURL          string `gorm:"size:500;not null;default:''"`
 	GitURL             string `gorm:"not null;default:''"`
@@ -237,11 +237,11 @@ type Branch struct {
 	TimeMetadata
 	BranchID  uint     `gorm:"primaryKey"`
 	ProjectID uint     `gorm:"not null;index:branch_idx_project_id"`
-	Project   *Project `gorm:"foreignKey:ProjectID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	Project   *Project `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	Name      string   `gorm:"not null"`
 	Default   bool     `gorm:"not null"`
 	TokenID   uint     `gorm:"nullable;default:NULL;index:branch_idx_token_id"`
-	Token     Token    `gorm:"foreignKey:TokenID;constraint:OnUpdate:RESTRICT,OnDelete:RESTRICT"`
+	Token     Token    `gorm:"constraint:OnUpdate:RESTRICT,OnDelete:RESTRICT"`
 }
 
 // BuildFields holds the Go struct field names for each field.
@@ -310,21 +310,21 @@ const BuildTable = "build"
 // start it, what status it holds, et.al.
 type Build struct {
 	TimeMetadata
-	BuildID             uint                `gorm:"primaryKey"`
-	StatusID            BuildStatus         `gorm:"not null"`
-	ProjectID           uint                `gorm:"not null;index:build_idx_project_id"`
-	Project             *Project            `gorm:"foreignKey:ProjectID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-	ScheduledOn         null.Time           `gorm:"nullable;default:NULL"`
-	StartedOn           null.Time           `gorm:"nullable;default:NULL"`
-	CompletedOn         null.Time           `gorm:"nullable;default:NULL"`
-	GitBranch           string              `gorm:"size:300;not null;default:''"`
-	Environment         null.String         `gorm:"nullable;size:40" swaggertype:"string"`
-	Stage               string              `gorm:"size:40;not null;default:''"`
-	WorkerID            string              `gorm:"size:40;not null;default:'';index:build_idx_worker_id"`
-	Params              []BuildParam        `gorm:"foreignKey:BuildID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-	IsInvalid           bool                `gorm:"not null;default:false"`
-	TestResultSummaries []TestResultSummary `gorm:"foreignKey:BuildID"`
-	EngineID            string              `gorm:"size:32;not null;default:''"`
+	BuildID             uint         `gorm:"primaryKey"`
+	StatusID            BuildStatus  `gorm:"not null"`
+	ProjectID           uint         `gorm:"not null;index:build_idx_project_id"`
+	Project             *Project     `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	ScheduledOn         null.Time    `gorm:"nullable;default:NULL"`
+	StartedOn           null.Time    `gorm:"nullable;default:NULL"`
+	CompletedOn         null.Time    `gorm:"nullable;default:NULL"`
+	GitBranch           string       `gorm:"size:300;not null;default:''"`
+	Environment         null.String  `gorm:"nullable;size:40" swaggertype:"string"`
+	Stage               string       `gorm:"size:40;not null;default:''"`
+	WorkerID            string       `gorm:"size:40;not null;default:'';index:build_idx_worker_id"`
+	Params              []BuildParam `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	IsInvalid           bool         `gorm:"not null;default:false"`
+	TestResultSummaries []TestResultSummary
+	EngineID            string `gorm:"size:32;not null;default:''"`
 }
 
 // BuildStatus is an enum of different states for a build.
@@ -365,7 +365,7 @@ var BuildParamFields = struct {
 type BuildParam struct {
 	BuildParamID uint   `gorm:"primaryKey"`
 	BuildID      uint   `gorm:"not null;index:buildparam_idx_build_id"`
-	Build        *Build `gorm:"foreignKey:BuildID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	Build        *Build `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	Name         string `gorm:"not null"`
 	Value        string `gorm:"not null;default:''"`
 }
@@ -392,7 +392,7 @@ const LogTable = "log"
 type Log struct {
 	LogID     uint      `gorm:"primaryKey"`
 	BuildID   uint      `gorm:"not null;index:log_idx_build_id"`
-	Build     *Build    `gorm:"foreignKey:BuildID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	Build     *Build    `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	Message   string    `sql:"type:text"`
 	Timestamp time.Time `gorm:"not null"`
 }
@@ -449,7 +449,7 @@ type Artifact struct {
 	TimeMetadata
 	ArtifactID uint   `gorm:"primaryKey"`
 	BuildID    uint   `gorm:"not null;index:artifact_idx_build_id"`
-	Build      *Build `gorm:"foreignKey:BuildID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	Build      *Build `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	Name       string `gorm:"not null"`
 	FileName   string `gorm:"not null;default:''"`
 	Data       []byte `gorm:"nullable"`
@@ -470,9 +470,9 @@ type TestResultSummary struct {
 	TestResultSummaryID uint      `gorm:"primaryKey"`
 	FileName            string    `gorm:"not null;default:''"`
 	ArtifactID          uint      `gorm:"not null;index:testresultsummary_idx_artifact_id"`
-	Artifact            *Artifact `gorm:"foreignKey:ArtifactID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
+	Artifact            *Artifact `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
 	BuildID             uint      `gorm:"not null;index:testresultsummary_idx_build_id"`
-	Build               *Build    `gorm:"foreignKey:BuildID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	Build               *Build    `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	Total               uint      `gorm:"not null"`
 	Failed              uint      `gorm:"not null"`
 	Passed              uint      `gorm:"not null"`
@@ -496,9 +496,9 @@ type TestResultDetail struct {
 	TimeMetadata
 	TestResultDetailID uint             `gorm:"primaryKey"`
 	ArtifactID         uint             `gorm:"not null;index:testresultdetail_idx_artifact_id"`
-	Artifact           *Artifact        `gorm:"foreignKey:ArtifactID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
+	Artifact           *Artifact        `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
 	BuildID            uint             `gorm:"not null;index:testresultdetail_idx_build_id"`
-	Build              *Build           `gorm:"foreignKey:BuildID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	Build              *Build           `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	Name               string           `gorm:"not null"`
 	Message            null.String      `gorm:"nullable"`
 	StartedOn          null.Time        `gorm:"nullable;default:NULL;"`
