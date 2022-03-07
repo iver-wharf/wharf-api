@@ -921,7 +921,6 @@ func triggerBuild(dbJobParams []database.Param, engine CIEngineConfig) (string, 
 		WithString("url", redactedURL.Redacted()).
 		Message("Triggering build.")
 
-	log.Info().WithString("url", u.String()).Message("Real URL.")
 	resp, err := http.Post(u.String(), "", nil)
 	if err != nil {
 		return "", err
