@@ -14,7 +14,7 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
 ## v5.1.1 (WIP)
 
-- Fixed bug of failing migrations that was introduced in v5.1.0. (#161)
+- Fixed bug of failing migrations that was introduced in v5.1.0. (#161, #163)
 
 ## v5.1.0 (2022-03-04)
 
