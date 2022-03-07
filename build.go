@@ -912,7 +912,7 @@ func triggerBuild(dbJobParams []database.Param, engine CIEngineConfig) (string, 
 	u.RawQuery = q.Encode()
 
 	redactedURL := *u
-	q.Set("token", "*****")
+	q.Set("token", "~~redacted~~")
 	redactedURL.RawQuery = q.Encode()
 
 	log.Info().
