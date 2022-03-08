@@ -1,10 +1,8 @@
 name: "Lint protobuf"
 
 on:
-  push:
-    branches: [main]
   pull_request:
-    branches: [main]
+    branches: [ '**' ]
 
 jobs:
   pr-check:
