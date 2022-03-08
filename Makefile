@@ -1,7 +1,7 @@
 .PHONY: install tidy deps check \
 	docker docker-run serve swag-force swag proto \
-	lint lint-md lint-go \
-	lint-fix lint-fix-md lint-fix-go
+	lint lint-md lint-go lint-proto \
+	lint-fix lint-fix-md lint-fix-go lint-fix-proto
 
 commit = $(shell git rev-parse HEAD)
 version = latest
@@ -26,6 +26,7 @@ deps:
 	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.26
 	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1
 	go install github.com/alta/protopatch/cmd/protoc-gen-go-patch@v0.5.0
+	go install github.com/yoheimuta/protolint/cmd/protolint@v0.37.1
 	go mod download
 	npm install
 
@@ -76,8 +77,8 @@ proto:
 # Generated files have some non-standard formatting, so let's format it.
 	goimports -w ./api/wharfapi/v5/.
 
-lint: lint-md lint-go
-lint-fix: lint-fix-md lint-fix-go
+lint: lint-md lint-go lint-proto
+lint-fix: lint-fix-md lint-fix-go lint-fix-proto
 
 lint-md:
 	npx remark . .github
@@ -91,3 +92,9 @@ lint-go:
 
 lint-fix-go:
 	goimports -d -w $(shell git ls-files "*.go")
+
+lint-proto:
+	protolint lint api/wharfapi
+
+lint-fix-proto:
+	protolint lint -fix api/wharfapi

@@ -32,13 +32,13 @@ type CreateLogStreamRequest struct {
 
 	// BuildID is the database ID of the build this log line belongs to.
 	BuildID uint64 `protobuf:"varint,1,opt,name=build_id,json=buildId,proto3" json:"build_id,omitempty"`
-	// WorkerLogID is the worker's own ID of the log line. It's unique per build step
-	// for a given build, but may have collisons across multiple steps or builds.
-	// Not database value, but instead worker's own ID of the log line.
+	// WorkerLogID is the worker's own ID of the log line. It's unique per build
+	// step for a given build, but may have collisons across multiple steps or
+	// builds. Not database value, but instead worker's own ID of the log line.
 	WorkerLogID uint64 `protobuf:"varint,2,opt,name=worker_log_id,json=workerLogId,proto3" json:"worker_log_id,omitempty"`
-	// WorkerStepID is the worker's own ID of the step. It's unique for a given build,
-	// but may have collisions across multiple builds.
-	// Not database value, but instead worker's own ID of the step ID.
+	// WorkerStepID is the worker's own ID of the step. It's unique for a given
+	// build, but may have collisions across multiple builds. Not database value,
+	// but instead worker's own ID of the step ID.
 	WorkerStepID uint64 `protobuf:"varint,3,opt,name=worker_step_id,json=workerStepId,proto3" json:"worker_step_id,omitempty"`
 	// Timestamp is when the log line was outputted from the build step.
 	Timestamp *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
