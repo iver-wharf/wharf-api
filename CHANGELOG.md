@@ -12,7 +12,7 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 	https://changelog.md/
 -->
 
-## v5.1.2 (WIP)
+## v5.1.2 (2022-03-08)
 
 - Fixed token in trigger URL used in HTTP request getting redacted, instead of
   only the copy that is logged. (#166)
