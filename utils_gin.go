@@ -45,21 +45,18 @@ func parseCommonOrderBySlice(c *gin.Context, orders []string, fieldToColumnNames
 }
 
 func renderJSON(c *gin.Context, code int, response interface{}) {
-	indent := false
-	prettyQuery, ok := c.GetQuery("pretty")
-	if ok {
-		if prettyQuery == "" || strings.EqualFold(prettyQuery, "true") {
-			indent = true
-		}
-	} else {
-		agent := ua.Parse(c.Request.UserAgent())
-		if agent.Name == "curl" || agent.Desktop || agent.Mobile || agent.Tablet {
-			indent = true
-		}
-	}
-	if indent {
+	if shouldIndentJSONResponse(c) {
 		c.IndentedJSON(code, response)
 	} else {
 		c.JSON(code, response)
 	}
+}
+
+func shouldIndentJSONResponse(c *gin.Context) bool {
+	prettyQuery, ok := c.GetQuery("pretty")
+	if ok {
+		return prettyQuery == "" || strings.EqualFold(prettyQuery, "true")
+	}
+	agent := ua.Parse(c.Request.UserAgent())
+	return agent.Name == "curl"
 }

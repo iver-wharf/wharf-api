@@ -12,6 +12,12 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 	https://changelog.md/
 -->
 
+## v5.1.3 (WIP)
+
+- Changed automatic JSON indentation in HTTP responses based on the user agent,
+  so it no longer automatically indents for desktop, mobile, or tablet devices.
+  It is still enabled for cURL and if the `?pretty` flag is set. (#170)
+
 ## v5.1.2 (2022-03-08)
 
 - Fixed token in trigger URL used in HTTP request getting redacted, instead of
