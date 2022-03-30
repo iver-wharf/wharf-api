@@ -105,7 +105,7 @@ func (m *oidcMiddleware) VerifyTokenMiddleware(ginContext *gin.Context) {
 		return
 	}
 	tokenString = strings.TrimPrefix(tokenString, "Bearer ")
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
 		if kid, ok := token.Header["kid"].(string); ok {
 			return m.rsaKeys[kid], nil
 		}

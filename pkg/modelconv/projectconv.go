@@ -68,11 +68,11 @@ func ReqProjectToDatabase(reqProject request.Project) database.Project {
 
 // ParseBuildDefinition parses a YAML-formatted build definition string to be
 // used in a project response.
-func ParseBuildDefinition(buildDef string) (interface{}, error) {
+func ParseBuildDefinition(buildDef string) (any, error) {
 	if buildDef == "" {
 		return nil, nil
 	}
-	var parsed interface{}
+	var parsed any
 	err := yaml.Unmarshal([]byte(buildDef), &parsed)
 	if err != nil {
 		return nil, err

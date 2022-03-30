@@ -253,19 +253,19 @@ var ProjectJSONFields = struct {
 // Project holds details about a project.
 type Project struct {
 	TimeMetadata
-	ProjectID             uint        `json:"projectId" minimum:"0"`
-	RemoteProjectID       string      `json:"remoteProjectId"`
-	Name                  string      `json:"name"`
-	GroupName             string      `json:"groupName"`
-	Description           string      `json:"description"`
-	AvatarURL             string      `json:"avatarUrl"`
-	TokenID               uint        `json:"tokenId" minimum:"0"`
-	ProviderID            uint        `json:"providerId" minimum:"0"`
-	Provider              *Provider   `json:"provider" extensions:"x-nullable"`
-	BuildDefinition       string      `json:"buildDefinition"`
-	Branches              []Branch    `json:"branches"`
-	GitURL                string      `json:"gitUrl"`
-	ParsedBuildDefinition interface{} `json:"build" swaggertype:"object" extensions:"x-nullable"`
+	ProjectID             uint      `json:"projectId" minimum:"0"`
+	RemoteProjectID       string    `json:"remoteProjectId"`
+	Name                  string    `json:"name"`
+	GroupName             string    `json:"groupName"`
+	Description           string    `json:"description"`
+	AvatarURL             string    `json:"avatarUrl"`
+	TokenID               uint      `json:"tokenId" minimum:"0"`
+	ProviderID            uint      `json:"providerId" minimum:"0"`
+	Provider              *Provider `json:"provider" extensions:"x-nullable"`
+	BuildDefinition       string    `json:"buildDefinition"`
+	Branches              []Branch  `json:"branches"`
+	GitURL                string    `json:"gitUrl"`
+	ParsedBuildDefinition any       `json:"build" swaggertype:"object" extensions:"x-nullable"`
 }
 
 // ProjectOverrides holds field overrides for a project.

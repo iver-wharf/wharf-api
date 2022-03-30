@@ -5,12 +5,12 @@ import "gopkg.in/guregu/null.v4"
 // Collection stores field names of non-nil values. Meant to be used with the
 // GORM .Where() clause.
 type Collection struct {
-	fieldNames []interface{}
+	fieldNames []any
 }
 
 // NonNilFieldNames returns the slice of field names. Meant to be used as the
 // trailing arguments to the GORM .Where() clause.
-func (sc *Collection) NonNilFieldNames() []interface{} {
+func (sc *Collection) NonNilFieldNames() []any {
 	return sc.fieldNames
 }
 

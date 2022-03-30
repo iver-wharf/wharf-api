@@ -13,7 +13,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-func findDBPaginatedSliceAndTotalCount(dbQuery *gorm.DB, limit, offset int, slicePtr interface{}, totalCount *int64) error {
+func findDBPaginatedSliceAndTotalCount(dbQuery *gorm.DB, limit, offset int, slicePtr any, totalCount *int64) error {
 	err := dbQuery.Scopes(optionalLimitOffsetScope(limit, offset)).Find(slicePtr).Error
 	if err != nil {
 		return err
@@ -22,7 +22,7 @@ func findDBPaginatedSliceAndTotalCount(dbQuery *gorm.DB, limit, offset int, slic
 	return dbQuery.Count(totalCount).Error
 }
 
-func fetchDatabaseObjByID(c *gin.Context, db *gorm.DB, modelPtr interface{}, id uint, name, whenMsg string) bool {
+func fetchDatabaseObjByID(c *gin.Context, db *gorm.DB, modelPtr any, id uint, name, whenMsg string) bool {
 	if err := db.First(modelPtr, id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			writeDBFetchObjByIDNotFoundProblem(c, id, name, whenMsg)
@@ -34,7 +34,7 @@ func fetchDatabaseObjByID(c *gin.Context, db *gorm.DB, modelPtr interface{}, id 
 	return true
 }
 
-func validateDatabaseObjExistsByID(c *gin.Context, db *gorm.DB, modelPtr interface{}, id uint, name, whenMsg string) bool {
+func validateDatabaseObjExistsByID(c *gin.Context, db *gorm.DB, modelPtr any, id uint, name, whenMsg string) bool {
 	var count int64
 	if err := db.Model(modelPtr).Where(id).Count(&count).Error; err != nil {
 		writeDBFetchObjByIDErrorProblem(c, err, id, name, whenMsg)
@@ -179,7 +179,7 @@ func (b gormClauseBuilder) likeExpr(key database.SafeSQLName, value *string) cla
 	}
 	return clause.Expr{
 		SQL:  sqlString,
-		Vars: []interface{}{newLikeContainsValue(*value)},
+		Vars: []any{newLikeContainsValue(*value)},
 	}
 }
 

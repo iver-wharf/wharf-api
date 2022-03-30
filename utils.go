@@ -23,8 +23,8 @@ func findDefaultBranch(branches []database.Branch) (database.Branch, bool) {
 	return database.Branch{}, false
 }
 
-func stringSliceToInterfaces(values []string) []interface{} {
-	newSlice := make([]interface{}, len(values))
+func stringSliceToInterfaces(values []string) []any {
+	newSlice := make([]any, len(values))
 	for i, v := range values {
 		newSlice[i] = v
 	}
