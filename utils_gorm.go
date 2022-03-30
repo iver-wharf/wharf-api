@@ -9,6 +9,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/iver-wharf/wharf-api/v5/pkg/model/database"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -53,10 +55,12 @@ func writeDBFetchObjByIDErrorProblem(c *gin.Context, err error, id uint, name, w
 		strings.ToLower(name), id, spaceWhenMessage(whenMsg)))
 }
 
+var titleCaser = cases.Title(language.English)
+
 func writeDBFetchObjByIDNotFoundProblem(c *gin.Context, id uint, name, whenMsg string) {
 	ginutil.WriteDBNotFound(c, fmt.Sprintf(
 		"%s with ID %d was not found%s.",
-		strings.Title(name), id, spaceWhenMessage(whenMsg)))
+		titleCaser.String(name), id, spaceWhenMessage(whenMsg)))
 }
 
 func spaceWhenMessage(whenMsg string) string {

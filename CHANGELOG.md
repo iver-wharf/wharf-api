@@ -22,7 +22,10 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
 - Changed version of `github.com/swaggo/swag` from v1.8.0 to v1.8.1. (#171)
 
-- Added dependency `gopkg.in/typ.v3` v3.0.1. (#172)
+- Added dependencies:
+
+  - `golang.org/x/text` v0.3.7 (#173)
+  - `gopkg.in/typ.v3` v3.0.1. (#172)
 
 ## v5.1.2 (2022-03-08)
 
