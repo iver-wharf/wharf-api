@@ -260,7 +260,7 @@ func createBranchesWithNames(db *gorm.DB, projectID, tokenID uint, branchNames [
 func deleteBranchesByNames(db *gorm.DB, projectID uint, branchNames []string) error {
 	return db.
 		Where(&database.Branch{ProjectID: projectID}, database.BranchFields.ProjectID).
-		Where(database.BranchColumns.Name+" IN ?", stringSliceToInterfaces(branchNames)).
+		Where(database.BranchColumns.Name+" IN ?", asAnySlice(branchNames)).
 		Delete(&database.Branch{}).
 		Error
 }

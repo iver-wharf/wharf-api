@@ -10,11 +10,10 @@ func findDefaultBranch(branches []database.Branch) (database.Branch, bool) {
 			return branch, true
 		}
 	}
-
 	return database.Branch{}, false
 }
 
-func stringSliceToInterfaces(values []string) []any {
+func asAnySlice[S ~[]E, E any](values S) []any {
 	newSlice := make([]any, len(values))
 	for i, v := range values {
 		newSlice[i] = v
