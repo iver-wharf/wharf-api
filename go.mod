@@ -16,7 +16,7 @@ require (
 	github.com/swaggo/gin-swagger v1.4.1
 	github.com/swaggo/swag v1.8.1
 	gopkg.in/guregu/null.v4 v4.0.0
-	gopkg.in/typ.v3 v3.0.0
+	gopkg.in/typ.v3 v3.0.1
 	gorm.io/driver/postgres v1.2.3
 	gorm.io/driver/sqlite v1.2.6
 	gorm.io/gorm v1.22.5
