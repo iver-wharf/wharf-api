@@ -65,13 +65,13 @@ func (m buildModule) Register(g *gin.RouterGroup) {
 
 var buildChannels = make(map[uint]broadcast.Broadcaster)
 
-func openListener(buildID uint) chan interface{} {
-	listener := make(chan interface{})
+func openListener(buildID uint) chan any {
+	listener := make(chan any)
 	build(buildID).Register(listener)
 	return listener
 }
 
-func closeListener(buildID uint, listener chan interface{}) {
+func closeListener(buildID uint, listener chan any) {
 	build(buildID).Unregister(listener)
 	close(listener)
 }
@@ -261,7 +261,7 @@ func (m buildModule) getBuildListHandler(c *gin.Context) {
 	}
 
 	if len(statusIDs) > 0 {
-		ids := make([]interface{}, len(statusIDs))
+		ids := make([]any, len(statusIDs))
 		for i, status := range statusIDs {
 			ids[i] = int(status.id)
 		}
@@ -466,7 +466,7 @@ func createLogBatchPostgresQuery(db *gorm.DB, dbLogs []database.Log) *gorm.DB {
 	// Based on:
 	// https://stackoverflow.com/a/36039580
 	var sb strings.Builder
-	var params []interface{}
+	var params []any
 	// Looping in reverse order as the "RETURNING" produces rows in reverse
 	for i := len(dbLogs) - 1; i >= 0; i-- {
 		if sb.Len() == 0 {
@@ -969,7 +969,7 @@ func getDBJobParams(
 	var err error
 	var v []byte
 	if len(dbBuildParams) > 0 {
-		m := make(map[string]interface{})
+		m := make(map[string]any)
 
 		for _, input := range dbBuildParams {
 			m[input.Name] = input.Value

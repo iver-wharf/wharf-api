@@ -32,7 +32,7 @@ func migrateInitSchema(db *gorm.DB) error {
 	if err := migrateBeforeGormigrate(db); err != nil {
 		return err
 	}
-	tables := []interface{}{
+	tables := []any{
 		&database.Token{}, &database.Provider{},
 		&database.Project{}, &database.ProjectOverrides{},
 		&database.Branch{}, &database.Build{}, &database.Log{},

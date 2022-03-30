@@ -120,7 +120,7 @@ func dropOldConstraint(db *gorm.DB, table string, constraintName string) error {
 }
 
 type columnToDrop struct {
-	model      interface{}
+	model      any
 	columnName string
 }
 
@@ -134,7 +134,7 @@ func dropOldColumns(db *gorm.DB, columns []columnToDrop) error {
 	return nil
 }
 
-func dropOldColumn(db *gorm.DB, model interface{}, columnName string) error {
+func dropOldColumn(db *gorm.DB, model any, columnName string) error {
 	if db.Migrator().HasColumn(model, columnName) {
 		log.Info().
 			WithString("column", columnName).
@@ -230,7 +230,7 @@ func migrateWharfColumnsToNotNull(db *gorm.DB) error {
 	return nil
 }
 
-func migrateColumnsToNotNull(db *gorm.DB, model interface{}, fieldNames ...string) error {
+func migrateColumnsToNotNull(db *gorm.DB, model any, fieldNames ...string) error {
 	if !db.Migrator().HasTable(model) {
 		log.Debug().WithStringf("model", "%T", model).Message("Skipping changing column to not null as the table does not exist.")
 		return nil
@@ -271,7 +271,7 @@ func migrateColumnsToNotNull(db *gorm.DB, model interface{}, fieldNames ...strin
 	})
 }
 
-func migrateColumnToNotNull(db *gorm.DB, model interface{}, want *schema.Field, actual gorm.ColumnType) error {
+func migrateColumnToNotNull(db *gorm.DB, model any, want *schema.Field, actual gorm.ColumnType) error {
 	if want.PrimaryKey {
 		return fmt.Errorf("cannot operate changing the column to not null for a primary key: %q", want.Name)
 	}
@@ -333,7 +333,7 @@ func migrateColumnToNotNull(db *gorm.DB, model interface{}, want *schema.Field, 
 	return nil
 }
 
-func sqlDefaultValue(dataType schema.DataType) (interface{}, error) {
+func sqlDefaultValue(dataType schema.DataType) (any, error) {
 	switch dataType {
 	case schema.Bool:
 		return false, nil

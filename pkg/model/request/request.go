@@ -90,7 +90,7 @@ type BuildStatusUpdate struct {
 // BuildInputs is a key-value object of input variables used when starting a new
 // build, where the key is the input variable name and the value is its string,
 // boolean, or numeric value.
-type BuildInputs map[string]interface{}
+type BuildInputs map[string]any
 
 // Project specifies fields when creating a new project.
 type Project struct {

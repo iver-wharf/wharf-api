@@ -49,7 +49,7 @@ func (set Strings) String() string {
 func (set Strings) GoString() string {
 	values := set.Slice()
 	sort.Strings(values)
-	valuesInterfaces := make([]interface{}, len(values))
+	valuesInterfaces := make([]any, len(values))
 	for i, v := range values {
 		valuesInterfaces[i] = v
 	}

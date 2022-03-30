@@ -18,6 +18,10 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   so it no longer automatically indents for desktop, mobile, or tablet devices.
   It is still enabled for cURL and if the `?pretty` flag is set. (#170)
 
+- Changed Go runtime from v1.17 to v1.18. (#171)
+
+- Changed version of `github.com/swaggo/swag` from v1.8.0 to v1.8.1. (#171)
+
 ## v5.1.2 (2022-03-08)
 
 - Fixed token in trigger URL used in HTTP request getting redacted, instead of

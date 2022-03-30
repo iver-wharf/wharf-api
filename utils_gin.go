@@ -23,7 +23,7 @@ var defaultCommonGetQueryParams = commonGetQueryParams{
 	Offset: 0,
 }
 
-func bindCommonGetQueryParams(c *gin.Context, params interface{}) bool {
+func bindCommonGetQueryParams(c *gin.Context, params any) bool {
 	if err := c.ShouldBindQuery(params); err != nil {
 		ginutil.WriteInvalidBindError(c, err, "One or more parameters failed to parse when reading query parameters.")
 		return false
@@ -44,7 +44,7 @@ func parseCommonOrderBySlice(c *gin.Context, orders []string, fieldToColumnNames
 	return orderBySlice, true
 }
 
-func renderJSON(c *gin.Context, code int, response interface{}) {
+func renderJSON(c *gin.Context, code int, response any) {
 	if shouldIndentJSONResponse(c) {
 		c.IndentedJSON(code, response)
 	} else {

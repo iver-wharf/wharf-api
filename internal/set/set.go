@@ -7,7 +7,7 @@ import (
 
 type emptyStruct struct{}
 
-func goString(set interface{}, values []interface{}) string {
+func goString(set any, values []any) string {
 	var sb strings.Builder
 	fmt.Fprintf(&sb, "%T{", set)
 	for i, value := range values {

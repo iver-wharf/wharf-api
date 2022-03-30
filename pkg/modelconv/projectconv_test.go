@@ -11,7 +11,7 @@ func TestDBProjectToResponseBuildDefParsing(t *testing.T) {
 	var testCases = []struct {
 		name      string
 		dbProject database.Project
-		want      interface{}
+		want      any
 	}{
 		{
 			name:      "no build def",
@@ -21,7 +21,7 @@ func TestDBProjectToResponseBuildDefParsing(t *testing.T) {
 		{
 			name:      "with build def",
 			dbProject: database.Project{BuildDefinition: "myStage: moo"},
-			want: map[string]interface{}{
+			want: map[string]any{
 				"myStage": "moo",
 			},
 		},
