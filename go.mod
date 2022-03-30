@@ -1,6 +1,6 @@
 module github.com/iver-wharf/wharf-api/v5
 
-go 1.17
+go 1.18
 
 require (
 	github.com/dustin/go-broadcast v0.0.0-20171205050544-f664265f5a66
