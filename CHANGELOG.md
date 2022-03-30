@@ -20,6 +20,8 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
 - Changed Go runtime from v1.17 to v1.18. (#171)
 
+- Changed version of `github.com/swaggo/swag` from v1.8.0 to v1.8.1. (#171)
+
 ## v5.1.2 (2022-03-08)
 
 - Fixed token in trigger URL used in HTTP request getting redacted, instead of
