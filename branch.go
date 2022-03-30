@@ -209,8 +209,8 @@ func ensureOnlyRequestedBranchesExist(db *gorm.DB, projectID uint, tokenID uint,
 		wantBranchNamesSet := modelconv.ReqBranchUpdatesToSetOfNames(reqUpdate.Branches)
 		hasBranchNamesSet := modelconv.DBBranchesToSetOfNames(dbOldBranches)
 
-		branchNamesToDelete := hasBranchNamesSet.Difference(wantBranchNamesSet)
-		branchNamesToAdd := wantBranchNamesSet.Difference(hasBranchNamesSet)
+		branchNamesToDelete := hasBranchNamesSet.SetDiff(wantBranchNamesSet)
+		branchNamesToAdd := wantBranchNamesSet.SetDiff(hasBranchNamesSet)
 
 		if len(branchNamesToAdd) > 0 {
 			if err := createBranchesWithNames(tx, projectID, tokenID, branchNamesToAdd.Slice()); err != nil {
