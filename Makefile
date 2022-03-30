@@ -22,7 +22,7 @@ tidy:
 deps:
 	go install github.com/mgechev/revive@latest
 	go install golang.org/x/tools/cmd/goimports@latest
-	go install github.com/swaggo/swag/cmd/swag@v1.8.0
+	go install github.com/iver-wharf/swag/cmd/swag@v1.8.1
 	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.26
 	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1
 	go install github.com/alta/protopatch/cmd/protoc-gen-go-patch@v0.5.0
