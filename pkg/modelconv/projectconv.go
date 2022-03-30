@@ -2,11 +2,11 @@ package modelconv
 
 import (
 	"github.com/ghodss/yaml"
-	"github.com/iver-wharf/wharf-api/v5/internal/coalesce"
 	"github.com/iver-wharf/wharf-api/v5/internal/ptrconv"
 	"github.com/iver-wharf/wharf-api/v5/pkg/model/database"
 	"github.com/iver-wharf/wharf-api/v5/pkg/model/request"
 	"github.com/iver-wharf/wharf-api/v5/pkg/model/response"
+	"gopkg.in/typ.v3"
 )
 
 // DBProjectsToResponses converts a slice of database projects to a slice of
@@ -38,14 +38,14 @@ func DBProjectToResponse(dbProject database.Project) response.Project {
 		ProjectID:             dbProject.ProjectID,
 		Name:                  dbProject.Name,
 		GroupName:             dbProject.GroupName,
-		Description:           coalesce.String(dbProject.Overrides.Description, dbProject.Description),
-		AvatarURL:             coalesce.String(dbProject.Overrides.AvatarURL, dbProject.AvatarURL),
+		Description:           typ.Coal(dbProject.Overrides.Description, dbProject.Description),
+		AvatarURL:             typ.Coal(dbProject.Overrides.AvatarURL, dbProject.AvatarURL),
 		TokenID:               ptrconv.UintPtr(dbProject.TokenID),
 		ProviderID:            ptrconv.UintPtr(dbProject.ProviderID),
 		Provider:              resProviderPtr,
 		BuildDefinition:       dbProject.BuildDefinition,
 		Branches:              DBBranchesToResponses(dbProject.Branches),
-		GitURL:                coalesce.String(dbProject.Overrides.GitURL, dbProject.GitURL),
+		GitURL:                typ.Coal(dbProject.Overrides.GitURL, dbProject.GitURL),
 		RemoteProjectID:       dbProject.RemoteProjectID,
 		ParsedBuildDefinition: parsedBuildDef,
 	}
