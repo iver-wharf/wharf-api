@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"gopkg.in/typ.v3/pkg/chans"
 	"gorm.io/gorm"
 )
 
@@ -36,7 +37,8 @@ func (s *grpcWharfServer) CreateLogStream(stream v5.Builds_CreateLogStreamServer
 
 	var logsInserted uint64
 	for {
-		lines := recvBufferedLogsFromChan(logReqChan)
+		const bufferSize = 100
+		lines := chans.RecvQueued(logReqChan, bufferSize)
 		if len(lines) == 0 {
 			break
 		}
@@ -95,28 +97,6 @@ func (s *grpcWharfServer) CreateLogStream(stream v5.Builds_CreateLogStreamServer
 		return err
 	}
 	return nil
-}
-
-func recvBufferedLogsFromChan(ch <-chan *v5.CreateLogStreamRequest) []*v5.CreateLogStreamRequest {
-	const bufferSize = 100
-	firstLine, ok := <-ch
-	if !ok {
-		return nil
-	}
-	buf := make([]*v5.CreateLogStreamRequest, 0, bufferSize)
-	buf = append(buf, firstLine)
-	for len(buf) < bufferSize {
-		select {
-		case line, ok := <-ch:
-			if !ok {
-				return buf
-			}
-			buf = append(buf, line)
-		default:
-			break
-		}
-	}
-	return buf
 }
 
 func recvLogStreamIntoChan(stream v5.Builds_CreateLogStreamServer, ch chan<- *v5.CreateLogStreamRequest) error {
