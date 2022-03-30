@@ -3,24 +3,24 @@ module github.com/iver-wharf/wharf-api/v5
 go 1.18
 
 require (
+	github.com/alta/protopatch v0.5.0
 	github.com/dustin/go-broadcast v0.0.0-20171205050544-f664265f5a66
 	github.com/ghodss/yaml v1.0.0
 	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-gonic/gin v1.7.7
 	github.com/go-gormigrate/gormigrate/v2 v2.0.0
 	github.com/golang-jwt/jwt/v4 v4.1.0
+	github.com/iver-wharf/swag v1.8.1
 	github.com/iver-wharf/wharf-core v1.3.0
 	github.com/mileusna/useragent v1.0.2
 	github.com/stretchr/testify v1.7.0
 	github.com/swaggo/gin-swagger v1.4.1
-	github.com/swaggo/swag v1.8.0
+	github.com/swaggo/swag v1.8.0 // indirect
 	gopkg.in/guregu/null.v4 v4.0.0
 	gorm.io/driver/postgres v1.2.3
 	gorm.io/driver/sqlite v1.2.6
 	gorm.io/gorm v1.22.5
 )
-
-require github.com/alta/protopatch v0.5.0
 
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
