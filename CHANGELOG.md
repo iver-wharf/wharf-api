@@ -27,6 +27,9 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   - `golang.org/x/text` v0.3.7 (#173)
   - `gopkg.in/typ.v3` v3.0.1. (#172)
 
+- Fixed gRPC logs streaming silently ignoring all logs after a pause between
+  log lines. (#175)
+
 ## v5.1.2 (2022-03-08)
 
 - Fixed token in trigger URL used in HTTP request getting redacted, instead of
