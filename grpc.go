@@ -38,7 +38,7 @@ func (s *grpcWharfServer) CreateLogStream(stream v5.Builds_CreateLogStreamServer
 	var logsInserted uint64
 	for {
 		const bufferSize = 100
-		lines := chans.RecvQueued(logReqChan, bufferSize)
+		lines := recvQueuedAtLeastOne(logReqChan, bufferSize)
 		if len(lines) == 0 {
 			break
 		}
@@ -112,4 +112,15 @@ func recvLogStreamIntoChan(stream v5.Builds_CreateLogStreamServer, ch chan<- *v5
 		}
 		ch <- msg
 	}
+}
+
+func recvQueuedAtLeastOne[C chans.Receiver[E], E any](ch C, bufferSize int) []E {
+	buf := make([]E, 100)
+	firstMsg, ok := <-ch
+	if !ok {
+		return nil
+	}
+	buf[0] = firstMsg
+	count := chans.RecvQueuedFull(ch, buf[1:])
+	return buf[:count+1]
 }
