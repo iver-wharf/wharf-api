@@ -1,25 +1,43 @@
-.PHONY: install tidy deps check \
-	docker docker-run serve swag-force swag proto \
-	lint lint-md lint-go lint-proto \
-	lint-fix lint-fix-md lint-fix-go lint-fix-proto
 
 commit = $(shell git rev-parse HEAD)
 version = latest
 
 ifeq ($(OS),Windows_NT)
 wharf-api.exe: swag
+	go build -o wharf-api.exe .
 else
 wharf-api: swag
+	go build -o wharf-api .
 endif
-	go build .
 
-install:
+.PHONY: clean
+clean: clean-swag clean-build
+
+.PHONY: clean-build
+clean-build:
+ifeq ($(OS),Windows_NT)
+	rm -rfv wharf-api.exe
+else
+	rm -rfv wharf-api
+endif
+
+.PHONY: install
+install: swag
 	go install
 
+.PHONY: check
+check: swag
+	go test ./...
+
+.PHONY: tidy
 tidy:
 	go mod tidy
 
-deps:
+.PHONY: deps
+deps: deps-go deps-npm
+
+.PHONY: deps-go
+deps-go:
 	go install github.com/mgechev/revive@latest
 	go install golang.org/x/tools/cmd/goimports@latest
 	go install github.com/swaggo/swag/cmd/swag@v1.8.1
@@ -28,11 +46,12 @@ deps:
 	go install github.com/alta/protopatch/cmd/protoc-gen-go-patch@v0.5.0
 	go install github.com/yoheimuta/protolint/cmd/protolint@v0.37.1
 	go mod download
+
+.PHONY: deps-npm
+deps-npm:
 	npm install
 
-check: swag
-	go test ./...
-
+.PHONY: docker
 docker:
 	docker build . \
 		--pull \
@@ -48,26 +67,31 @@ ifneq "$(version)" "latest"
 	@echo "docker push quay.io/iver-wharf/wharf-api:$(version)"
 endif
 
+.PHONY: docker-run
 docker-run:
 	docker run --rm -it quay.io/iver-wharf/wharf-api:$(version)
 
+.PHONY: serve
 serve: swag
 	go run .
 
-clean:
-	@rm -vf docs/docs.go
-	@rm -vf docs/swagger.json
-	@rm -vf docs/swagger.yaml
+.PHONY: clean-swag
+clean-swag:
+	rm -vrf docs
 
-swag-force:
-	swag init --parseDependency --parseDepth 1
+.PHONY: swag-force
+swag-force: clean-swag swag
 
-swag: docs/docs.go
+.PHONY: swag
+swag: docs
 
-docs/docs.go:
-	swag init --parseDependency --parseDepth 1
+docs:
+	swag init --parseDependency --parseDepth 2
 
-proto:
+.PHONY: proto
+proto: api/wharfapi/v5/builds.pb.go
+
+api/wharfapi/v5/builds.pb.go:
 	protoc -I . \
 		-I `go list -m -f {{.Dir}} github.com/alta/protopatch` \
 		-I `go list -m -f {{.Dir}} google.golang.org/protobuf` \
@@ -77,8 +101,11 @@ proto:
 # Generated files have some non-standard formatting, so let's format it.
 	goimports -w ./api/wharfapi/v5/.
 
-lint: lint-md lint-go lint-proto
-lint-fix: lint-fix-md lint-fix-go lint-fix-proto
+.PHONY: lint lint-fix \
+	lint-md lint-go \
+	lint-fix-md lint-fix-go
+lint: lint-md lint-go
+lint-fix: lint-fix-md lint-fix-go
 
 lint-md:
 	npx remark . .github
@@ -87,14 +114,10 @@ lint-fix-md:
 	npx remark . .github -o
 
 lint-go:
-	goimports -d $(shell git ls-files "*.go")
+	@echo goimports -d '**/*.go'
+	@goimports -d $(shell git ls-files "*.go")
 	revive -formatter stylish -config revive.toml ./...
 
 lint-fix-go:
-	goimports -d -w $(shell git ls-files "*.go")
-
-lint-proto:
-	protolint lint api/wharfapi
-
-lint-fix-proto:
-	protolint lint -fix api/wharfapi
+	@echo goimports -d -w '**/*.go'
+	@goimports -d -w $(shell git ls-files "*.go")
