@@ -102,10 +102,10 @@ api/wharfapi/v5/builds.pb.go:
 	goimports -w ./api/wharfapi/v5/.
 
 .PHONY: lint lint-fix \
-	lint-md lint-go \
-	lint-fix-md lint-fix-go
-lint: lint-md lint-go
-lint-fix: lint-fix-md lint-fix-go
+	lint-md lint-go lint-proto \
+	lint-fix-md lint-fix-go lint-fix-proto
+lint: lint-md lint-go lint-proto
+lint-fix: lint-fix-md lint-fix-go lint-fix-proto
 
 lint-md:
 	npx remark . .github
@@ -121,3 +121,9 @@ lint-go:
 lint-fix-go:
 	@echo goimports -d -w '**/*.go'
 	@goimports -d -w $(shell git ls-files "*.go")
+
+lint-proto:
+	protolint lint api/wharfapi
+
+lint-fix-proto:
+	protolint lint -fix api/wharfapi
