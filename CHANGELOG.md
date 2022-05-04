@@ -28,7 +28,7 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   - `gopkg.in/typ.v4` v4.1.0. (#172, #181)
 
 - Fixed gRPC logs streaming silently ignoring all logs after a pause between
-  log lines. (#175)
+  log lines. (#175, #180)
 
 ## v5.1.2 (2022-03-08)
 
