@@ -4,7 +4,7 @@ import (
 	"github.com/iver-wharf/wharf-api/v5/pkg/model/database"
 	"github.com/iver-wharf/wharf-api/v5/pkg/model/request"
 	"github.com/iver-wharf/wharf-api/v5/pkg/model/response"
-	"gopkg.in/typ.v3/pkg/sets"
+	"gopkg.in/typ.v4/maps"
 )
 
 // DBBranchListToResponse converts a list of branches and an optional default
@@ -58,8 +58,8 @@ func DBBranchToResponse(dbBranch database.Branch) response.Branch {
 
 // ReqBranchUpdatesToSetOfNames converts a slice of request branch updates to a
 // set of branch names.
-func ReqBranchUpdatesToSetOfNames(reqBranches []request.BranchUpdate) sets.Set[string] {
-	namesSet := make(sets.Set[string])
+func ReqBranchUpdatesToSetOfNames(reqBranches []request.BranchUpdate) maps.Set[string] {
+	namesSet := make(maps.Set[string])
 	for _, reqBranchUpdate := range reqBranches {
 		namesSet.Add(reqBranchUpdate.Name)
 	}
@@ -68,8 +68,8 @@ func ReqBranchUpdatesToSetOfNames(reqBranches []request.BranchUpdate) sets.Set[s
 
 // DBBranchesToSetOfNames converts a slice of database branches to a set of
 // branch names.
-func DBBranchesToSetOfNames(dbBranches []database.Branch) sets.Set[string] {
-	namesSet := make(sets.Set[string])
+func DBBranchesToSetOfNames(dbBranches []database.Branch) maps.Set[string] {
+	namesSet := make(maps.Set[string])
 	for _, dbOldBranch := range dbBranches {
 		namesSet.Add(dbOldBranch.Name)
 	}
