@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"gopkg.in/typ.v3/pkg/chans"
+	"gopkg.in/typ.v4/chans"
 	"gorm.io/gorm"
 )
 

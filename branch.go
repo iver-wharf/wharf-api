@@ -212,22 +212,22 @@ func ensureOnlyRequestedBranchesExist(db *gorm.DB, projectID uint, tokenID uint,
 		branchNamesToDelete := hasBranchNamesSet.SetDiff(wantBranchNamesSet)
 		branchNamesToAdd := wantBranchNamesSet.SetDiff(hasBranchNamesSet)
 
-		if len(branchNamesToAdd) > 0 {
+		if branchNamesToAdd.Len() > 0 {
 			if err := createBranchesWithNames(tx, projectID, tokenID, branchNamesToAdd.Slice()); err != nil {
 				return err
 			}
 			log.Info().
-				WithInt("branchesAdded", len(branchNamesToAdd)).
+				WithStringer("branchesAdded", branchNamesToAdd).
 				WithUint("project", projectID).
 				Message("Added branches to project when updating branches.")
 		}
 
-		if len(branchNamesToDelete) > 0 {
+		if branchNamesToDelete.Len() > 0 {
 			if err := deleteBranchesByNames(tx, projectID, branchNamesToDelete.Slice()); err != nil {
 				return err
 			}
 			log.Info().
-				WithInt("branchesDeleted", len(branchNamesToDelete)).
+				WithStringer("branchesDeleted", branchNamesToDelete).
 				WithUint("project", projectID).
 				Message("Deleted branches from project when updating branches.")
 		}
