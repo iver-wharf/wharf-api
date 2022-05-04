@@ -6,7 +6,7 @@ import (
 	"github.com/iver-wharf/wharf-api/v5/pkg/model/database"
 	"github.com/iver-wharf/wharf-api/v5/pkg/model/request"
 	"github.com/iver-wharf/wharf-api/v5/pkg/model/response"
-	"gopkg.in/typ.v3"
+	"gopkg.in/typ.v4"
 )
 
 // DBProjectsToResponses converts a slice of database projects to a slice of

@@ -25,7 +25,7 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Added dependencies:
 
   - `golang.org/x/text` v0.3.7 (#173)
-  - `gopkg.in/typ.v3` v3.0.1. (#172)
+  - `gopkg.in/typ.v4` v4.1.0. (#172, #181)
 
 - Fixed gRPC logs streaming silently ignoring all logs after a pause between
   log lines. (#175, #180)

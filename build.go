@@ -25,7 +25,7 @@ import (
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"github.com/iver-wharf/wharf-core/pkg/problem"
 	"gopkg.in/guregu/null.v4"
-	"gopkg.in/typ.v3"
+	"gopkg.in/typ.v4"
 	"gorm.io/gorm"
 )
 
