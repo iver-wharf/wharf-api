@@ -35,7 +35,6 @@ func (s *grpcWharfServer) CreateLogStream(stream v5.Builds_CreateLogStreamServer
 			return err
 		} else if line == nil {
 			log.Warn().Message("Received nil message, skipping.")
-			//return status.Error(codes.InvalidArgument, "received nil message")
 			continue
 		}
 		if err := line.Timestamp.CheckValid(); err != nil {
@@ -63,7 +62,7 @@ func (s *grpcWharfServer) CreateLogStream(stream v5.Builds_CreateLogStreamServer
 			return status.Errorf(codes.Internal, "insert logs: %v", err)
 		}
 		log.Debug().WithUint("logId", createdLog.LogID).
-			Message("Inserted logs into database.")
+			Message("Inserted log into database.")
 		build(createdLog.BuildID).Submit(response.Log{
 			LogID:     createdLog.LogID,
 			BuildID:   createdLog.BuildID,
