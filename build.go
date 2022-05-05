@@ -429,7 +429,7 @@ func (m buildModule) createBuildLogHandler(c *gin.Context) {
 // @accept json
 // @param buildId path uint true "Build ID" minimum(0)
 // @param data body request.BuildStatusUpdate true "Status update"
-// @success 200 {object} response.Build
+// @success 200 {object} response.Build "Updated build status"
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 404 {object} problem.Response "Build not found"
