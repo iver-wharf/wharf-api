@@ -30,6 +30,10 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Fixed gRPC logs streaming silently ignoring all logs after a pause between
   log lines. (#175, #180)
 
+- Fixed `PUT /api/build/{buildId}/status` not returning the resulting updated
+  build object, and changed to return status code `200 (OK)` instead of
+  `204 (No Content)` on success. (#183)
+
 ## v5.1.2 (2022-03-08)
 
 - Fixed token in trigger URL used in HTTP request getting redacted, instead of
