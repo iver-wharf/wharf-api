@@ -429,7 +429,7 @@ func (m buildModule) createBuildLogHandler(c *gin.Context) {
 // @accept json
 // @param buildId path uint true "Build ID" minimum(0)
 // @param data body request.BuildStatusUpdate true "Status update"
-// @success 204 "Updated"
+// @success 200 {object} response.Build
 // @failure 400 {object} problem.Response "Bad request"
 // @failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @failure 404 {object} problem.Response "Build not found"
@@ -457,14 +457,14 @@ func (m buildModule) updateBuildStatusHandler(c *gin.Context) {
 			reqStatusUpdate.Status,
 		))
 	}
-	_, err := m.updateBuildStatus(buildID, dbBuildStatus)
+	updatedBuild, err := m.updateBuildStatus(buildID, dbBuildStatus)
 	if err != nil {
 		ginutil.WriteDBWriteError(c, err, fmt.Sprintf(
 			"Failed updating status on build with ID %d to status with ID %d.",
 			buildID, dbBuildStatus))
 		return
 	}
-	c.Status(http.StatusNoContent)
+	c.JSON(http.StatusOK, modelconv.DBBuildToResponse(updatedBuild, m.engineLookup))
 }
 
 func (m buildModule) updateBuildStatus(buildID uint, statusID database.BuildStatus) (database.Build, error) {
