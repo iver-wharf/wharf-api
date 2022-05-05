@@ -31,7 +31,8 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   log lines. (#175, #180)
 
 - Fixed `PUT /api/build/{buildId}/status` not returning the resulting updated
-  build object. (#?)
+  build object, and changed to return status code `200 (OK)` instead of
+  `204 (No Content)` on success. (#183)
 
 ## v5.1.2 (2022-03-08)
 
