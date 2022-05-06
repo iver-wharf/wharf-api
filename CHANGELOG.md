@@ -12,6 +12,19 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 	https://changelog.md/
 -->
 
+## v5.2.0 (WIP)
+
+- Added `api` field to engine response (in e.g `GET /api/engine`) that was added
+  to the configuration in v5.1.0/#156. The field can currently only have two
+  different values: (#185)
+
+  - `"jenkins-generic-webhook-trigger"`: Jenkins Generic Webhook Trigger plugin:
+    https://plugins.jenkins.io/generic-webhook-trigger/
+
+  - `"wharf-cmd.v1"`: wharf-cmd-provisioner REST interface v1, which is an
+    extension of the jenkins-generic-webhook-trigger. The `build.workerId` is
+    only set in the database if the engine API is of this type.
+
 ## v5.1.3 (2022-05-05)
 
 - Changed automatic JSON indentation in HTTP responses based on the user agent,

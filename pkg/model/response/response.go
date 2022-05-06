@@ -145,6 +145,7 @@ type Engine struct {
 	ID   string `json:"id" example:"primary"`
 	Name string `json:"name" example:"Primary"`
 	URL  string `json:"url" example:"http://wharf-cmd-provisioner/trigger"`
+	API  string `json:"api" example:"wharf-cmd.v1"`
 }
 
 // EngineList contains a list of execution engines that the wharf-api is

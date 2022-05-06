@@ -96,6 +96,7 @@ func convCIEngineToResponse(engine CIEngineConfig) response.Engine {
 		ID:   engine.ID,
 		Name: engine.Name,
 		URL:  engine.URL,
+		API:  string(engine.API),
 	}
 }
 
