@@ -41,7 +41,7 @@ type TimeMetadata struct {
 //
 // It is merely semantical and has no validation attached. Values of this type
 // should never be constructed from user input.
-type SafeSQLName string
+type SafeSQLName = string
 
 // ProviderFields holds the Go struct field names for each field.
 // Useful in GORM .Where() statements to only select certain fields or in GORM
