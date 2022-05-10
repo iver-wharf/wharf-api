@@ -12,7 +12,7 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 	https://changelog.md/
 -->
 
-## v5.2.0 (WIP)
+## v5.2.0 (2022-05-10)
 
 - Added `api` field to engine response (in e.g `GET /api/engine`) that was added
   to the configuration in v5.1.0/#156. The field can currently only have two
