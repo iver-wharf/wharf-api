@@ -25,6 +25,9 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
     extension of the jenkins-generic-webhook-trigger. The `build.workerId` is
     only set in the database if the engine API is of this type.
 
+- Fixed `PUT /api/project/{projectId}/branch` where it created invalid SQL
+  statements to delete old branches. (#186)
+
 ## v5.1.3 (2022-05-05)
 
 - Changed automatic JSON indentation in HTTP responses based on the user agent,
